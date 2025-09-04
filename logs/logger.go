@@ -1,0 +1,64 @@
+package logs
+
+import (
+	"io"
+	"log"
+	"os"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
+)
+
+var Sugar *zap.SugaredLogger
+
+func InitZapSugarDefault() {
+	_, err := os.OpenFile("./logs/logs.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("创建/打开日志文件失败：%v", err.Error())
+	}
+
+	// 配置日志文件
+	fileLogger := &lumberjack.Logger{
+		Filename:   "./logs/logs.log",
+		MaxSize:    20,
+		MaxBackups: 5,
+		MaxAge:     360,
+		Compress:   false,
+	}
+
+	// 编码器配置
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	encoder := zapcore.NewJSONEncoder(encoderConfig)
+
+	// 文件输出核心
+	fileCore := zapcore.NewCore(encoder, zapcore.AddSync(fileLogger), zapcore.InfoLevel)
+
+	// 控制台输出核心
+	consoleCore := zapcore.NewCore(encoder, zapcore.Lock(os.Stdout), zapcore.InfoLevel)
+
+	// 合并核心
+	core := zapcore.NewTee(fileCore, consoleCore)
+
+	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
+
+	Sugar = logger.Sugar()
+}
+
+func SetupZapSugar(writer io.Writer, level zapcore.Level) {
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	encoder := zapcore.NewJSONEncoder(encoderConfig)
+
+	core := zapcore.NewCore(
+		encoder,
+		zapcore.AddSync(writer),
+		level,
+	)
+
+	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
+	// logger := zap.New(core)
+
+	Sugar = logger.Sugar()
+}

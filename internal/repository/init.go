@@ -13,8 +13,21 @@ import (
 
 var DB *gorm.DB
 
+func InitDB() error {
+	err := ConnectDB()
+	if err != nil {
+		return err
+	}
+
+	err = InitData()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // 连接PostgreSQL
-func ConnectPG() error {
+func ConnectDB() error {
 	dsn := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s",
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
@@ -40,7 +53,7 @@ func ConnectPG() error {
 	return nil
 }
 
-func DBInit() error {
+func InitData() error {
 	if DB == nil {
 		return fmt.Errorf("database connection not initialized")
 	}
@@ -59,28 +72,27 @@ func DBInit() error {
 	}
 
 	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+        if r := recover(); r != nil {
+            tx.Rollback()
+            panic(r)
+        }
+    }()
 
-	for _, file := range files {
-		// 执行以.init.sql结尾的文件
-		if filepath.Ext(file.Name()) != ".init.sql" {
-			continue
-		}
-		// 读取文件内容
-		content, err := ioutil.ReadFile(filepath.Join(migrationsDir, file.Name()))
-		if err != nil {
-			return fmt.Errorf("failed to read file: %v", err)
-		}
-		// 执行SQL语句
-		if err = tx.Exec(string(content)).Error; err != nil {
-			return fmt.Errorf("failed to execute SQL: %v", err)
-		}
-	}
+    for _, file := range files {
+        if !file.IsDir() && filepath.Ext(file.Name()) == ".init.sql" {
+            filePath := filepath.Join(migrationsDir, file.Name())
+            content, err := ioutil.ReadFile(filePath)
+            if err != nil {
+                tx.Rollback()
+                return fmt.Errorf("读取文件失败 %s: %v", filePath, err)
+            }
 
-	return nil
+            if err = tx.Exec(string(content)).Error; err != nil {
+                tx.Rollback()
+                return fmt.Errorf("执行 SQL 失败 %s: %v", filePath, err)
+            }
+        }
+    }
+
+    return tx.Commit().Error
 }
