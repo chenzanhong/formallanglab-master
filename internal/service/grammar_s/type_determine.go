@@ -34,7 +34,7 @@ func TypeDetermine(g *model.Grammar) int {
 // isContextFreeForm 检查是否所有产生式左部都是“单个非终结符”
 func isContextFreeForm(g *model.Grammar) bool {
 	for _, p := range g.Productions {
-		if len(p.Left) != 1 || !isInSet(g.NonTerminals, p.Left[0]) {
+		if len(p.Left) != 1 || !g.CheckIsNonTerminal(p.Left[0]) {
 			return false
 		}
 	}
@@ -79,7 +79,7 @@ func isRightLinearProduction(right []model.Symbol, g *model.Grammar) bool {
 	// 情况1：全为终结符（A → w）
 	allTerminals := true
 	for _, sym := range right {
-		if sym != model.Epsilon && !isInSet(g.Terminals, sym) {
+		if sym != model.Epsilon && !g.CheckIsTerminal(sym) {
 			allTerminals = false
 			break
 		}
@@ -96,7 +96,7 @@ func isLeftLinearProduction(right []model.Symbol, g *model.Grammar) bool {
 	// 情况1：全为终结符（A → w）
 	allTerminals := true
 	for _, sym := range right {
-		if sym != model.Epsilon && !isInSet(g.Terminals, sym) {
+		if sym != model.Epsilon && !g.CheckIsTerminal(sym) {
 			allTerminals = false
 			break
 		}
@@ -117,7 +117,7 @@ func checkWithNonTerminalAt(right []model.Symbol, g *model.Grammar, index int) b
 	}
 
 	// 检查 index 位置：必须是非终结符
-	if !isInSet(g.NonTerminals, right[index]) {
+	if !g.CheckIsNonTerminal(right[index]) {
 		return false
 	}
 
@@ -127,7 +127,7 @@ func checkWithNonTerminalAt(right []model.Symbol, g *model.Grammar, index int) b
 			continue
 		}
 		sym := right[i]
-		if sym != model.Epsilon && !isInSet(g.Terminals, sym) {
+		if sym != model.Epsilon && !g.CheckIsTerminal(sym) {
 			return false
 		}
 	}

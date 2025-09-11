@@ -2,11 +2,11 @@ package repository
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
-
+	"backend/logs"
+	"runtime"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -14,15 +14,14 @@ import (
 var DB *gorm.DB
 
 func InitDB() error {
-	err := ConnectDB()
-	if err != nil {
-		return err
+	if err := ConnectDB(); err != nil {
+		return fmt.Errorf("ConnectDB failed: %w", err)
 	}
 
-	err = InitData()
-	if err != nil {
-		return err
+	if err := InitData(); err != nil {
+		return fmt.Errorf("InitData failed: %w", err)
 	}
+
 	return nil
 }
 
@@ -34,8 +33,8 @@ func ConnectDB() error {
 		os.Getenv("DB_HOST"),
 		os.Getenv("DB_PORT"),
 		os.Getenv("DB_NAME"))
-
-	DB, err := gorm.Open(postgres.Open(dsn))
+	var err error
+	DB, err = gorm.Open(postgres.Open(dsn))
 	if err != nil {
 		return err
 	}
@@ -58,10 +57,16 @@ func InitData() error {
 		return fmt.Errorf("database connection not initialized")
 	}
 
-	migrationsDir := filepath.Join(".", "migrations")
+	_, filename, _, ok := runtime.Caller(0) // 获取当前的文件名
+	if !ok {
+		logs.Sugar.Fatal("无法获取运行时调用者信息")
+	}
 
+	// 获取当前文件所在的目录
+	currentDir := filepath.Dir(filename)
+	migrationsDir := filepath.Join(currentDir, "../../migrations")
 	var err error
-	files, err := ioutil.ReadDir(migrationsDir)
+	files, err := os.ReadDir(migrationsDir)
 	if err != nil {
 		return fmt.Errorf("failed to read migrations directory: %v", err)
 	}
@@ -79,9 +84,10 @@ func InitData() error {
     }()
 
     for _, file := range files {
-        if !file.IsDir() && filepath.Ext(file.Name()) == ".init.sql" {
+        if !file.IsDir() && filepath.Ext(file.Name()) == ".sql" {
             filePath := filepath.Join(migrationsDir, file.Name())
-            content, err := ioutil.ReadFile(filePath)
+			fmt.Println("Execute: ",filePath)
+            content, err := os.ReadFile(filePath)
             if err != nil {
                 tx.Rollback()
                 return fmt.Errorf("读取文件失败 %s: %v", filePath, err)
@@ -94,5 +100,9 @@ func InitData() error {
         }
     }
 
-    return tx.Commit().Error
+    if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("failed to commit transaction: %v", err)
+	}
+	fmt.Println("Migration completed successfully.")
+	return nil
 }

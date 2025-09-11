@@ -14,75 +14,98 @@ FormalLangLab 是一个基于 Web 的交互式形式语言与自动机学习系�
 		文法解释助手（自然语言解释文法规则）
 		自动补全文法输入（类似 IDE 的语法提示）
 		错误文法智能修复
-6、项目部署：尝试学习使用k8s
+    
 
-[Web UI] <---> [Go API Server] <---> [AI 模块]
-前端可用 Vue/React + Canvas/SVG 绘制自动机。
-后端提供 RESTful API，处理自动机构建逻辑。
 
 后端	Golang（Gin/Echo 框架）、JSON API
-前端	React/Vue + Ant Design + SVG/D3.js 绘图 // 目前打算使用react
 数据库	PostgreSQL（用于保存用户信息和相关历史记录）
 AI	本地运行 Ollama + Llama3，或调用阿里云 Qwen API
 相关算法	参考开源库/工具，如 go-graphviz、ANTLR
-（目前知识储备部分基本OK，NFA转DFA、LL(1)分析和LR(1)分析过程有过C++实现，主要问题在于前端部分的实现没什么经验）
-
-通义的建议：
-## ✅ 一、整体架构回顾
-
-```
-[Web UI] <-----> [Go API Server] <-----> [AI 模块]
-               ↖                ↗
-                 ↖         ↗
-                   [数据库 PostgreSQL]
-```
-
-- **前端（Vue/React）**：负责用户交互、文法输入、自动机图形展示、AI功能调用。
-- **后端（Golang + Gin/Echo）**：处理文法解析、DFA/NFA生成、字符串判断、LL(1)/LR(1)分析等逻辑。
-- **AI模块**：使用本地模型或API提供文法解释、补全、修复等智能辅助功能。
-- **数据库**：用于存储用户信息、历史记录、保存自定义文法等。
 
 ---
 
-## 🧰 二、可能用到的技术栈
 
-### 1. **前端（建议使用 React 或 Vue3）**
 
-| 功能 | 技术推荐 | 说明 |
-|------|-----------|------|
-| 主框架 | **React + TypeScript / Vue 3 + TypeScript** | 增强类型安全，适合复杂系统开发 |
-| UI 组件库 | **Ant Design / Element Plus / Vuetify** | 快速构建美观界面 |
-| 图形绘制 | **D3.js / React Flow / GoJS / Konva / SVG 手绘** | 实现 DFA/NFA 的节点连线图示 |
-| 状态管理 | **Redux / Zustand / Pinia / Vuex** | 管理复杂的前端状态（如当前文法、自动机结构） |
-| 编辑器 | **Monaco Editor / CodeMirror** | 类似 VSCode 的语法高亮编辑器，用于输入文法 |
-| 路由 | **React Router / Vue Router** | 多页面导航支持 |
-| 构建工具 | **Vite / Webpack** | 开发体验更流畅 |
 
-#### 🔍 自动机可视化推荐方案：
+# 项目功能板块
 
-- **React Flow**（官方文档友好，社区活跃）
-  - 支持拖拽、缩放、节点连接
-  - 可以表示状态之间的转移关系
-- **D3.js + Force Layout**
-  - 更加自由灵活，适合展示复杂结构
-  - 学习成本略高，但视觉效果更好
-- **SVG 手动绘制**
-  - 控制力最强，适合简单场景
-  - 需要掌握 SVG 元素操作
+以下是本项目提供的所有接口及其功能说明：
 
----
+## 公开路由
+
+| 方法 | 路由                | 功能描述             |
+|------|---------------------|----------------------|
+| POST | `/gdesign/register` | 用户注册             |
+| POST | `/gdesign/login`    | 用户登录             |
+
+## 需要认证的路由
+
+### 文法相关接口
+
+| 方法 | 路由                                 | 功能描述                           |
+|------|--------------------------------------|------------------------------------|
+| POST | `/gdesign/grammar/validate`          | 文法校验——是否有效                 |
+| POST | `/gdesign/grammar/ambiguity`         | -正则文法的二义性判断                      |
+| POST | `/gdesign/grammar/recognize`         | 字符串识别——是否被指定文法所接受；（可选）扩展：返回递归下降分析、LL(1)分析、LR(0)分析或LR(1)分析的过程 |
+| POST | `/gdesign/grammar/type`              | 判断所给文法的类型                  |
+| POST | `/gdesign/grammar/equivalence`       | -判断所给的两个正则文法是否等价           |
+| POST | `/gdesign/grammar/simplify`          | 文法的化简——去无用符号（不可派生、不可达）、单一产生式、空产生式 |
+
+### 正则表达式相关接口
+
+| 方法 | 路由                                  | 功能描述                     |
+|------|---------------------------------------|------------------------------|
+| POST | `/gdesign/regex/validate`             | -判断是否为有效的正则表达式     |
+| POST | `/gdesign/regex/equivalence`          | -判断两个正则表达式是否等效     |
+
+### 自动机相关接口
+
+| 方法 | 路由                                | 功能描述                       |
+|------|-------------------------------------|--------------------------------|
+| POST | `/gdesign/fsm/validate`             | 是否有效                       |
+| POST | `/gdesign/fsm/recognize`            | 字符串识别                     |
+| POST | `/gdesign/fsm/cleanup`              | 去无效符号、不可达符号          |
+| POST | `/gdesign/fsm/minimize`             | DFA 最小化                     |
+| POST | `/gdesign/fsm/nfa-to-dfa`           | NFA 转 DFA                     |
+
+### 文法、自动机间的转换
+
+| 方法 | 路由                                | 功能描述                       |
+|------|-------------------------------------|--------------------------------|
+| POST | `/gdesign/convert/grammartodfa`     | -文法转成 DFA                   |
+| POST | `/gdesign/convert/dfatogrammar`     | -DFA 转成文法                   |
+| POST | `/gdesign/convert/nfatogrammar`     | -NFA 转成文法                   |
+
+### 知识学习
+
+| 方法 | 路由                            | 功能描述               |
+|------|---------------------------------|------------------------|
+| GET  | `/gdesign/learn/`               | -获取学习资料或信息      |
+
+### AI 相关接口
+
+| 方法 | 路由                        | 功能描述             |
+|------|-----------------------------|----------------------|
+| GET  | `/gdesign/ai/`              | -获取AI相关信息或执行特定操作 |
+
+
+
+
+
+
+
+
 
 ### 2. **后端（Golang）**
 
 | 功能 | 技术推荐 | 说明 |
 |------|-----------|------|
-| 框架 | **Gin / Echo / Fiber** | 轻量级高性能框架，适合 RESTful API |
-| 文法解析 | **ANTLR + go target / 自行实现 LL(1) 分析器** | ANTLR可快速构建词法分析器和语法树 |
+| 框架 | **Gin ** | 轻量级高性能框架，适合 RESTful API |
+| 文法解析 | **自行实现 LL(1) 分析器** | ANTLR可快速构建词法分析器和语法树 |
 | 自动机构建 | **手动实现 NFA/DFA 转换 / 最小化 DFA / ε-NFA 消除** | 结合编译原理知识实现核心算法 |
-| 数据库 | **PostgreSQL + GORM / SQLx / pgx** | ORM 或原生 SQL 操作 |
+| 数据库 | **PostgreSQL + GORM** | ORM 或原生 SQL 操作 |
 | AI 接口 | **HTTP Client (net/http) / Qwen SDK / Ollama API** | 与本地或远程大模型通信 |
-| 日志 | **Zap / Logrus** | 提升日志可读性和性能 |
-| 单元测试 | **Testify / GoConvey** | 保证核心算法稳定性 |
+| 日志 | **Zap** | 提升日志可读性和性能 |
 
 ---
 
@@ -94,6 +117,22 @@ AI	本地运行 Ollama + Llama3，或调用阿里云 Qwen API
 | API 调用 | **阿里云 Qwen API / OpenAI API / 百度千帆 / Moonshot** | 使用成熟大模型服务 |
 | 封装接口 | **自定义中间层封装 AI 请求逻辑** | 对接前端与后端，返回自然语言结果 |
 | 示例功能 | **文法解释、错误修正、自动补全、练习题生成** | 提升系统智能化程度 |
+
+步骤	操作
+1️⃣ 选择模型	下载 Qwen 或 DeepSeek 开源模型
+2️⃣ 构建数据	收集/生成形式语言题目和答案
+3️⃣ 购买算力	租用云GPU（如 AutoDL）
+4️⃣ 微调模型	使用 LoRA 微调，让模型学会编译原理
+5️⃣ 部署使用	封装成 API 或本地运行
+
+核心设计理念
+AI Copilot 不是外挂的聊天窗口，而是系统的“智能大脑”，它能：
+
+🔍 自动感知上下文（用户正在操作的自动机、输入的字符串、当前页面状态）
+🧠 构造专业 Prompt（将结构化数据转为高质量提示词）
+
+使用React-Chatbot-Kit 实现ai对话组件，后端调用通义千问模型。
+
 
 ---
 
@@ -150,16 +189,9 @@ AI	本地运行 Ollama + Llama3，或调用阿里云 Qwen API
 
 ## 🎯 五、结语
 
-你的项目具备以下几个亮点：
+项目具备以下几个亮点：
 
 ✅ 教学意义：帮助理解形式语言与自动机理论  
 ✅ 工程价值：完整的前后端架构+AI融合  
 ✅ 技术广度：涵盖算法、前端、后端、AI、部署  
 ✅ 创新性：加入AI辅助学习模块，提升交互体验
-
-如果你希望我帮你：
-- 设计详细的模块接口文档
-- 提供前端自动机可视化代码模板（React Flow / D3.js）
-- 写后端 DFA/NFA 构建的 Go 代码示例
-- 指导如何对接 Qwen API
-- 搭建 Kubernetes 部署环境

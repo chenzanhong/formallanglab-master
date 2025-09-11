@@ -4,7 +4,8 @@ import (
 	"io"
 	"log"
 	"os"
-
+	"runtime"
+	"path/filepath"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -13,7 +14,17 @@ import (
 var Sugar *zap.SugaredLogger
 
 func InitZapSugarDefault() {
-	_, err := os.OpenFile("./logs/logs.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	_, filename, _, ok := runtime.Caller(0) // 获取调用者的文件名
+	if !ok {
+		log.Fatal("无法获取运行时调用者信息")
+	}
+
+	// 获取当前文件所在的目录
+	currentDir := filepath.Dir(filename)
+
+	
+	logPath := filepath.Join(currentDir, "./logs.log")
+	_, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("创建/打开日志文件失败：%v", err.Error())
 	}

@@ -1,0 +1,29 @@
+{"level":"fatal","ts":"2025-09-04T15:55:30.321+0800","caller":"api/router.go:15","msg":"加载配置失败：open ./config.yaml: The system cannot find the file specified.","stacktrace":"backend/internal/api.SetupRouter\n\tD:/GDesign/backend/internal/api/router.go:15\nmain.main\n\tD:/GDesign/backend/cmd/server/main.go:21\nruntime.main\n\tD:/Go/golang/src/runtime/proc.go:272"}
+{"level":"info","ts":"2025-09-04T16:02:13.588+0800","caller":"server/main.go:40","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-04T16:15:19.314+0800","caller":"server/main.go:45","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-04T16:15:19.315+0800","caller":"server/main.go:55","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-04T16:16:47.524+0800","caller":"server/main.go:40","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-04T16:20:49.153+0800","caller":"server/main.go:45","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-04T16:20:49.154+0800","caller":"server/main.go:55","msg":"HTTP server gracefully stopped"}
+{"level":"fatal","ts":"2025-09-04T16:21:52.557+0800","caller":"server/main.go:20","msg":"Failed to initialize database: ConnectDB failed: failed to connect to `user=password= database=`:\n\thostname resolving error: lookup port=: no such host\n\tlookup port=: no such host","stacktrace":"main.main\n\tD:/GDesign/backend/cmd/server/main.go:20\nruntime.main\n\tD:/Go/golang/src/runtime/proc.go:272"}
+{"level":"info","ts":"2025-09-04T16:29:47.772+0800","caller":"server/main.go:46","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-04T16:34:24.638+0800","caller":"server/main.go:51","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-04T16:34:24.638+0800","caller":"server/main.go:61","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-04T16:34:24.638+0800","caller":"server/main.go:70","msg":"PostgreSQL GORM DB closed"}
+{"level":"info","ts":"2025-09-04T16:34:24.638+0800","caller":"server/main.go:76","msg":"Server exited"}
+{"level":"info","ts":"2025-09-04T16:40:24.714+0800","caller":"server/main.go:46","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-04T16:41:41.582+0800","caller":"server/main.go:51","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-04T16:41:41.588+0800","caller":"server/main.go:61","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-04T16:41:41.590+0800","caller":"server/main.go:70","msg":"PostgreSQL GORM DB closed"}
+{"level":"info","ts":"2025-09-04T16:41:41.592+0800","caller":"server/main.go:76","msg":"Server exited"}
+{"level":"info","ts":"2025-09-04T16:44:48.536+0800","caller":"server/main.go:46","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-04T16:49:32.624+0800","caller":"server/main.go:51","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-04T16:49:32.624+0800","caller":"server/main.go:61","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-04T16:49:32.625+0800","caller":"server/main.go:70","msg":"PostgreSQL GORM DB closed"}
+{"level":"info","ts":"2025-09-04T16:49:32.625+0800","caller":"server/main.go:76","msg":"Server exited"}
+{"level":"info","ts":"2025-09-04T16:53:03.281+0800","caller":"server/main.go:46","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-04T16:54:13.262+0800","caller":"server/main.go:51","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-04T16:54:13.264+0800","caller":"server/main.go:61","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-04T16:54:13.267+0800","caller":"server/main.go:70","msg":"PostgreSQL GORM DB closed"}
+{"level":"info","ts":"2025-09-04T16:54:13.268+0800","caller":"server/main.go:76","msg":"Server exited"}
+{"level":"fatal","ts":"2025-09-04T18:29:42.208+0800","caller":"server/main.go:24","msg":"Failed to initialize database: InitData failed: 执行 SQL 失败 migrations\\1_init_schema.init.sql: 错误: 语法错误 在 \"e'a'\" 或附近的 (SQLSTATE 42601)","stacktrace":"main.main\n\tD:/GDesign/backend/cmd/server/main.go:24\nruntime.main\n\tD:/Go/golang/src/runtime/proc.go:272"}

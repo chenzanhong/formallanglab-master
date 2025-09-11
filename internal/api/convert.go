@@ -1,6 +1,6 @@
 /* 
 	文法与自动机的转换
-	GrammarToDFA	// 文法转成 DFA
+	GrammarToNFA	// 正则文法转成 NFA，自然
     DFAToGrammar    // DFA 转成文法
     NFAToGrammar    // NFA 转成文法
 */
@@ -10,14 +10,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GrammarToDFA(c *gin.Context) {
+func GrammarToNFA(c *gin.Context) {
 
 }
 
-func DFAToGrammar(c *gin.Context) {
-	
-}
-
-func NFAToGrammar(c *gin.Context) {
+func FAToGrammar(c *gin.Context) {
 	
 }

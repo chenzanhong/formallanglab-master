@@ -7,4 +7,12 @@ pg:
   max_conn: 10
   max_idle_conn: 5
 
+# 邮件服务
+email:
+  email_name: caohaitong_czh@163.com # 13650607205@163.com
+  email_password: JSb8pHUqz9QdzUfD  # HSunSK57Z3G3aA3f
 
+# 邮件服务商
+smtp_server:
+  SMTPServer_host: smtp.163.com # 服务提供商，须与email中的邮箱相匹配
+  SMTPServer_port: 465

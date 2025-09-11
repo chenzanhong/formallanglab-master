@@ -2,93 +2,94 @@ package api
 
 import (
 	"backend/configs"
-    "backend/pkg/middleware"
 	"backend/logs"
+	"backend/pkg/middleware"
+
+	"os"
 
 	"github.com/gin-gonic/gin"
-    "os"
 )
 
 func SetupRouter() *gin.Engine {
-	
-	config, err := configs.LoadConfig()
-	if err != nil {
-		logs.Sugar.Fatalf("加载配置失败：%v", err.Error())
-	}
-
-	// 设置环境变量
-	setEnvVariables(config)
 
 	router := gin.Default()
 	router.Use(middleware.CORSMiddleware())
 
 	setupPublicRoutes(router) // 注册公开路由
-	setupAuthRoutes(router) // 注册需要认证的路由
+	setupAuthRoutes(router)   // 注册需要认证的路由
 
 	return router
 }
 
-func setEnvVariables(config *configs.Config) {
-	os.Setenv("DB_USER", config.PG.User),
-    os.Setenv("DB_PASSWORD", config.PG.Password)
-    os.Setenv("DB_HOST", config.PG.Host)
-    os.Setenv("DB_PORT", config.PG.Port)
-    os.Setenv("DB_NAME", config.PG.Name)
+func SetEnvVariables() {
+	config, err := configs.LoadConfig()
+	if err != nil {
+		logs.Sugar.Fatalf("加载配置失败：%v", err.Error())
+	}
+	os.Setenv("DB_USER", config.PG.User)
+	os.Setenv("DB_PASSWORD", config.PG.Password)
+	os.Setenv("DB_HOST", config.PG.Host)
+	os.Setenv("DB_PORT", config.PG.Port)
+	os.Setenv("DB_NAME", config.PG.Name)
+	os.Setenv("EMAIL_NAME", config.Email.Name)
+	os.Setenv("EMAIL_PASSWORD", config.Email.Password)
+	os.Setenv("SMTP_SERVER_HOST", config.SMTPServer.Host)
+	os.Setenv("SMTP_SERVER_PORT", config.SMTPServer.Port)
 }
+
 func setupPublicRoutes(router *gin.Engine) {
-    router.POST("/gdesign/register", Register) // 注册
-    router.GET("/gdesign/login", Login)        // 登录
+	router.POST("/gdesign/register", Register) // 注册
+	router.POST("/gdesign/login", Login)       // 登录
 }
 
 func setupAuthRoutes(router *gin.Engine) {
-    // 使用 JWT 中间件保护这些路由
-    r := router.Group("/gdesign", middleware.JWTAuthMiddleware())
+	// 使用 JWT 中间件保护这些路由
+	r := router.Group("/gdesign", middleware.JWTAuthMiddleware())
 
-    // 文法相关接口
-    grammar := r.Group("/grammar")
-    {
-        grammar.POST("/validate", GrammarValidate)                      // 文法校验——是否有效
-        grammar.POST("/ambiguity", GrammarAmbiguityCheck)               // 文法二义性判断
-        grammar.POST("/recognize", GrammarStringRecognize)              // 字符串识别——是否被指定文法所接受；（可选）扩展：返回递归下降分析、LL(1)分析、LR(0)分析或LR(1)分析的过程
-        grammar.POST("/type", GrammarTypeDetermine)                     // 判断所给文法的类型
-        grammar.POST("/equivalence", GrammarEquivalenceCheck)           // 判断所给的两个文法是否等价
-		grammar.POST("/simplify", GrammarSimplify) 						// 文法的化简——去无用符号（不可派生、不可达）、单一产生式、空产生式
-    }
+	// 文法相关接口
+	// grammar := r.Group("/grammar")
+	// {
+	// 	grammar.POST("/validate", GrammarValidate)            // 文法校验——是否有效
+	// 	grammar.POST("/ambiguity", GrammarAmbiguityCheck)     // 正则文法的二义性判断
+	// 	grammar.POST("/recognize", GrammarStringRecognize)    // 字符串识别——是否被指定文法所接受；（可选）扩展：返回递归下降分析、LL(1)分析、LR(0)分析或LR(1)分析的过程
+	// 	grammar.POST("/type", GrammarTypeDetermine)           // 判断所给文法的类型
+	// 	grammar.POST("/equivalence", GrammarEquivalenceCheck) // 判断所给的两个正则文法是否等价
+	// 	grammar.POST("/simplify", GrammarSimplify)            // 文法的化简——去无用符号（不可派生、不可达）、单一产生式、空产生式
+	// }
 
-    // 正则表达式相关接口
-    regEx := r.Group("/regex")
-    {
-        regEx.POST("/validate", RegexValidate)                          // 判断是否为有效的正则表达式
-        regEx.POST("/equivalence", RegexEquivalenceCheck)               // 判断两个正则表达式是否等效
-    }
+	// 正则表达式相关接口
+	// regEx := r.Group("/regex")
+	// {
+	// 	regEx.POST("/validate", RegexValidate)            // 判断是否为有效的正则表达式
+	// 	regEx.POST("/equivalence", RegexEquivalenceCheck) // 判断两个正则表达式是否等效
+	// }
 
-    // 自动机相关接口
-    fsm := r.Group("/fsm")
-    {
-        fsm.POST("/validate", FSMValidate)                              // 是否有效
-        fsm.POST("/recognize", FSMStringRecognize)                      // 字符串识别
-        fsm.POST("/cleanup", FSMCleanup)                                // 去无效符号、不可达符号
-        fsm.POST("/minimize", DFAMinimize)                              // DFA 最小化
-        fsm.POST("/nfa-to-dfa", NFAToDFA)                               // NFA 转 DFA
-    }
+	// 自动机相关接口
+	fsm := r.Group("/fsm")
+	{
+		fsm.POST("/validate", FSMValidate)         // 是否有效
+		fsm.POST("/recognize", FSMStringRecognize) // 字符串识别
+		fsm.POST("/cleanup", FSMCleanup)           // 去无效符号、不可达符号
+		fsm.POST("/minimize", DFAMinimize)         // DFA 最小化
+		fsm.POST("/nfatodfa", NFAToDFA)          // NFA 转 DFA
+	}
 
-    // 文法、自动机间的转换
-    convert := r.Group("/convert")
-    {
-        convert.POST("/grammartodfa", GrammarToDFA)                     // 文法转成 DFA
-        convert.POST("/dfatogrammar", DFAToGrammar)                     // DFA 转成文法
-        convert.POST("/nfatogrammar", NFAToGrammar)                     // NFA 转成文法
-    }
+	// 文法、自动机间的转换
+	// convert := r.Group("/convert")
+	// {
+	// 	convert.POST("/grammartonfa", GrammarToNFA) // 文法转成 NFA
+	// 	convert.POST("/fatogrammar", FAToGrammar) // DFA 转成文法
+	// }
 
-    // 知识学习
-    learn := r.Group("/learn")
-    {
-        learn.GET("/", LearnGet)                                         // 获取学习资料或信息
-    }
+	// 知识学习
+	// learn := r.Group("/learn")
+	// {
+	// 	learn.GET("/", LearnGet) // 获取学习资料或信息
+	// }
 
-    // AI 相关接口
-    ai := r.Group("/ai")
-    {
-        ai.GET("/", AIGet)                                              // 获取AI相关信息或执行特定操作
-    }
+	// AI 相关接口
+	// ai := r.Group("/ai")
+	// {
+	// 	ai.GET("/", AIGet) // 获取AI相关信息或执行特定操作
+	// }
 }

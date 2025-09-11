@@ -1,33 +1,101 @@
-/* 
-	有限状态自动机
-	FSMValidate                             // 是否有效
-    FSMCleanup                              // 去无效符号、不可达符号
-    DFAMinimize                             // DFA 最小化
-	NFAToDFA                                // NFA 转 DFA
-	FSMStringRecognize						// 字符串识别
+/*
+		有限状态自动机
+		FSMValidate                             // 是否有效
+	    FSMCleanup                              // 去无效符号、不可达符号
+	    DFAMinimize                             // DFA 最小化
+		FSMStringRecognize						// 字符串识别
+		NFAToDFA                                // NFA 转 DFA
 */
 package api
 
 import (
+	"backend/internal/domain/model"
+
+	"backend/internal/service/fsm_s"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
 
 func FSMValidate(c *gin.Context){ // 是否有效
+	var fsm model.Automaton
+	if err:= c.ShouldBindJSON(&fsm); err != nil{
+		c.JSON(http.StatusBadRequest, gin.H{"msg":"参数解析错误"})
+		return
+	}
 
+	ok, err := fsm_s.FSMValidate(&fsm)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"msg":"无效的自动机", "result":ok, "error":err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"msg":"有效", "result":ok})
 }
 
-func FSMCleanup(c *gin.Context){ // 去无效符号、不可达符号
+func FSMCleanup(c *gin.Context){ // 去无效符号、无效状态以及相关的转移函数
+	var fsm model.Automaton
+	if err:= c.ShouldBindJSON(&fsm); err != nil{
+		c.JSON(http.StatusBadRequest, gin.H{"msg":"参数解析错误"})
+		return
+	}
 
+	fsm_s.Cleanup(&fsm)
+	c.JSON(http.StatusOK, gin.H{"fsm":fsm})
 }
 
 func DFAMinimize(c *gin.Context){ // DFA 最小化
+	var fsm model.Automaton
+	if err:= c.ShouldBindJSON(&fsm); err != nil{
+		c.JSON(http.StatusBadRequest, gin.H{"msg":"参数解析错误"})
+		return
+	}
 
+	ok, err := fsm_s.FSMValidate(&fsm) // 包含了DFA还是NFA的判断
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"msg":"无效的自动机", "result":ok, "error":err.Error()})
+		return
+	}
+	if !fsm.IsDFA {
+		c.JSON(http.StatusBadRequest, gin.H{"msg":"不是DFA"})
+		return
+	}
+	new_fsm := fsm_s.DFAMinimize(&fsm) // reduce
+	c.JSON(http.StatusOK, gin.H{"fsm":new_fsm})
 }
 
-func NFAToDFA(c *gin.Context){ // NFA 转 DFA
-
+func FSMStringRecognize(c *gin.Context){ // 字符串识别，
+	type Req struct {
+		FSM model.Automaton
+		Str string
+	}
+	var req Req
+	if err:= c.ShouldBindJSON(&req); err != nil{
+		c.JSON(http.StatusBadRequest, gin.H{"msg":"参数解析错误"})
+		return
+	}
+	ok, err := fsm_s.Recognize(&req.FSM, req.Str) // 先对Str分词，再模拟状态转移
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"msg":"识别失败", "result":ok, "error":err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"msg":"识别成功", "result":ok})
 }
 
-func FSMStringRecognize(c *gin.Context){ // 字符串识别
-
+func NFAToDFA(c *gin.Context){ // NFA 转 DFA，子集构造法
+	var fsm model.Automaton
+	if err:= c.ShouldBindJSON(&fsm); err != nil{
+		c.JSON(http.StatusBadRequest, gin.H{"msg":"参数解析错误", "result":false})
+		return
+	}
+	ok, err := fsm_s.FSMValidate(&fsm) // 包含了DFA还是NFA的判断
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"msg":"无效的自动机", "result":false, "error":err.Error()})
+		return
+	}
+	if fsm.IsDFA {
+		c.JSON(http.StatusBadRequest, gin.H{"msg":"不是NFA", "result":false})
+		return
+	}
+	new_fsm := fsm_s.NFAToDFA(&fsm)
+	c.JSON(http.StatusOK, gin.H{"msg":"NFA转换为DFA成功","dfa":new_fsm, "result":true})
 }

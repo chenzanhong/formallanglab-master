@@ -22,13 +22,13 @@ func IsValidGrammar(g *model.Grammar) bool {
 	if g.StartSymbol == "" {
 		return false
 	}
-	if !isInSet(g.NonTerminals, g.StartSymbol) {
+	if !g.CheckIsNonTerminal(g.StartSymbol) {
 		return false
 	}
 
 	// 3. 非终结符和终结符不能有交集
-	for sym := range g.NonTerminals {
-		if isInSet(g.Terminals, sym) {
+	for _, sym := range g.NonTerminals {
+		if g.CheckIsTerminal(sym) {
 			return false
 		}
 	}
@@ -48,7 +48,7 @@ func IsValidGrammar(g *model.Grammar) bool {
 		}
 		hasNonTerminal := false
 		for _, sym := range p.Left {
-			if isInSet(g.NonTerminals, sym) {
+			if g.CheckIsNonTerminal(sym) {
 				hasNonTerminal = true
 				break
 			}

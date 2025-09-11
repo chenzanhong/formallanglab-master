@@ -28,14 +28,14 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		if !strings.HasPrefix(authHeader, "Bearer ") {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"code":    401,
-				"message": "Authorization 头格式错误",
-			})
-			c.Abort()
-			return
-		}
+		// if !strings.HasPrefix(authHeader, "Bearer ") {
+		// 	c.JSON(http.StatusUnauthorized, gin.H{
+		// 		"code":    401,
+		// 		"message": "Authorization 头格式错误",
+		// 	})
+		// 	c.Abort()
+		// 	return
+		// }
 
 		tokenStr := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
 		if tokenStr == "" {

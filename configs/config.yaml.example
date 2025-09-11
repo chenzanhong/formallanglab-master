@@ -1,0 +1,8 @@
+pg:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: 
+  name: gdesign
+  max_conn: 10
+  max_idle_conn: 5

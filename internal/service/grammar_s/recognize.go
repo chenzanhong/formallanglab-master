@@ -14,12 +14,12 @@ func CalculateFirst(grammar *model.Grammar) map[model.Symbol]map[model.Symbol]st
     firstSet := make(map[model.Symbol]map[model.Symbol]struct{})
 
     // 初始化所有终结符的 FIRST 集
-    for terminal := range grammar.Terminals {
+    for _, terminal := range grammar.Terminals {
         firstSet[terminal] = map[model.Symbol]struct{}{terminal: {}}
     }
 
     // 初始化所有非终结符的 FIRST 集为空
-    for nonTerminal := range grammar.NonTerminals {
+    for _, nonTerminal := range grammar.NonTerminals {
         firstSet[nonTerminal] = make(map[model.Symbol]struct{})
     }
 
@@ -89,7 +89,7 @@ func CalculateFollow(grammar *model.Grammar, firstSet map[model.Symbol]map[model
     followSet := make(map[model.Symbol]map[model.Symbol]struct{})
 
     // 初始化
-    for nonTerminal := range grammar.NonTerminals {
+    for _,nonTerminal := range grammar.NonTerminals {
         followSet[nonTerminal] = make(map[model.Symbol]struct{})
     }
 
@@ -105,7 +105,7 @@ func CalculateFollow(grammar *model.Grammar, firstSet map[model.Symbol]map[model
 
             for i := 0; i < len(right); i++ {
                 symbol := right[i]
-                if _, isNonTerminal := grammar.NonTerminals[symbol]; !isNonTerminal {
+                if !grammar.CheckIsNonTerminal(symbol) {
                     continue
                 }
 
@@ -265,7 +265,7 @@ func IsLL1(grammar *model.Grammar) (bool, string) {
 
     table := make(map[model.Symbol]map[model.Symbol]int)
 
-    for nonTerminal, _ := range grammar.NonTerminals {
+    for _, nonTerminal := range grammar.NonTerminals {
         table[nonTerminal] = make(map[model.Symbol]int)
     }
 
@@ -309,7 +309,7 @@ func LL1Parse(grammar *model.Grammar, input []model.Symbol) (bool, []string, err
 
     // 构建预测分析表
     table := make(map[model.Symbol]map[model.Symbol]int)
-    for nt := range grammar.NonTerminals {
+    for _, nt := range grammar.NonTerminals {
         table[nt] = make(map[model.Symbol]int)
     }
 
@@ -362,7 +362,7 @@ func LL1Parse(grammar *model.Grammar, input []model.Symbol) (bool, []string, err
         current := input[ip]
 
         steps = append(steps, fmt.Sprintf("栈: [%s], 输入: %s, 指针: %d", 
-            strings.Join(symbolsToString(stack), ","), 
+            symbolsToString(stack), ",", 
             symbolsToString(input[ip:]), ip))
 
         if top == current && top == "#" {
@@ -375,7 +375,7 @@ func LL1Parse(grammar *model.Grammar, input []model.Symbol) (bool, []string, err
             continue
         }
 
-        if _, isTerminal := grammar.Terminals[top]; isTerminal {
+        if grammar.CheckIsTerminal(top) {
             steps = append(steps, fmt.Sprintf("匹配失败: 栈顶 %s ≠ 输入 %s", string(top), string(current)))
             return false, steps, nil
         }
