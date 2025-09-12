@@ -7,6 +7,15 @@ pg:
   max_conn: 10
   max_idle_conn: 5
 
+# Redis配置
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
+  max_conn: 10
+  max_idle_conn: 5
+
 # 邮件服务
 email:
   email_name: caohaitong_czh@163.com # 13650607205@163.com

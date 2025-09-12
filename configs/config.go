@@ -17,6 +17,15 @@ type PGConfig struct {
 	Password string `yaml:"password"`
 }
 
+type RedisConfig struct {
+	Host        string `yaml:"host"`
+	Port        string `yaml:"port"`
+	Password    string `yaml:"password"`
+	DB          int    `yaml:"db"`
+	MaxConn     int    `yaml:"max_conn"`
+	MaxIdleConn int    `yaml:"max_idle_conn"`
+}
+
 type EMAILConfig struct {
 	Name     string `yaml:"email_name"`
 	Password string `yaml:"email_password"`
@@ -28,6 +37,7 @@ type SMTPServerConfig struct {
 
 type Config struct {
 	PG         PGConfig         `yaml:"pg"`
+	Redis      RedisConfig      `yaml:"redis"`
 	Email      EMAILConfig      `yaml:"email"`
 	SMTPServer SMTPServerConfig `yaml:"smtp_server"`
 }

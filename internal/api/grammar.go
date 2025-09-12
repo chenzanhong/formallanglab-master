@@ -101,7 +101,7 @@ func GrammarStringRecognize(c *gin.Context) { // 字符串识别——是否被�
 	if input == "" {
 		input = "ε"
 	}
-	inputSymbols := stringToSymbols(input)
+	inputSymbols := stringToSymbols(input, &req.Grammar)
 
 	// 1. 尝试判断是否是 LL(1) 文法，若是则用 LL(1) 分析器
 	if isLL1, _ := grammar_s.IsLL1(&req.Grammar); isLL1 && req.ShowSteps {
@@ -219,14 +219,55 @@ func GrammarSimplify(c *gin.Context) { // 文法的化简——去无用符号�
 	grammar_s.Simplify(&grammar)
 }
 
-// 辅助函数：字符串转符号切片
-func stringToSymbols(s string) []model.Symbol {
-	if s == "" {
+// 辅助函数：根据文法中定义的符号来分割字符串
+// 辅助函数：根据文法中定义的符号来分割字符串
+// 使用最长匹配原则，优先匹配较长的终结符
+// 例如：如果文法中有 "if" 和 "i" 两个终结符，则 "if" 会被优先匹配为一个符号，而不是 "i" + "f"
+func stringToSymbols(s string, grammar *model.Grammar) []model.Symbol {
+	if s == "" || s == "ε" {
 		return []model.Symbol{model.Epsilon}
 	}
-	symbols := make([]model.Symbol, len(s))
-	for i, c := range s {
-		symbols[i] = model.Symbol(string(c))
+
+	// 收集文法中所有的终结符，并按长度排序（最长先匹配）
+	var terminals []string
+
+	// 从 Grammar.Terminals 获取定义的终结符
+	for _, terminal := range grammar.Terminals {
+		termStr := string(terminal)
+		if termStr != "" && termStr != "ε" { // 排除空符号
+			terminals = append(terminals, termStr)
+		}
 	}
+
+	// 按长度降序排序，确保最长匹配
+	for i := 0; i < len(terminals)-1; i++ {
+		for j := i + 1; j < len(terminals); j++ {
+			if len(terminals[i]) < len(terminals[j]) {
+				terminals[i], terminals[j] = terminals[j], terminals[i]
+			}
+		}
+	}
+
+	// 按最长匹配原则分割字符串
+	var symbols []model.Symbol
+	i := 0
+	for i < len(s) {
+		matched := false
+		// 从最长的符号开始尝试匹配
+		for _, terminal := range terminals {
+			if i+len(terminal) <= len(s) && s[i:i+len(terminal)] == terminal {
+				symbols = append(symbols, model.Symbol(terminal))
+				i += len(terminal)
+				matched = true
+				break
+			}
+		}
+		// 如果没有匹配到任何已定义的终结符，按单字符处理
+		if !matched {
+			symbols = append(symbols, model.Symbol(string(s[i])))
+			i++
+		}
+	}
+
 	return symbols
 }

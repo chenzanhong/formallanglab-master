@@ -1,21 +1,30 @@
 package repository
 
 import (
+	"backend/logs"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
-	"backend/logs"
 	"runtime"
+	"strconv"
+	"time"
+
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 var DB *gorm.DB
+var RedisClient *redis.Client
 
 func InitDB() error {
 	if err := ConnectDB(); err != nil {
 		return fmt.Errorf("ConnectDB failed: %w", err)
+	}
+
+	if err := ConnectRedis(); err != nil {
+		return fmt.Errorf("ConnectRedis failed: %w", err)
 	}
 
 	if err := InitData(); err != nil {
@@ -52,6 +61,39 @@ func ConnectDB() error {
 	return nil
 }
 
+// 连接Redis
+func ConnectRedis() error {
+	host := os.Getenv("REDIS_HOST")
+	port := os.Getenv("REDIS_PORT")
+	password := os.Getenv("REDIS_PASSWORD")
+	dbStr := os.Getenv("REDIS_DB")
+
+	db := 0
+	if dbStr != "" {
+		var err error
+		db, err = strconv.Atoi(dbStr)
+		if err != nil {
+			return fmt.Errorf("invalid REDIS_DB value: %v", err)
+		}
+	}
+
+	RedisClient = redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%s", host, port),
+		Password: password,
+		DB:       db,
+	})
+
+	// 测试连接
+	ctx := context.Background()
+	_, err := RedisClient.Ping(ctx).Result()
+	if err != nil {
+		return fmt.Errorf("failed to connect to Redis: %v", err)
+	}
+
+	logs.Sugar.Info("Redis connected successfully")
+	return nil
+}
+
 func InitData() error {
 	if DB == nil {
 		return fmt.Errorf("database connection not initialized")
@@ -77,30 +119,30 @@ func InitData() error {
 	}
 
 	defer func() {
-        if r := recover(); r != nil {
-            tx.Rollback()
-            panic(r)
-        }
-    }()
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		}
+	}()
 
-    for _, file := range files {
-        if !file.IsDir() && filepath.Ext(file.Name()) == ".sql" {
-            filePath := filepath.Join(migrationsDir, file.Name())
-			fmt.Println("Execute: ",filePath)
-            content, err := os.ReadFile(filePath)
-            if err != nil {
-                tx.Rollback()
-                return fmt.Errorf("读取文件失败 %s: %v", filePath, err)
-            }
+	for _, file := range files {
+		if !file.IsDir() && filepath.Ext(file.Name()) == ".sql" {
+			filePath := filepath.Join(migrationsDir, file.Name())
+			fmt.Println("Execute: ", filePath)
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("读取文件失败 %s: %v", filePath, err)
+			}
 
-            if err = tx.Exec(string(content)).Error; err != nil {
-                tx.Rollback()
-                return fmt.Errorf("执行 SQL 失败 %s: %v", filePath, err)
-            }
-        }
-    }
+			if err = tx.Exec(string(content)).Error; err != nil {
+				tx.Rollback()
+				return fmt.Errorf("执行 SQL 失败 %s: %v", filePath, err)
+			}
+		}
+	}
 
-    if err := tx.Commit().Error; err != nil {
+	if err := tx.Commit().Error; err != nil {
 		return fmt.Errorf("failed to commit transaction: %v", err)
 	}
 	fmt.Println("Migration completed successfully.")

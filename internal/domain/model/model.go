@@ -7,6 +7,7 @@ type User struct {
 	ID       uint   `json:"id" gorm:"primarykey"`
 	Name     string `json:"name"`
 	Password string `json:"password"`
+	Token    string `json:"token"`
 	Email    string `json:"email"`
 }
 
@@ -18,12 +19,12 @@ const Epsilon Symbol = "" // 定义""作为特殊输入符号，表示ε，前�
 
 // 工具函数：将用户输入映射为标准 ε
 func NormalizeSymbol(s string) Symbol {
-    switch s {
-    case "ε", "epsilon", "e", "E", "", "λ", "eps":
-        return Epsilon
-    default:
-        return Symbol(s)
-    }
+	switch s {
+	case "ε", "epsilon", "e", "E", "", "λ", "eps":
+		return Epsilon
+	default:
+		return Symbol(s)
+	}
 }
 
 /* 文法 */
@@ -58,7 +59,6 @@ func (g *Grammar) CheckIsNonTerminal(s Symbol) bool {
 	}
 	return false
 }
-
 
 /* 自动机 */
 // State 表示自动机中的一个状态
@@ -109,7 +109,7 @@ func (a *Automaton) SplitString(s string) ([]Symbol, error) {
 // CheckIsDFA 检查当前自动机是否真的是一个有效的 DFA
 // 如果是，则返回 true，并将 IsDFA 设为 true
 // 否则返回 false，并将 IsDFA 设为 false
-func (a *Automaton) CheckIsDFA() (bool,error) {
+func (a *Automaton) CheckIsDFA() (bool, error) {
 	// 构建转移映射：fromState + input -> toState（用于检查完备性和唯一性）
 	transitionMap := make(map[string]State) // key: state|symbol
 
