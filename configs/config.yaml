@@ -14,7 +14,7 @@ redis:
   password: ""
   db: 0
   max_conn: 10
-  max_idle_conn: 5
+  max_idle_conn: 5 # 
 
 # 邮件服务
 email:

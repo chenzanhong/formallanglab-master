@@ -87,6 +87,7 @@ func GrammarStringRecognize(c *gin.Context) { // 字符串识别——是否被�
 		Grammar   model.Grammar `json:"grammar" binding:"required"`
 		Input     string        `json:"input" binding:"required"`
 		ShowSteps bool          `json:"showSteps"` // 是否返回分析步骤
+		Mode      string        `json:"mode"`      // 分析模式: "auto", "ll1", "ll1_recovery", "recursive_descent", "lr0", "lr1", "bfs"
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -97,42 +98,36 @@ func GrammarStringRecognize(c *gin.Context) { // 字符串识别——是否被�
 		return
 	}
 
+	// 默认模式为 auto
+	if req.Mode == "" {
+		req.Mode = "auto"
+	}
+
 	input := req.Input
 	if input == "" {
 		input = "ε"
 	}
 	inputSymbols := stringToSymbols(input, &req.Grammar)
 
-	// 1. 尝试判断是否是 LL(1) 文法，若是则用 LL(1) 分析器
-	if isLL1, _ := grammar_s.IsLL1(&req.Grammar); isLL1 && req.ShowSteps {
-		accepted, steps, err := grammar_s.LL1Parse(&req.Grammar, inputSymbols)
-		if err == nil {
-			c.JSON(http.StatusOK, gin.H{
-				"accepted": accepted,
-				"method":   "LL(1) 分析",
-				"steps":    steps,
-			})
-			return
-		}
-		// 失败则降级
-	}
+	// 使用新的统一分析接口
+	result := grammar_s.ParseStringWithMode(&req.Grammar, inputSymbols, req.Mode, req.ShowSteps)
 
-	// 2. 通用 BFS 推导（教学模拟）
-	accepted, derivation, err := grammar_s.RecognizeString(&req.Grammar, inputSymbols, 100, 100)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"msg":   "识别失败",
-			"error": err.Error(),
-		})
-		return
-	}
-
+	// 返回结果
 	response := gin.H{
-		"accepted": accepted,
-		"method":   "BFS 推导模拟",
+		"accepted": result.Accepted,
+		"method":   result.Method,
 	}
-	if req.ShowSteps {
-		response["derivation"] = derivation
+
+	if result.Error != "" {
+		response["error"] = result.Error
+	}
+
+	if result.Message != "" {
+		response["message"] = result.Message
+	}
+
+	if req.ShowSteps && len(result.Steps) > 0 {
+		response["steps"] = result.Steps
 	}
 
 	c.JSON(http.StatusOK, response)

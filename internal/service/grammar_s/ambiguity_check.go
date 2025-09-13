@@ -10,11 +10,6 @@ import (
 func symbolsToString(symbols []model.Symbol) string {
 	parts := make([]string, len(symbols))
 	for i, sym := range symbols {
-		// if sym == model.Epsilon {
-		// 	parts[i] = "<eps>"
-		// } else {
-		// 	parts[i] = string(sym)
-		// }
         if sym != model.Epsilon {
 			parts[i] = string(sym)
 		}

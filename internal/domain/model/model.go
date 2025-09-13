@@ -256,6 +256,26 @@ func (a *Automaton) ToReactFlow() *ReactFlowAutomaton {
 }
 */
 
+// ParseStep 表示文法分析过程中的一个步骤
+type ParseStep struct {
+	StepType    string      `json:"stepType"`    // "init", "match", "predict", "accept", "error"
+	Description string      `json:"description"` // 步骤描述
+	Stack       []Symbol    `json:"stack"`       // 当前栈状态
+	Input       []Symbol    `json:"input"`       // 剩余输入
+	InputPos    int         `json:"inputPos"`    // 输入指针位置
+	Action      string      `json:"action"`      // 执行的动作描述
+	Production  *Production `json:"production"`  // 使用的产生式（如果有）
+}
+
+// ParseResult 表示文法分析的完整结果
+type ParseResult struct {
+	Accepted bool        `json:"accepted"` // 是否接受输入串
+	Method   string      `json:"method"`   // 使用的分析方法
+	Steps    []ParseStep `json:"steps"`    // 分析步骤（可选）
+	Error    string      `json:"error"`    // 错误信息（如果有）
+	Message  string      `json:"message"`  // 额外信息
+}
+
 /*
 前端传给后端的自动机格式：
 {
