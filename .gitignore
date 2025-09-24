@@ -1,4 +1,4 @@
 *.yaml
-logs
 *.log
 backend/logs/*.log
+logs/*.log

@@ -33,7 +33,7 @@ func CompleteGrammarStructure(grammar *model.Grammar) *model.Grammar {
 				terminals[symbol] = true
 			}
 		}
-		
+
 		// 处理右部
 		for _, symbol := range production.Right {
 			if symbol == model.Epsilon || symbol == "" {

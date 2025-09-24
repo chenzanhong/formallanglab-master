@@ -82,3 +82,81 @@
 {"level":"info","ts":"2025-09-13T01:51:10.250+0800","caller":"backend/main.go:63","msg":"HTTP server gracefully stopped"}
 {"level":"info","ts":"2025-09-13T01:51:10.252+0800","caller":"backend/main.go:72","msg":"PostgreSQL GORM DB closed"}
 {"level":"info","ts":"2025-09-13T01:51:10.252+0800","caller":"backend/main.go:78","msg":"Server exited"}
+{"level":"info","ts":"2025-09-13T18:25:55.612+0800","caller":"repository/init.go:93","msg":"Redis connected successfully"}
+{"level":"info","ts":"2025-09-13T18:25:55.632+0800","caller":"backend/main.go:48","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-13T18:33:25.945+0800","caller":"backend/main.go:53","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-13T18:33:25.951+0800","caller":"backend/main.go:63","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-13T18:33:25.959+0800","caller":"backend/main.go:72","msg":"PostgreSQL GORM DB closed"}
+{"level":"info","ts":"2025-09-13T18:33:25.969+0800","caller":"backend/main.go:78","msg":"Server exited"}
+{"level":"info","ts":"2025-09-13T18:36:17.356+0800","caller":"repository/init.go:93","msg":"Redis connected successfully"}
+{"level":"info","ts":"2025-09-13T18:36:17.377+0800","caller":"backend/main.go:48","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-13T19:00:04.171+0800","caller":"backend/main.go:53","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-13T19:00:04.173+0800","caller":"backend/main.go:63","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-13T19:00:04.175+0800","caller":"backend/main.go:72","msg":"PostgreSQL GORM DB closed"}
+{"level":"info","ts":"2025-09-13T19:00:04.189+0800","caller":"backend/main.go:78","msg":"Server exited"}
+{"level":"info","ts":"2025-09-13T19:00:09.140+0800","caller":"repository/init.go:93","msg":"Redis connected successfully"}
+{"level":"info","ts":"2025-09-13T19:00:09.169+0800","caller":"backend/main.go:48","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-13T19:01:52.199+0800","caller":"backend/main.go:53","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-13T19:01:52.201+0800","caller":"backend/main.go:63","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-13T19:01:52.202+0800","caller":"backend/main.go:72","msg":"PostgreSQL GORM DB closed"}
+{"level":"info","ts":"2025-09-13T19:01:52.202+0800","caller":"backend/main.go:78","msg":"Server exited"}
+{"level":"info","ts":"2025-09-13T19:01:56.233+0800","caller":"repository/init.go:93","msg":"Redis connected successfully"}
+{"level":"info","ts":"2025-09-13T19:01:56.249+0800","caller":"backend/main.go:48","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-13T19:51:11.413+0800","caller":"backend/main.go:53","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-13T19:51:11.417+0800","caller":"backend/main.go:63","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-13T19:51:11.419+0800","caller":"backend/main.go:72","msg":"PostgreSQL GORM DB closed"}
+{"level":"info","ts":"2025-09-13T19:51:11.430+0800","caller":"backend/main.go:78","msg":"Server exited"}
+{"level":"info","ts":"2025-09-16T00:30:56.027+0800","caller":"repository/init.go:93","msg":"Redis connected successfully"}
+{"level":"info","ts":"2025-09-16T00:30:56.044+0800","caller":"backend/main.go:48","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-16T00:39:43.305+0800","caller":"backend/main.go:53","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-16T00:39:43.315+0800","caller":"backend/main.go:63","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-16T00:39:43.321+0800","caller":"backend/main.go:72","msg":"PostgreSQL GORM DB closed"}
+{"level":"info","ts":"2025-09-16T00:39:43.324+0800","caller":"backend/main.go:78","msg":"Server exited"}
+{"level":"info","ts":"2025-09-16T00:44:14.546+0800","caller":"repository/init.go:93","msg":"Redis connected successfully"}
+{"level":"info","ts":"2025-09-16T00:44:14.565+0800","caller":"backend/main.go:48","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-16T00:53:53.923+0800","caller":"backend/main.go:53","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-16T00:53:53.924+0800","caller":"backend/main.go:63","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-16T00:53:53.925+0800","caller":"backend/main.go:72","msg":"PostgreSQL GORM DB closed"}
+{"level":"info","ts":"2025-09-16T00:53:53.926+0800","caller":"backend/main.go:78","msg":"Server exited"}
+{"level":"info","ts":"2025-09-16T00:54:18.180+0800","caller":"repository/init.go:93","msg":"Redis connected successfully"}
+{"level":"info","ts":"2025-09-16T00:54:18.195+0800","caller":"backend/main.go:48","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-16T01:07:32.012+0800","caller":"backend/main.go:53","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-16T01:07:32.017+0800","caller":"backend/main.go:63","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-16T01:07:32.019+0800","caller":"backend/main.go:72","msg":"PostgreSQL GORM DB closed"}
+{"level":"info","ts":"2025-09-16T01:07:32.019+0800","caller":"backend/main.go:78","msg":"Server exited"}
+{"level":"info","ts":"2025-09-16T01:07:38.257+0800","caller":"repository/init.go:93","msg":"Redis connected successfully"}
+{"level":"info","ts":"2025-09-16T01:07:38.358+0800","caller":"backend/main.go:48","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-16T01:13:49.901+0800","caller":"backend/main.go:53","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-16T01:13:49.955+0800","caller":"backend/main.go:63","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-16T01:13:49.959+0800","caller":"backend/main.go:72","msg":"PostgreSQL GORM DB closed"}
+{"level":"info","ts":"2025-09-16T01:13:49.967+0800","caller":"backend/main.go:78","msg":"Server exited"}
+{"level":"info","ts":"2025-09-16T01:14:42.953+0800","caller":"repository/init.go:93","msg":"Redis connected successfully"}
+{"level":"info","ts":"2025-09-16T01:14:42.985+0800","caller":"backend/main.go:48","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-16T01:17:02.703+0800","caller":"backend/main.go:53","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-16T01:17:02.704+0800","caller":"backend/main.go:63","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-16T01:17:02.705+0800","caller":"backend/main.go:72","msg":"PostgreSQL GORM DB closed"}
+{"level":"info","ts":"2025-09-16T01:17:02.705+0800","caller":"backend/main.go:78","msg":"Server exited"}
+{"level":"info","ts":"2025-09-16T01:17:10.923+0800","caller":"repository/init.go:93","msg":"Redis connected successfully"}
+{"level":"info","ts":"2025-09-16T01:17:10.955+0800","caller":"backend/main.go:48","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-16T01:18:00.503+0800","caller":"backend/main.go:53","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-16T01:18:00.503+0800","caller":"backend/main.go:63","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-16T01:18:00.504+0800","caller":"backend/main.go:72","msg":"PostgreSQL GORM DB closed"}
+{"level":"info","ts":"2025-09-16T01:18:00.504+0800","caller":"backend/main.go:78","msg":"Server exited"}
+{"level":"info","ts":"2025-09-16T01:18:08.302+0800","caller":"repository/init.go:93","msg":"Redis connected successfully"}
+{"level":"info","ts":"2025-09-16T01:18:08.375+0800","caller":"backend/main.go:48","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-16T01:20:08.722+0800","caller":"backend/main.go:53","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-16T01:20:08.768+0800","caller":"backend/main.go:63","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-16T01:20:08.783+0800","caller":"backend/main.go:72","msg":"PostgreSQL GORM DB closed"}
+{"level":"info","ts":"2025-09-16T01:20:08.799+0800","caller":"backend/main.go:78","msg":"Server exited"}
+{"level":"info","ts":"2025-09-16T01:20:15.579+0800","caller":"repository/init.go:93","msg":"Redis connected successfully"}
+{"level":"info","ts":"2025-09-16T01:20:15.765+0800","caller":"backend/main.go:48","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-16T01:20:36.003+0800","caller":"backend/main.go:53","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-16T01:20:36.004+0800","caller":"backend/main.go:63","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-16T01:20:36.004+0800","caller":"backend/main.go:72","msg":"PostgreSQL GORM DB closed"}
+{"level":"info","ts":"2025-09-16T01:20:36.004+0800","caller":"backend/main.go:78","msg":"Server exited"}
+{"level":"info","ts":"2025-09-16T01:20:42.609+0800","caller":"repository/init.go:93","msg":"Redis connected successfully"}
+{"level":"info","ts":"2025-09-16T01:20:42.639+0800","caller":"backend/main.go:48","msg":"Server started on :8080"}
+{"level":"info","ts":"2025-09-16T01:21:17.156+0800","caller":"backend/main.go:53","msg":"Shutting down server..."}
+{"level":"info","ts":"2025-09-16T01:21:17.157+0800","caller":"backend/main.go:63","msg":"HTTP server gracefully stopped"}
+{"level":"info","ts":"2025-09-16T01:21:17.158+0800","caller":"backend/main.go:72","msg":"PostgreSQL GORM DB closed"}
+{"level":"info","ts":"2025-09-16T01:21:17.158+0800","caller":"backend/main.go:78","msg":"Server exited"}

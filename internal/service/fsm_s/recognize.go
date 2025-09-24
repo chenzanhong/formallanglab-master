@@ -12,12 +12,16 @@ func Recognize(fsm *model.Automaton, str string) (bool, error) {
 		return false, fmt.Errorf("自动机状态为空")
 	}
 
+	// 初始化 TransMap 以提高识别效率
+	fsm.InitTransMap()
+
 	if fsm.IsDFA {
 		return recognizeDFA(fsm, str)
 	} else {
 		return recognizeNFA(fsm, str)
 	}
 }
+
 func recognizeDFA(fsm *model.Automaton, str string) (bool, error) {
 	symbols, err := fsm.SplitString(str)
 	if err != nil {
@@ -38,6 +42,7 @@ func recognizeDFA(fsm *model.Automaton, str string) (bool, error) {
 	}
 	return false, fmt.Errorf("输入字符串 %s 被完整识别，但是未到达接收状态", str)
 }
+
 func recognizeNFA(fsm *model.Automaton, str string) (bool, error) {
 	// 第一步：将字符串分词为符号序列
 	symbols, err := fsm.SplitString(str)
@@ -87,18 +92,20 @@ func recognizeNFA(fsm *model.Automaton, str string) (bool, error) {
 }
 
 func getDFANextState(fsm *model.Automaton, from model.State, input model.Symbol) model.State {
-	for _, t := range fsm.Transitions {
-		if t.FromState == from && t.Input == input && len(t.ToStates) == 1 {
-			return t.ToStates[0]
+	// 使用 TransMap 提高查找效率
+	if stateMap, exists := fsm.TransMap[from]; exists {
+		if targets, exists := stateMap[input]; exists && len(targets) == 1 {
+			return targets[0]
 		}
 	}
 	return ""
 }
 
 func GetNFANextStates(fsm *model.Automaton, from model.State, input model.Symbol) []model.State {
-	for _, t := range fsm.Transitions {
-		if t.FromState == from && t.Input == input {
-			return t.ToStates
+	// 使用 TransMap 提高查找效率
+	if stateMap, exists := fsm.TransMap[from]; exists {
+		if targets, exists := stateMap[input]; exists {
+			return targets
 		}
 	}
 	return nil

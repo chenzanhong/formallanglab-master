@@ -7,9 +7,9 @@ import (
 
 // Simplify 对文法进行化简：去不可派生、不可达、空产生式、单一产生式
 // 注意：会修改原文法结构，建议传入副本
-func Simplify(grammar *model.Grammar) {
+func Simplify(grammar *model.Grammar) *model.Grammar{
 	if grammar == nil || len(grammar.Productions) == 0 {
-		return
+		return grammar
 	}
 
 	// 步骤1: 去除不可派生的变量（Non-generating variables）
@@ -23,6 +23,8 @@ func Simplify(grammar *model.Grammar) {
 
 	// 步骤4: 去除单一产生式（Unit productions）
 	removeUnitProductions(grammar)
+	
+	return grammar
 }
 
 // removeNonGenerating 删除不可派生的变量（即不能推导出终结符串的变量）

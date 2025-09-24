@@ -1,10 +1,10 @@
 /*
-		有限状态自动机
-		FSMValidate                             // 是否有效
-	    FSMCleanup                              // 去无效符号、不可达符号
-	    DFAMinimize                             // DFA 最小化
-		FSMStringRecognize						// 字符串识别
-		NFAToDFA                                // NFA 转 DFA
+	有限状态自动机
+	FSMValidate                             // 是否有效
+	FSMCleanup                              // 去无效符号、不可达符号
+	DFAMinimize                             // DFA 最小化
+	FSMStringRecognize						// 字符串识别
+	NFAToDFA                                // NFA 转 DFA
 */
 package api
 
@@ -40,7 +40,7 @@ func FSMCleanup(c *gin.Context){ // 去无效符号、无效状态以及相关�
 	}
 
 	fsm_s.Cleanup(&fsm)
-	c.JSON(http.StatusOK, gin.H{"fsm":fsm})
+	c.JSON(http.StatusOK, gin.H{"fsm":fsm.ToReactFlow()})
 }
 
 func DFAMinimize(c *gin.Context){ // DFA 最小化
@@ -60,7 +60,7 @@ func DFAMinimize(c *gin.Context){ // DFA 最小化
 		return
 	}
 	new_fsm := fsm_s.DFAMinimize(&fsm) // reduce
-	c.JSON(http.StatusOK, gin.H{"fsm":new_fsm})
+	c.JSON(http.StatusOK, gin.H{"fsm":new_fsm.ToReactFlow()})
 }
 
 func FSMStringRecognize(c *gin.Context){ // 字符串识别，
@@ -97,5 +97,5 @@ func NFAToDFA(c *gin.Context){ // NFA 转 DFA，子集构造法
 		return
 	}
 	new_fsm := fsm_s.NFAToDFA(&fsm)
-	c.JSON(http.StatusOK, gin.H{"msg":"NFA转换为DFA成功","dfa":new_fsm, "result":true})
+	c.JSON(http.StatusOK, gin.H{"msg":"NFA转换为DFA成功","dfa":new_fsm.ToReactFlow(), "result":true})
 }

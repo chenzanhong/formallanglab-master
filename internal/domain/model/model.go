@@ -73,12 +73,13 @@ type Transition struct {
 
 // Automaton 基础自动机结构
 type Automaton struct {
-	States          []State      `json:"states"`          // 状态集合
-	Alphabet        []Symbol     `json:"alphabet"`        // 符号表
-	Transitions     []Transition `json:"transitions"`     // 状态转移规则集合
-	InitialState    State        `json:"initialState"`    // 初始状态
-	AcceptingStates []State      `json:"acceptingStates"` // 接受状态集合
-	IsDFA           bool         `json:"isDFA"`           // 是否为DFA，否则为NFA
+	States          []State                      `json:"states"`          // 状态集合
+	Alphabet        []Symbol                     `json:"alphabet"`        // 符号表
+	Transitions     []Transition                 `json:"transitions"`     // 状态转移规则集合
+	InitialState    State                        `json:"initialState"`    // 初始状态
+	AcceptingStates []State                      `json:"acceptingStates"` // 接受状态集合
+	IsDFA           bool                         `json:"isDFA"`           // 是否为DFA，否则为NFA
+	TransMap        map[State]map[Symbol][]State // Map存储状态转移规则，识别字符串时效率高
 }
 
 func (a *Automaton) SplitString(s string) ([]Symbol, error) {
@@ -126,6 +127,19 @@ func (a *Automaton) CheckIsDFA() (bool, error) {
 	// 所有条件满足，是 DFA
 	a.IsDFA = true
 	return true, nil
+}
+
+func (a *Automaton) InitTransMap() {
+	a.TransMap = make(map[State]map[Symbol][]State)
+	for _, t := range a.Transitions {
+		if _, exists := a.TransMap[t.FromState]; !exists {
+			a.TransMap[t.FromState] = make(map[Symbol][]State)
+		}
+		// 注意：DFA 才能这样赋值！NFA 不适用（见下文警告）
+		if len(t.ToStates) > 0 {
+			a.TransMap[t.FromState][t.Input] = t.ToStates // DFA 假设唯一目标
+		}
+	}
 }
 
 type ReactFlowNode struct {
@@ -274,6 +288,38 @@ type ParseResult struct {
 	Steps    []ParseStep `json:"steps"`    // 分析步骤（可选）
 	Error    string      `json:"error"`    // 错误信息（如果有）
 	Message  string      `json:"message"`  // 额外信息
+}
+
+// ToReactFlow 返回格式化后的产生式字符串，用于前端展示
+func (g *Grammar) ToReactFlow() []string {
+	productions := make([]string, 0, len(g.Productions))
+
+	for _, prod := range g.Productions {
+		// 格式化左部
+		left := string(prod.Left[0]) // 通常左部只有一个符号
+
+		// 格式化右部
+		right := ""
+		if len(prod.Right) == 0 || (len(prod.Right) == 1 && prod.Right[0] == Epsilon) {
+			right = "ε"
+		} else {
+			for i, symbol := range prod.Right {
+				if i > 0 {
+					right += " "
+				}
+				if symbol == Epsilon {
+					right += "ε"
+				} else {
+					right += string(symbol)
+				}
+			}
+		}
+
+		// 组合成产生式字符串
+		productions = append(productions, left+" -> "+right)
+	}
+
+	return productions
 }
 
 /*

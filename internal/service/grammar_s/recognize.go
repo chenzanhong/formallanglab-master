@@ -358,7 +358,8 @@ func canDeriveEpsilon(grammar *model.Grammar) bool {
 
 // RecognizeString 判断字符串是否被文法生成（BFS 模拟推导）
 func RecognizeString(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth int) (bool, []string, error) {
-	if len(input) == 0 {
+	// 支持两种空串表示：[] 和 [ε]
+	if len(input) == 0 || (len(input) == 1 && input[0] == model.Epsilon) {
 		// 处理空串
 		if canDeriveEpsilon(g) {
 			for _, prod := range g.Productions {
@@ -366,7 +367,7 @@ func RecognizeString(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth 
 					return true, []string{fmt.Sprintf("%s → ε", string(g.StartSymbol))}, nil
 				}
 			}
-			return true, []string{"S → ε"}, nil
+			return true, []string{fmt.Sprintf("%s → ε", string(g.StartSymbol))}, nil
 		}
 		return false, nil, nil
 	}
@@ -410,9 +411,15 @@ func RecognizeString(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth 
 			leftSymbol := prod.Left[0]
 			for i := 0; i < len(curr.symbols); i++ {
 				if curr.symbols[i] == leftSymbol {
-					// 替换第 i 个符号
+					// 替换第 i 个符号（若产生式为 ε，则不添加任何符号）
 					newSymbols := append([]model.Symbol{}, curr.symbols[:i]...)
-					newSymbols = append(newSymbols, prod.Right...)
+					if !(len(prod.Right) == 0 || prod.Right[0] == model.Epsilon) {
+						for _, r := range prod.Right {
+							if r != model.Epsilon {
+								newSymbols = append(newSymbols, r)
+							}
+						}
+					}
 					newSymbols = append(newSymbols, curr.symbols[i+1:]...)
 
 					if len(newSymbols) > maxWidth {
