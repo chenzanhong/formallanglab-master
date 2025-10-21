@@ -5,6 +5,15 @@ import (
 )
 
 // CompleteGrammarStructure 完善文法结构，如果某些部分缺失则根据默认规则填充
+// 算法思路：
+// 1. 检查文法是否已经完整（包含起始符号、终结符集、非终结符集），如果完整则直接返回
+// 2. 遍历所有产生式，收集所有出现的符号
+// 3. 根据符号的命名规则判断其类型（大写字母开头为非终结符，否则为终结符）
+// 4. 设置起始符号（默认为"S"，如果第一个产生式的左部是单个大写字母则使用该符号）
+// 5. 将收集到的终结符和非终结符分别放入对应的集合中
+//
+// 时间复杂度：O(n*m)，其中n为产生式数量，m为产生式平均长度
+// 空间复杂度：O(k)，其中k为不同符号的总数量
 func CompleteGrammarStructure(grammar *model.Grammar) *model.Grammar {
 	// 如果文法结构完整，直接返回
 	if grammar.StartSymbol != "" && len(grammar.Terminals) > 0 && len(grammar.NonTerminals) > 0 {
