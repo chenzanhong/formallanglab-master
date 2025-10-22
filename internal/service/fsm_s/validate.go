@@ -51,7 +51,7 @@ func FSMValidate(fsm *model.Automaton) (bool, error) {
 	for _, sym := range fsm.Alphabet {
 		alphabetSet[sym] = true
 	}
-	alphabetSet[""] = true // 允许空转移
+	alphabetSet[model.Epsilon] = true // 允许空转移
 
 	// 5. 验证所有转移规则
 	// 如果是 DFA，我们需要检查：每个 (fromState, input) 只能有一个 toState

@@ -18,7 +18,7 @@ package grammar_s
    - PrintFirst(), PrintFollow() 打印FIRST/FOLLOW集
 
 2. 【工具函数】(第200-300行)
-   - symbolsToStringFast()     符号序列转字符串
+   - symbolsToStringJoinSepFast()    符号序列转字符串
    - copySymbols()            符号序列复制
    - symbolsEqual()           符号序列比较
    - canDeriveEpsilon()       判断是否可推导出ε
@@ -116,9 +116,9 @@ func copySymbols(src []model.Symbol) []model.Symbol {
 }
 
 // 高性能字符串转换
-func symbolsToStringFast(symbols []model.Symbol) string {
+func symbolsToStringJoinSepFast(symbols []model.Symbol) string {
 	if len(symbols) == 0 {
-		return "ε"
+		return ""
 	}
 
 	var builder strings.Builder
@@ -390,7 +390,7 @@ func RecognizeString(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth 
 		queue = queue[1:]
 
 		// 去重
-		key := symbolsToString(curr.symbols)
+		key := symbolsToStringJoinSep(curr.symbols)
 		if visited[key] || curr.steps >= maxSteps {
 			continue
 		}
@@ -427,7 +427,7 @@ func RecognizeString(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth 
 					}
 
 					// 构建新推导路径
-					step := fmt.Sprintf("%s → %s", string(leftSymbol), symbolsToString(prod.Right))
+					step := fmt.Sprintf("%s → %s", string(leftSymbol), symbolsToStringJoinSep(prod.Right))
 					newPath := append([]string{}, curr.path...)
 					newPath = append(newPath, step)
 
@@ -622,8 +622,8 @@ func LL1ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 			}
 
 			step.StepType = "predict"
-			step.Description = fmt.Sprintf("使用产生式: %s → %s", string(prod.Left[0]), symbolsToString(prod.Right))
-			step.Action = fmt.Sprintf("出栈 %s，压入 %s", string(top), symbolsToString(prod.Right))
+			step.Description = fmt.Sprintf("使用产生式: %s → %s", string(prod.Left[0]), symbolsToStringJoinSep(prod.Right))
+			step.Action = fmt.Sprintf("出栈 %s，压入 %s", string(top), symbolsToStringJoinSep(prod.Right))
 			step.Production = &prod
 
 			result.Steps = append(result.Steps, step)
@@ -810,8 +810,8 @@ func LL1ParseWithRecovery(grammar *model.Grammar, input []model.Symbol) *model.P
 			}
 
 			step.StepType = "predict"
-			step.Description = fmt.Sprintf("使用产生式: %s → %s", string(prod.Left[0]), symbolsToStringFast(prod.Right))
-			step.Action = fmt.Sprintf("出栈 %s，压入 %s", string(top), symbolsToStringFast(prod.Right))
+			step.Description = fmt.Sprintf("使用产生式: %s → %s", string(prod.Left[0]), symbolsToStringJoinSepFast(prod.Right))
+			step.Action = fmt.Sprintf("出栈 %s，压入 %s", string(top), symbolsToStringJoinSepFast(prod.Right))
 			step.Production = &prod
 
 			result.Steps = append(result.Steps, step)
@@ -921,7 +921,7 @@ func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth
 		stepCount++
 
 		// 去重
-		key := symbolsToString(curr.symbols)
+		key := symbolsToStringJoinSep(curr.symbols)
 		if visited[key] || curr.steps >= maxSteps {
 			continue
 		}
@@ -963,18 +963,18 @@ func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth
 					}
 
 					// 构建新推导路径
-					step := fmt.Sprintf("%s → %s", string(leftSymbol), symbolsToString(prod.Right))
+					step := fmt.Sprintf("%s → %s", string(leftSymbol), symbolsToStringJoinSep(prod.Right))
 					newPath := append([]string{}, curr.path...)
 					newPath = append(newPath, step)
 
 					// 记录推导步骤
 					result.Steps = append(result.Steps, model.ParseStep{
 						StepType:    "predict",
-						Description: fmt.Sprintf("应用产生式: %s → %s", string(leftSymbol), symbolsToString(prod.Right)),
+						Description: fmt.Sprintf("应用产生式: %s → %s", string(leftSymbol), symbolsToStringJoinSep(prod.Right)),
 						Stack:       newSymbols,
 						Input:       input,
 						InputPos:    0,
-						Action:      fmt.Sprintf("替换 %s 为 %s", string(leftSymbol), symbolsToString(prod.Right)),
+						Action:      fmt.Sprintf("替换 %s 为 %s", string(leftSymbol), symbolsToStringJoinSep(prod.Right)),
 						Production:  &prod,
 					})
 
@@ -1611,7 +1611,7 @@ func LR0ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 			stateStack = append(stateStack, gotoState)
 
 			step.StepType = "predict"
-			step.Description = fmt.Sprintf("归约: 使用产生式 %s → %s", string(leftSymbol), symbolsToStringFast(prod.Right))
+			step.Description = fmt.Sprintf("归约: 使用产生式 %s → %s", string(leftSymbol), symbolsToStringJoinSepFast(prod.Right))
 			step.Action = fmt.Sprintf("归约，弹出 %d 个符号，转到状态 %d", popCount, gotoState)
 			step.Production = prod
 			result.Steps = append(result.Steps, step)
@@ -2175,7 +2175,7 @@ func (p *RecursiveDescentParser) parseNonTerminal(nt model.Symbol) bool {
 	// 记录使用的产生式
 	p.addStep(model.ParseStep{
 		StepType:    "predict",
-		Description: fmt.Sprintf("使用产生式: %s → %s", string(nt), symbolsToStringFast(selectedProd.Right)),
+		Description: fmt.Sprintf("使用产生式: %s → %s", string(nt), symbolsToStringJoinSepFast(selectedProd.Right)),
 		Stack:       []model.Symbol{nt},
 		Input:       p.Input[p.Pos:],
 		InputPos:    p.Pos,

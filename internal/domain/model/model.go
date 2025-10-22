@@ -14,8 +14,7 @@ type User struct {
 // Symbol 表示一个符号，可以是终结符、非终结符或者自动机所识别的一个符号
 type Symbol string
 
-// const Epsilon Symbol = "ε" // 定义ε作为特殊输入符号
-const Epsilon Symbol = "" // 定义""作为特殊输入符号，表示ε，前端传输时用""表示就行，毕竟ε不属于ASCII，属于Unicode
+const Epsilon Symbol = "ε" // 定义ε作为特殊输入符号，表示空转移符号
 
 // 工具函数：将用户输入映射为标准 ε
 func NormalizeSymbol(s string) Symbol {
@@ -116,6 +115,9 @@ func (a *Automaton) CheckIsDFA() (bool, error) {
 
 	// 遍历所有转移
 	for _, t := range a.Transitions {
+		if t.Input == Epsilon{
+			return false, fmt.Errorf("包含空转移，不是DFA")
+		}
 		// 检查是否重复定义了同一 (fromState, input)
 		key := string(t.FromState) + "|" + string(t.Input)
 		if prev, exists := transitionMap[key]; exists {
@@ -156,10 +158,10 @@ type ReactFlowEdge struct {
 	Source    string            `json:"source"`
 	Target    string            `json:"target"`
 	Label     string            `json:"label"`
-	Style     map[string]string `json:"style,omitempty"`
-	MarkerEnd struct {
-		Type string `json:"type"` // "arrow"
-	} `json:"markerEnd"`
+	// Style     map[string]string `json:"style,omitempty"`
+	// MarkerEnd struct {
+	// 	Type string `json:"type"` // "arrow"
+	// } `json:"markerEnd"`
 }
 
 type ReactFlowAutomaton struct {
@@ -210,13 +212,13 @@ func (a *Automaton) ToReactFlow() *ReactFlowAutomaton {
 				Source: string(t.FromState),
 				Target: string(toState),
 				Label:  label,
-				MarkerEnd: struct {
-					Type string `json:"type"`
-				}{Type: "arrow"},
+				// MarkerEnd: struct {
+				// 	Type string `json:"type"`
+				// }{Type: "arrow"},
 			}
-			if t.Input == Epsilon {
-				edge.Style = map[string]string{"stroke": "#1890ff"}
-			}
+			// if t.Input == Epsilon {
+			// 	edge.Style = map[string]string{"stroke": "#1890ff"}
+			// }
 			edges = append(edges, edge)
 			edgeID++
 		}
@@ -224,51 +226,6 @@ func (a *Automaton) ToReactFlow() *ReactFlowAutomaton {
 
 	return &ReactFlowAutomaton{Nodes: nodes, Edges: edges}
 }
-
-/*
-返回给前端的自动机数据，JSON格式，点和边：
-    1. id对应状态
-    2. "type": "input",对应初始状态
-    3. "type": "default",对应非开始状态
-    4. label为点上的状态名称或边上的符号
-{
-  "nodes": [
-    {
-      "id": "q0",
-      "type": "initial", // 明确初始状态类型
-      "data": {
-        "label": "q₀",
-        "isAccepting": false // 显式标记是否为接受状态，接收状态需要前端用双鱼圈表示，其他节点均用圆形节点表示（节点内部展示label）
-      }
-    },
-    {
-      "id": "q1",
-      "type": "default",
-      "data": {
-        "label": "q₁",
-        "isAccepting": true
-      }
-    }
-  ],
-  "edges": [
-    {
-      "id": "e1", // 由后端生成唯一ID
-      "source": "q0",
-      "target": "q1",
-      "label": "a",
-      "markerEnd": { "type": "arrow" } // ReactFlow 的箭头标记
-    },
-    {
-      "id": "e2",
-      "source": "q1",
-      "target": "q0",
-      "label": "ε",
-      "style": { "stroke": "#1890ff" }, // 蓝色边
-      "markerEnd": { "type": "arrow" }
-    }
-  ]
-}
-*/
 
 // ParseStep 表示文法分析过程中的一个步骤
 type ParseStep struct {
@@ -301,14 +258,14 @@ func (g *Grammar) ToReactFlow() []string {
 		// 格式化右部
 		right := ""
 		if len(prod.Right) == 0 || (len(prod.Right) == 1 && prod.Right[0] == Epsilon) {
-			right = "ε"
+			right = string(Epsilon)
 		} else {
 			for i, symbol := range prod.Right {
 				if i > 0 {
 					right += " "
 				}
 				if symbol == Epsilon {
-					right += "ε"
+					right += string(Epsilon)
 				} else {
 					right += string(symbol)
 				}
@@ -323,6 +280,28 @@ func (g *Grammar) ToReactFlow() []string {
 }
 
 /*
+
+前端传给后端的文法格式：：
+{
+  "startSymbol": "S",
+  "terminals": ["a", "b", "ε"],
+  "nonTerminals": ["S", "A", "B"],
+  "productions": [
+    {
+      "left": "S",
+      "right": ["a", "A", "b"]
+    },
+    {
+      "left": "A",
+      "right": ["b", "B"]
+    },
+    {
+      "left": "B",
+      "right": ["ε"]
+    }
+  ]
+}
+
 前端传给后端的自动机格式：
 {
   "states": ["q0", "q1", "q2"],
@@ -349,23 +328,46 @@ func (g *Grammar) ToReactFlow() []string {
   "isDFA": false
 }
 
-文法前端传输格式：
+
+返回给前端的自动机数据，JSON格式，点和边：
+    1. id对应状态
+    2. "type": "input",对应初始状态
+    3. "type": "default",对应非开始状态
+    4. label为点上的状态名称或边上的符号
 {
-  "startSymbol": "S",
-  "terminals": ["a", "b", "ε"],
-  "nonTerminals": ["S", "A", "B"],
-  "productions": [
+  "nodes": [
     {
-      "left": "S",
-      "right": ["a", "A", "b"]
+    	"id": "q0",
+      	"type": "initial", // 明确初始状态类型
+      	"data": {
+        "label": "q₀",
+        "isAccepting": false // 显式标记是否为接受状态，接收状态需要前端用双圆圈表示，其他节点均用圆形节点表示（节点内部展示label）
+      }
     },
     {
-      "left": "A",
-      "right": ["b", "B"]
+      "id": "q1",
+      "type": "default",
+      "data": {
+        "label": "q₁",
+        "isAccepting": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1", // 由后端生成唯一ID
+      "source": "q0",
+      "target": "q1",
+      "label": "a",
+    //   "markerEnd": { "type": "arrow" } // ReactFlow 的箭头标记
     },
     {
-      "left": "B",
-      "right": ["ε"]
+      "id": "e2",
+      "source": "q1",
+      "target": "q0",
+      "label": "ε",
+    //   "style": { "stroke": "#1890ff" }, // 空转移，使用蓝色边
+    //   "markerEnd": { "type": "arrow" }
     }
   ]
 }

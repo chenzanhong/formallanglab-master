@@ -1,4 +1,3 @@
 *.yaml
 *.log
-backend/logs/*.log
 logs/*.log

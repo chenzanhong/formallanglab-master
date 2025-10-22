@@ -8,13 +8,14 @@ import (
 
 // DFAMinimize 对给定的 DFA 进行极小化（最小化）
 // 使用 Hopcroft 算法的思想，通过区分可区分状态来合并不可区分状态
+// 参考文献：确定有限状态自动机最小化算法的并行处理 https://kns.cnki.net/nzkhtml/xmlRead/trialRead.html?dbCode=CJFD&tableName=CJFDTOTAL&fileName=JSJA200801086&fileSourceType=1&appId=KNS_BASIC_PSMC&invoice=kjvkyycspA83ZF6dEhNBgDLUICvAVSMgNr+kHtytwr5MjxqR1DKFgYwhMK961PKRQLPuLHa5szoQ0tZCCGQbbNSjncJ8KvfaObLAW8sVQNo9pmwi2VgatRLRfhHlkuY20OCDeWv026Vr6mYV+F16RZfWC1Gm1X93Dft55noF77Y=
 // 算法步骤：
-// 1. 去除不可达状态：删除从初始状态无法到达的所有状态
-// 2. 初始化可区分状态对：将接受状态和非接受状态标记为可区分
-// 3. 迭代标记可区分状态对：对于尚未标记为可区分的状态对(p,q)，如果存在某个输入符号a，
-//    使得(p,a)和(q,a)转移到的状态对已被标记为可区分，则将(p,q)也标记为可区分
-// 4. 合并不可区分状态：将所有未被标记为可区分的状态合并为同一等价类
-// 5. 构造最小DFA：以每个等价类作为一个新状态，构建新的转移函数
+//  1. 去除不可达状态：删除从初始状态无法到达的所有状态
+//  2. 初始化可区分状态对：将接受状态和非接受状态标记为可区分
+//  3. 迭代标记可区分状态对：对于尚未标记为可区分的状态对(p,q)，如果存在某个输入符号a，
+//     使得(p,a)和(q,a)转移到的状态对已被标记为可区分，则将(p,q)也标记为可区分
+//  4. 合并不可区分状态：将所有未被标记为可区分的状态合并为同一等价类
+//  5. 构造最小DFA：以每个等价类作为一个新状态，构建新的转移函数
 //
 // 时间复杂度：O(n^2 * k)，其中n是状态数，k是字母表大小
 // 空间复杂度：O(n^2)

@@ -1,5 +1,8 @@
 package grammar_s
 
+/*
+	实现有误，而且暂时没必要
+
 import (
 	"backend/internal/domain/model"
 )
@@ -87,3 +90,4 @@ func isNonTerminal(symbol model.Symbol) bool {
 	firstChar := string(symbol)[0]
 	return firstChar >= 'A' && firstChar <= 'Z'
 }
+*/

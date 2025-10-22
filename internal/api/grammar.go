@@ -11,12 +11,13 @@ package api
 import (
 	"backend/internal/domain/model"
 	"backend/internal/service/grammar_s"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-// normalizeGrammar 将前端传入的文法中的 "ε" 或空字符串统一规范为后端使用的 model.Epsilon("") 表示
+// normalizeGrammar 将前端传入的文法中的 "ε" 或空字符串统一规范为后端使用的 model.Epsilon("ε") 表示
 func normalizeGrammar(g *model.Grammar) {
 	// 终结符集合规范化
 	for i, t := range g.Terminals {
@@ -63,9 +64,11 @@ func GrammarValidate(c *gin.Context) { // 文法校验——是否有效
 	}
 
 	// 先统一 ε 表示
+	fmt.Printf("%+v\n", grammar)
 	normalizeGrammar(&grammar)
+	fmt.Printf("%+v\n", grammar)
 	// 如果文法结构不完整，先完善结构
-	grammar = *grammar_s.CompleteGrammarStructure(&grammar)
+	// grammar = *grammar_s.CompleteGrammarStructure(&grammar)
 
 	if !grammar_s.IsValidGrammar(&grammar) {
 		c.JSON(http.StatusBadRequest, gin.H{"valid": false, "msg": "invalid grammar"})
@@ -89,7 +92,7 @@ func GrammarAmbiguityCheck(c *gin.Context) { // 正则文法二义性判断，�
 	// 先统一 ε 表示
 	normalizeGrammar(&grammar)
 	// 如果文法结构不完整，先完善结构
-	grammar = *grammar_s.CompleteGrammarStructure(&grammar)
+	// grammar = *grammar_s.CompleteGrammarStructure(&grammar)
 
 	// 可选：先校验文法有效性
 	if !grammar_s.IsValidGrammar(&grammar) {
@@ -158,7 +161,7 @@ func GrammarStringRecognize(c *gin.Context) { // 字符串识别——是否被�
 	// 先统一 ε 表示
 	normalizeGrammar(&req.Grammar)
 	// 如果文法结构不完整，先完善结构
-	req.Grammar = *grammar_s.CompleteGrammarStructure(&req.Grammar)
+	// req.Grammar = *grammar_s.CompleteGrammarStructure(&req.Grammar)
 
 	// 可选：先校验文法有效性
 	if !grammar_s.IsValidGrammar(&req.Grammar) {
@@ -215,7 +218,7 @@ func GrammarTypeDetermine(c *gin.Context) { // 判断所给文法的类型
 	// 先统一 ε 表示
 	normalizeGrammar(&grammar)
 	// 如果文法结构不完整，先完善结构
-	grammar = *grammar_s.CompleteGrammarStructure(&grammar)
+	// grammar = *grammar_s.CompleteGrammarStructure(&grammar)
 
 	// 可选：先校验文法有效性
 	if !grammar_s.IsValidGrammar(&grammar) {
@@ -244,8 +247,8 @@ func GrammarTypeDetermine(c *gin.Context) { // 判断所给文法的类型
 
 func GrammarEquivalenceCheck(c *gin.Context) { // 判断所给的两个正则文法是否等价
 	type Req struct {
-		g1 model.Grammar
-		g2 model.Grammar
+		G1 model.Grammar `json:"g1"`
+		G2 model.Grammar `json:"g2"`
 	}
 	var req Req
 
@@ -253,34 +256,37 @@ func GrammarEquivalenceCheck(c *gin.Context) { // 判断所给的两个正则文
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "参数解析失败", "error": err.Error()})
 		return
 	}
-
+	fmt.Printf("%+v\n", req.G1)
+	fmt.Printf("%+v\n", req.G2)
 	// 先统一 ε 表示
-	normalizeGrammar(&req.g1)
-	normalizeGrammar(&req.g2)
+	normalizeGrammar(&req.G1)
+	normalizeGrammar(&req.G2)
+	fmt.Printf("统一空转移符号后%+v\n", req.G1)
+	fmt.Printf("统一空转移符号后%+v\n", req.G2)
 	// 如果文法结构不完整，先完善结构
-	req.g1 = *grammar_s.CompleteGrammarStructure(&req.g1)
-	req.g2 = *grammar_s.CompleteGrammarStructure(&req.g2)
+	// req.g1 = *grammar_s.CompleteGrammarStructure(&req.g1)
+	// req.g2 = *grammar_s.CompleteGrammarStructure(&req.g2)
 
 	// 先判断两个文法是否有效，且为正则文法
-	if !grammar_s.IsValidGrammar(&req.g1) {
+	if !grammar_s.IsValidGrammar(&req.G1) {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "invalid grammar1", "isEquivalent": false})
 		return
 	}
-	if grammar_s.TypeDetermine(&req.g1) != 3 { // 非正则文法
+	if grammar_s.TypeDetermine(&req.G1) != 3 { // 非正则文法
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "grammar1 is not regular grammar", "isEquivalent": false})
 		return
 	}
-	if !grammar_s.IsValidGrammar(&req.g2) {
+	if !grammar_s.IsValidGrammar(&req.G2) {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "invalid grammar2", "isEquivalent": false})
 		return
 	}
-	if grammar_s.TypeDetermine(&req.g2) != 3 { // 非正则文法
+	if grammar_s.TypeDetermine(&req.G2) != 3 { // 非正则文法
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "grammar2 is not regular grammar", "isEquivalent": false})
 		return
 	}
 
 	// 再判断是否等价
-	if !grammar_s.IsEquivalent(&req.g1, &req.g2) {
+	if !grammar_s.IsEquivalent(&req.G1, &req.G2) {
 		c.JSON(http.StatusOK, gin.H{"msg": "this two grammars are not equivalent", "isEquivalent": false})
 		return
 	}
@@ -298,7 +304,7 @@ func GrammarSimplify(c *gin.Context) { // 文法的化简——去无用符号�
 	// 先统一 ε 表示
 	normalizeGrammar(&grammar)
 	// 如果文法结构不完整，先完善结构
-	grammar = *grammar_s.CompleteGrammarStructure(&grammar)
+	// grammar = *grammar_s.CompleteGrammarStructure(&grammar)
 
 	// 可选：先校验文法有效性
 	if !grammar_s.IsValidGrammar(&grammar) {
@@ -313,7 +319,6 @@ func GrammarSimplify(c *gin.Context) { // 文法的化简——去无用符号�
 	c.JSON(http.StatusOK, gin.H{"msg": "简化成功", "grammar": new_grammar.ToReactFlow()})
 }
 
-// 辅助函数：根据文法中定义的符号来分割字符串
 // 辅助函数：根据文法中定义的符号来分割字符串
 // 使用最长匹配原则，优先匹配较长的终结符
 // 例如：如果文法中有 "if" 和 "i" 两个终结符，则 "if" 会被优先匹配为一个符号，而不是 "i" + "f"

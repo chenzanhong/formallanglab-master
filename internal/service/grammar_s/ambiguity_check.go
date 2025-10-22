@@ -5,12 +5,26 @@ import (
 	"strings"
 )
 
-// symbolsToString 将符号切片转为字符串，用于 map 的 key
-// 注意：ε 用特殊符号表示，如 "<eps>"
+// 注意：ε 会被省略，除了单一 ε 的情况
 func symbolsToString(symbols []model.Symbol) string {
 	parts := make([]string, len(symbols))
 	for i, sym := range symbols {
-        if sym != model.Epsilon {
+		if sym != model.Epsilon {
+			parts[i] = string(sym)
+		}
+	}
+	return strings.Join(parts, ",")
+}
+
+// symbolsToStringJoinSep 将符号切片转为字符串，用于 map 的 key
+// 注意：ε
+func symbolsToStringJoinSep(symbols []model.Symbol) string {
+	parts := make([]string, len(symbols))
+	if len(symbols) == 1 && symbols[0] == model.Epsilon {
+		return string(model.Epsilon)
+	}
+	for i, sym := range symbols {
+		if sym != model.Epsilon {
 			parts[i] = string(sym)
 		}
 	}
@@ -52,7 +66,7 @@ func IsAmbiguousRegular(g *model.Grammar) (bool, error) {
 		curr := queue[0]
 		queue = queue[1:]
 
-		key := symbolsToString(curr.symbols)
+		key := symbolsToStringJoinSep(curr.symbols)
 		if visited[key] {
 			continue
 		}
@@ -60,7 +74,7 @@ func IsAmbiguousRegular(g *model.Grammar) (bool, error) {
 
 		// 如果全是终结符，得到一个句子
 		if isAllTerminals(curr.symbols, g) {
-			sentence := symbolsToString(curr.symbols)
+			sentence := symbolsToStringJoinSep(curr.symbols)
 			sentenceCount[sentence]++
 			if sentenceCount[sentence] > 1 {
 				return true, nil

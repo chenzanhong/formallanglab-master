@@ -8,7 +8,7 @@ import (
 // 通过比较两个文法生成的语言是否相同来判断等价性
 // IsEquivalent 判断两个文法是否等价（生成相同的语言）
 // 算法思路：
-// 1. 首先验证两个文法都是有效的正则文法（Type3）
+// 1. 默认传入的两个文法都是有效的正则文法（Type3）
 // 2. 通过BFS生成两个文法在有限深度内能推导出的所有句子
 // 3. 比较两个文法生成的语言集合是否完全相同
 //
@@ -17,15 +17,23 @@ import (
 //
 // 时间复杂度：O(k * n^d)，其中k为产生式数量，n为非终结符数量，d为搜索深度
 // 空间复杂度：O(m)，其中m为生成的不同句子数量
+/*
+	目前还有点问题：
+	S -> a A
+	A -> c
+	与
+	S -> a | a c
+	被判定为不等价
+*/
 func IsEquivalent(g1, g2 *model.Grammar) bool {
-	// 先验证两个文法都是有效的正则文法
-	if !IsValidGrammar(g1) || !IsValidGrammar(g2) {
-		return false
-	}
+	// // 先验证两个文法都是有效的正则文法
+	// if !IsValidGrammar(g1) || !IsValidGrammar(g2) {
+	// 	return false
+	// }
 
-	if TypeDetermine(g1) != Type3 || TypeDetermine(g2) != Type3 {
-		return false
-	}
+	// if TypeDetermine(g1) != Type3 || TypeDetermine(g2) != Type3 {
+	// 	return false
+	// }
 
 	// 生成两个文法的语言（有限深度）
 	maxDepth := 8 // 限制生成字符串的最大长度
@@ -38,10 +46,6 @@ func IsEquivalent(g1, g2 *model.Grammar) bool {
 
 // HasAmbiguityOptimized 优化的二义性检查算法
 func HasAmbiguityOptimized(g *model.Grammar, maxLen int) (bool, []model.Symbol) {
-	if !isRightLinearRegularGrammar(g) {
-		return false, nil
-	}
-
 	// 为每个长度检查所有可能的字符串
 	for length := 0; length <= maxLen; length++ {
 		strings := generateStringsOfLength(g, length)
@@ -53,36 +57,6 @@ func HasAmbiguityOptimized(g *model.Grammar, maxLen int) (bool, []model.Symbol) 
 		}
 	}
 	return false, nil
-}
-
-// isRightLinearRegularGrammar 检查是否为右线性正则文法
-func isRightLinearRegularGrammar(g *model.Grammar) bool {
-	for _, p := range g.Productions {
-		left := p.Left
-		right := p.Right
-
-		// 左部必须是单个非终结符
-		if len(left) != 1 || !g.CheckIsNonTerminal(left[0]) {
-			return false
-		}
-
-		// 右部只能是: ε, a, aB
-		switch len(right) {
-		case 0: // ε
-			continue
-		case 1:
-			if !g.CheckIsTerminal(right[0]) && right[0] != model.Epsilon {
-				return false
-			}
-		case 2:
-			if !g.CheckIsTerminal(right[0]) || !g.CheckIsNonTerminal(right[1]) {
-				return false
-			}
-		default:
-			return false
-		}
-	}
-	return true
 }
 
 // generateStringsOfLength 生成指定长度的所有终结符字符串
@@ -179,7 +153,7 @@ func generateLanguage(g *model.Grammar, maxDepth int) map[string]bool {
 		curr := queue[0]
 		queue = queue[1:]
 
-		key := symbolsToString(curr.symbols)
+		key := symbolsToStringJoinSep(curr.symbols)
 		if visited[key] {
 			continue
 		}
@@ -192,7 +166,7 @@ func generateLanguage(g *model.Grammar, maxDepth int) map[string]bool {
 
 		// 如果全是终结符，加入语言
 		if isAllTerminals(curr.symbols, g) {
-			language[symbolsToString(curr.symbols)] = true
+			language[symbolsToStringJoinSep(curr.symbols)] = true
 			continue
 		}
 

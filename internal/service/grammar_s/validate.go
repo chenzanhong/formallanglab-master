@@ -36,6 +36,19 @@ func IsValidGrammar(g *model.Grammar) bool {
 		return false
 	}
 
+	// 收集符号
+	var symbolMap = make(map[model.Symbol]bool)
+	// 将非终结符添加到符号集合
+	for _, sym := range g.NonTerminals {
+		symbolMap[sym] = true
+	}
+	// 将终结符添加到符号集合
+	for _, sym := range g.Terminals {
+		symbolMap[sym] = true
+	}
+	// 将空转移符号也添加到集合中
+	symbolMap[model.Epsilon] = true
+
 	// 3. 非终结符和终结符不能有交集
 	for _, sym := range g.NonTerminals {
 		if g.CheckIsTerminal(sym) {
@@ -51,20 +64,29 @@ func IsValidGrammar(g *model.Grammar) bool {
 		return false
 	}
 
-	// 5. 每个产生式的左部至少包含一个非终结符
+	// 5. 每个产生式的左部至少包含一个非终结符，而且所使用的符号都在符号集里面
 	for _, p := range g.Productions {
 		if len(p.Left) == 0 {
 			return false // 左部不能为空
 		}
+
 		hasNonTerminal := false
 		for _, sym := range p.Left {
 			if g.CheckIsNonTerminal(sym) {
 				hasNonTerminal = true
 				break
 			}
+			if !symbolMap[sym] { // 是否是字符集里面的字符
+				return false
+			}
 		}
 		if !hasNonTerminal {
 			return false // 左部没有非终结符
+		}
+		for _, sym := range p.Right {
+			if !symbolMap[sym] { // 是否是字符集里面的字符
+				return false
+			}
 		}
 	}
 

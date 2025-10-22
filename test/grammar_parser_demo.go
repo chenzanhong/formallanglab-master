@@ -72,8 +72,8 @@ func testSimpleLL1Grammar() {
 		fmt.Printf("%d. %s - %s\n", i+1, step.StepType, step.Description)
 		if step.Production != nil {
 			fmt.Printf("   使用产生式: %s -> %s\n",
-				symbolsToString(step.Production.Left),
-				symbolsToString(step.Production.Right))
+				symbolsToStringJoinSep(step.Production.Left),
+				symbolsToStringJoinSep(step.Production.Right))
 		}
 	}
 
@@ -199,8 +199,8 @@ func testRecursiveGrammar() {
 			fmt.Printf("%d. %s - %s\n", i+1, step.StepType, step.Description)
 			if step.Production != nil {
 				fmt.Printf("   使用产生式: %s -> %s\n",
-					symbolsToString(step.Production.Left),
-					symbolsToString(step.Production.Right))
+					symbolsToStringJoinSep(step.Production.Left),
+					symbolsToStringJoinSep(step.Production.Right))
 			}
 		}
 	}
@@ -249,8 +249,7 @@ func testErrorHandling() {
 	}
 }
 
-
-func symbolsToString(symbols []model.Symbol) string {
+func symbolsToStringJoinSep(symbols []model.Symbol) string {
 	if len(symbols) == 0 {
 		return "ε"
 	}
