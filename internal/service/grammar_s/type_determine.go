@@ -45,7 +45,7 @@ func TypeDetermine(g *model.Grammar) int {
 	// === 第一步：判断是否为 2型或3型（即：所有产生式左部是否都只有一个非终结符）===
 	if isContextFreeForm(g) {
 		// 左部都是单个非终结符 → 可能是 Type2 或 Type3
-		if isRegular(g) {
+		if isRegular, _ := IsRegular(g); isRegular {
 			fmt.Println("三型文法")
 			return Type3
 		}
@@ -72,8 +72,8 @@ func isContextFreeForm(g *model.Grammar) bool {
 	return true
 }
 
-// isRegular 检查是否为正则文法（右线性或左线性）
-func isRegular(g *model.Grammar) bool {
+// isRegular 检查是否为正则文法（右线性或左线性）,前提是文法是上下文无关文法
+func IsRegular(g *model.Grammar) (IsRegular, isRight bool) {
 	hasRightLinear := false
 	hasLeftLinear := false
 
@@ -103,12 +103,12 @@ func isRegular(g *model.Grammar) bool {
 
 		// fmt.Println(4)
 		// 都不是，非正则
-		return false
+		return false, false
 	}
 
 	// fmt.Println(5)
 	// 必须全部右线性或全部左线性
-	return hasRightLinear != hasLeftLinear
+	return hasRightLinear != hasLeftLinear, hasRightLinear
 }
 
 func isRightLinearProduction(right []model.Symbol, g *model.Grammar) bool {

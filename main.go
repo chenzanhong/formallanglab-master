@@ -4,13 +4,19 @@ import (
 	"backend/internal/api"
 	rep "backend/internal/repository"
 	"backend/logs"
-	"fmt"
 	"context"
+	"fmt"
 	"net/http"
 	"os/signal"
 	"syscall"
 	"time"
+
+	mtr "backend/internal/metrics"
 )
+
+func init() {
+	mtr.PrometheusRegister()
+}
 
 func main() {
 	// 初始化zap日志配置

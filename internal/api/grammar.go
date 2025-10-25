@@ -5,14 +5,17 @@ GrammarStringRecognize  // 字符串识别——是否被指定文法所接受�
 GrammarTypeDetermine    // 判断所给文法的类型
 GrammarEquivalenceCheck // 判断所给的两个正则文法是否等价
 GrammarSimplify			// 文法的化简——去无用符号（不可派生、不可达）、单一产生式、空产生式
+GrammarTree				// 生成树（是否实现待确定）
 */
 package api
 
 import (
 	"backend/internal/domain/model"
+	"backend/internal/metrics"
 	"backend/internal/service/grammar_s"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -56,6 +59,10 @@ func normalizeGrammar(g *model.Grammar) {
 }
 
 func GrammarValidate(c *gin.Context) { // 文法校验——是否有效
+	start := time.Now()
+	defer func() {
+		metrics.ObserveOperationDuration("grammar", "validate", time.Since(start).Seconds())
+	}()
 	var grammar model.Grammar
 
 	if err := c.ShouldBindJSON(&grammar); err != nil {

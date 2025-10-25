@@ -18,7 +18,7 @@ FormalLangLab 是一个基于 Web 的交互式形式语言与自动机学习系�
     
 
 
-后端	Golang（Gin/Echo 框架）、JSON API
+后端	Golang（Gin 框架）、JSON API
 数据库	PostgreSQL（用于保存用户信息和相关历史记录）
 AI	本地运行 Ollama + Llama3，或调用阿里云 Qwen API
 相关算法	参考开源库/工具，如 go-graphviz、ANTLR
@@ -58,7 +58,6 @@ AI	本地运行 Ollama + Llama3，或调用阿里云 Qwen API
 | 方法 | 路由                                  | 功能描述                     |
 |------|---------------------------------------|------------------------------|
 | POST | `/gdesign/regex/validate`             | -判断是否为有效的正则表达式     |
-| POST | `/gdesign/regex/equivalence`          | -判断两个正则表达式是否等效     |
 
 ### 自动机相关接口
 
@@ -68,15 +67,16 @@ AI	本地运行 Ollama + Llama3，或调用阿里云 Qwen API
 | POST | `/gdesign/fsm/recognize`            | 字符串识别                     |
 | POST | `/gdesign/fsm/cleanup`              | 去无效符号、不可达符号          |
 | POST | `/gdesign/fsm/minimize`             | DFA 最小化                     |
-| POST | `/gdesign/fsm/nfa-to-dfa`           | NFA 转 DFA                     |
+| POST | `/gdesign/fsm/determinization`      | NFA 转 DFA                     |
 
 ### 文法、自动机间的转换
 
 | 方法 | 路由                                | 功能描述                       |
 |------|-------------------------------------|--------------------------------|
-| POST | `/gdesign/convert/grammartodfa`     | -文法转成 DFA                   |
-| POST | `/gdesign/convert/dfatogrammar`     | -DFA 转成文法                   |
-| POST | `/gdesign/convert/nfatogrammar`     | -NFA 转成文法                   |
+| POST | `/gdesign/convert/grammartonfa`     | -文法转成 NFA                   |
+| POST | `/gdesign/convert/fatogrammar`      | -FA 转成文法                   |
+| POST | `/gdesign/convert/regextonfa  `     | -正则表达式转成NFA               |
+| POST | `/gdesign/convert/fatoregex  `      | -FA转成正则表达式               |
 
 ### 知识学习
 

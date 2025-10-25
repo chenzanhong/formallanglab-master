@@ -81,6 +81,7 @@ type Automaton struct {
 	TransMap        map[State]map[Symbol][]State // Map存储状态转移规则，识别字符串时效率高
 }
 
+// 按字符集以及最长匹配原则切分字符串
 func (a *Automaton) SplitString(s string) ([]Symbol, error) {
 	if len(s) == 0 {
 		return nil, fmt.Errorf("输入字符串为空")
@@ -115,7 +116,7 @@ func (a *Automaton) CheckIsDFA() (bool, error) {
 
 	// 遍历所有转移
 	for _, t := range a.Transitions {
-		if t.Input == Epsilon{
+		if t.Input == Epsilon {
 			return false, fmt.Errorf("包含空转移，不是DFA")
 		}
 		// 检查是否重复定义了同一 (fromState, input)
@@ -144,6 +145,156 @@ func (a *Automaton) InitTransMap() {
 	}
 }
 
+// CompleteDFA 将自动机转换为等价的完备 DFA
+// 前提：调用者应确保 a 是一个有效的 DFA（可通过 a.CheckIsDFA() 验证）
+// 步骤：
+//   1. 移除不可达状态
+//   2. 添加陷阱状态（若需要）
+//   3. 补全所有缺失的转移
+func (a *Automaton) CompleteDFA() error {
+	// Step 0: 确保是 DFA
+	if !a.IsDFA {
+		if ok, err := a.CheckIsDFA(); !ok {
+			return fmt.Errorf("cannot complete non-DFA: %w", err)
+		}
+	}
+
+	// Step 1: 找出所有可达状态
+	reachable := a.FindReachableStates()
+
+	// 构建可达状态集合（用于快速查找）
+	reachableSet := make(map[State]bool)
+	for _, s := range reachable {
+		reachableSet[s] = true
+	}
+
+	// 过滤状态、接受状态、转移
+	newStates := reachable
+	newAccepting := []State{}
+	for _, s := range a.AcceptingStates {
+		if reachableSet[s] {
+			newAccepting = append(newAccepting, s)
+		}
+	}
+
+	newTransitions := []Transition{}
+	for _, t := range a.Transitions {
+		if reachableSet[t.FromState] {
+			// 只保留起点可达的转移
+			newTransitions = append(newTransitions, t)
+		}
+	}
+
+	// 更新自动机
+	a.States = newStates
+	a.AcceptingStates = newAccepting
+	a.Transitions = newTransitions
+
+	// Step 2: 构建当前转移映射（用于检查缺失）
+	transMap := make(map[State]map[Symbol]State)
+	for _, t := range a.Transitions {
+		if t.Input == Epsilon {
+			return fmt.Errorf("unexpected epsilon in DFA")
+		}
+		if _, ok := transMap[t.FromState]; !ok {
+			transMap[t.FromState] = make(map[Symbol]State)
+		}
+		transMap[t.FromState][t.Input] = t.ToStates[0] // DFA only
+	}
+
+	// Step 3: 创建陷阱状态（仅当需要时）
+	sinkState := State("__sink__")
+	hasSink := false
+	missingTransitions := []Transition{}
+
+	// 遍历每个可达状态和每个字母表符号
+	for _, state := range a.States {
+		for _, sym := range a.Alphabet {
+			if sym == Epsilon {
+				continue // DFA 不应有 ε
+			}
+			if _, exists := transMap[state][sym]; !exists {
+				// 缺失转移：指向 sink
+				missingTransitions = append(missingTransitions, Transition{
+					FromState: state,
+					Input:     sym,
+					ToStates:  []State{sinkState},
+				})
+				hasSink = true
+			}
+		}
+	}
+
+	// 如果有缺失转移，添加 sink 状态及其自环
+	if hasSink {
+		// 添加 sink 状态
+		a.States = append(a.States, sinkState)
+
+		// sink 对所有输入自环
+		for _, sym := range a.Alphabet {
+			if sym == Epsilon {
+				continue
+			}
+			a.Transitions = append(a.Transitions, Transition{
+				FromState: sinkState,
+				Input:     sym,
+				ToStates:  []State{sinkState},
+			})
+		}
+
+		// 添加缺失的转移
+		a.Transitions = append(a.Transitions, missingTransitions...)
+	}
+
+	// 重新构建 TransMap（供后续识别使用）
+	a.InitTransMap()
+	a.IsDFA = true // 仍为 DFA
+	return nil
+}
+
+// findReachableStates 使用 BFS 找出从初始状态可达的所有状态
+func (a *Automaton) FindReachableStates() []State {
+	visited := make(map[State]bool)
+	queue := []State{a.InitialState}
+	visited[a.InitialState] = true
+
+	// 构建邻接表
+	adj := make(map[State][]State)
+	for _, t := range a.Transitions {
+		if t.Input == Epsilon {
+			// 虽然 DFA 不应有 ε，但为健壮性考虑
+			for _, to := range t.ToStates {
+				adj[t.FromState] = append(adj[t.FromState], to)
+			}
+		} else {
+			for _, to := range t.ToStates {
+				adj[t.FromState] = append(adj[t.FromState], to)
+			}
+		}
+	}
+
+	for len(queue) > 0 {
+		current := queue[0]
+		queue = queue[1:]
+
+		for _, next := range adj[current] {
+			if !visited[next] {
+				visited[next] = true
+				queue = append(queue, next)
+			}
+		}
+	}
+
+	// 收集所有 visited 状态
+	var reachable []State
+	for _, state := range a.States {
+		if visited[state] {
+			reachable = append(reachable, state)
+		}
+	}
+	return reachable
+}
+
 type ReactFlowNode struct {
 	ID   string `json:"id"`
 	Type string `json:"type"` // "initial" | "default"
@@ -154,10 +305,10 @@ type ReactFlowNode struct {
 }
 
 type ReactFlowEdge struct {
-	ID        string            `json:"id"`
-	Source    string            `json:"source"`
-	Target    string            `json:"target"`
-	Label     string            `json:"label"`
+	ID     string `json:"id"`
+	Source string `json:"source"`
+	Target string `json:"target"`
+	Label  string `json:"label"`
 	// Style     map[string]string `json:"style,omitempty"`
 	// MarkerEnd struct {
 	// 	Type string `json:"type"` // "arrow"

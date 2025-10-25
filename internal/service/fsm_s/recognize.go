@@ -44,7 +44,7 @@ func recognizeDFA(fsm *model.Automaton, str string) (bool, error) {
 	}
 	currentState := fsm.InitialState
 	for _, sym := range symbols {
-		nextState := getDFANextState(fsm, currentState, sym)
+		nextState := getDFANextState2(fsm, currentState, sym)
 		if nextState == "" {
 			return false, fmt.Errorf("当前状态 %s 下输入 %s 没有相关的有效转移", currentState, sym)
 		}
@@ -106,7 +106,7 @@ func recognizeNFA(fsm *model.Automaton, str string) (bool, error) {
 	return false, fmt.Errorf("输入字符串 %s 被完整识别，但未到达任何接受状态", str)
 }
 
-func getDFANextState(fsm *model.Automaton, from model.State, input model.Symbol) model.State {
+func getDFANextState2(fsm *model.Automaton, from model.State, input model.Symbol) model.State {
 	// 使用 TransMap 提高查找效率
 	if stateMap, exists := fsm.TransMap[from]; exists {
 		if targets, exists := stateMap[input]; exists && len(targets) == 1 {

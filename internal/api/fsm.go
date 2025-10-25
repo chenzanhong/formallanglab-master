@@ -1,16 +1,18 @@
 /*
 有限状态自动机
 FSMValidate                             // 是否有效
-FSMCleanup                              // 去无效符号、不可达符号
+FSMCleanup                              // 去无效符号、不可达状态
 DFAMinimize                             // DFA 最小化
 FSMStringRecognize						// 字符串识别
-NFAToDFA                                // NFA 转 DFA
+NFADeterminization                                // NFA 转 DFA
 */
 package api
 
 import (
 	"backend/internal/domain/model"
+	"backend/internal/metrics"
 	"fmt"
+	"time"
 
 	"backend/internal/service/fsm_s"
 	"net/http"
@@ -19,6 +21,10 @@ import (
 )
 
 func FSMValidate(c *gin.Context) { // 是否有效
+	start := time.Now()
+	defer func() {
+		metrics.ObserveOperationDuration("fsm", "validate", time.Since(start).Seconds())
+	}()
 	var fsm model.Automaton
 	if err := c.ShouldBindJSON(&fsm); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "参数解析错误", "result": false})
@@ -82,7 +88,7 @@ func FSMStringRecognize(c *gin.Context) { // 字符串识别，
 	c.JSON(http.StatusOK, gin.H{"msg": "识别成功", "result": ok})
 }
 
-func NFAToDFA(c *gin.Context) { // NFA 转 DFA，子集构造法
+func NFADeterminization(c *gin.Context) { // NFA 转 DFA，子集构造法
 	var fsm model.Automaton
 	if err := c.ShouldBindJSON(&fsm); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "参数解析错误", "result": false})
