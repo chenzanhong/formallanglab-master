@@ -1,12 +1,7 @@
 package api
 
 import (
-	"backend/configs"
-	"backend/logs"
 	"backend/pkg/middleware"
-	"strconv"
-
-	"os"
 
 	mtr "backend/internal/metrics"
 
@@ -24,38 +19,18 @@ func SetupRouter() *gin.Engine {
 	return router
 }
 
-func SetEnvVariables() {
-	config, err := configs.LoadConfig()
-	if err != nil {
-		logs.Sugar.Fatalf("加载配置失败：%v", err.Error())
-	}
-	os.Setenv("DB_USER", config.PG.User)
-	os.Setenv("DB_PASSWORD", config.PG.Password)
-	os.Setenv("DB_HOST", config.PG.Host)
-	os.Setenv("DB_PORT", config.PG.Port)
-	os.Setenv("DB_NAME", config.PG.Name)
-	os.Setenv("REDIS_HOST", config.Redis.Host)
-	os.Setenv("REDIS_PORT", config.Redis.Port)
-	os.Setenv("REDIS_PASSWORD", config.Redis.Password)
-	os.Setenv("REDIS_DB", strconv.Itoa(config.Redis.DB))
-	os.Setenv("EMAIL_NAME", config.Email.Name)
-	os.Setenv("EMAIL_PASSWORD", config.Email.Password)
-	os.Setenv("SMTP_SERVER_HOST", config.SMTPServer.Host)
-	os.Setenv("SMTP_SERVER_PORT", config.SMTPServer.Port)
-}
-
 func setupPublicRoutes(router *gin.Engine) {
-	router.GET("/gdesign/metrics", mtr.MetricsHandler())                 // prometheus.yml中加上 metrics_path: /gdesign/metrics
-	router.POST("/gdesign/register", Register)                           // 注册
-	router.POST("/gdesign/login", Login)                                 // 登录
-	router.POST("/gdesign/send_verification_code", SendVerificationCode) // 发送验证码（注册用）
-	router.POST("/gdesign/req_resetpassword", RequestResetPassword)      // 请求重置密码
-	router.POST("/gdesign/resetpassword", ResetPassword)                 // 重置密码
+	router.GET("/gdesign/metrics", middleware.GlobalRateLimitMiddleware(), mtr.MetricsHandler())                 // prometheus.yml中加上 metrics_path: /gdesign/metrics
+	router.POST("/gdesign/register", middleware.GlobalRateLimitMiddleware(), Register)                           // 注册
+	router.POST("/gdesign/login", middleware.GlobalRateLimitMiddleware(), Login)                                 // 登录
+	router.POST("/gdesign/send_verification_code", middleware.GlobalRateLimitMiddleware(), SendVerificationCode) // 发送验证码（注册用）
+	router.POST("/gdesign/req_resetpassword", middleware.GlobalRateLimitMiddleware(), RequestResetPassword)      // 请求重置密码
+	router.POST("/gdesign/resetpassword", middleware.GlobalRateLimitMiddleware(), ResetPassword)                 // 重置密码
 }
 
 func setupAuthRoutes(router *gin.Engine) {
-	// 使用 JWT 中间件保护这些路由
-	r := router.Group("/gdesign", middleware.JWTAuthMiddleware())
+	// 使用 JWT、Rate 中间件保护这些路由
+	r := router.Group("/gdesign", middleware.JWTAuthMiddleware(), middleware.UserRateLimitMiddleware())
 
 	// 文法相关接口
 	grammar := r.Group("/grammar")
@@ -89,8 +64,8 @@ func setupAuthRoutes(router *gin.Engine) {
 	{
 		convert.POST("/grammartonfa", GrammarToNFA) // 文法转成 NFA
 		convert.POST("/fatogrammar", FAToGrammar)   // FA 转成文法
-		convert.POST("/regextonfa", RegexToNFA)      // 正则表达式转为NFA
-		convert.POST("/fatoregex", FAToRegex)        // FA转为正则表达式
+		convert.POST("/regextonfa", RegexToNFA)     // 正则表达式转为NFA
+		convert.POST("/fatoregex", FAToRegex)       // FA转为正则表达式
 	}
 
 	// 知识学习
@@ -102,6 +77,6 @@ func setupAuthRoutes(router *gin.Engine) {
 	// AI 相关接口
 	ai := r.Group("/ai")
 	{
-		ai.GET("/", AIGet) // 获取AI相关信息或执行特定操作
+		ai.GET("/", AIChatSSE) // 获取AI相关信息或执行特定操作
 	}
 }

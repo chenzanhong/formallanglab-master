@@ -1,17 +1,26 @@
-/* 
-	AI模块
-	调用大模型对当前的文法或自动机做相关问题发解答，再格式化返回给前端
-	 将 automaton 从真实上下文中注入（不要硬编码）
-✅ 前端记录 trace 路径并传给后端
-✅ 支持更多功能：complete, equivalence
-✅ 增加缓存（相同自动机 + 相同问题不重复调用）
+/*
+AI模块
 */
 package api
 
-import(
+import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
 
-func AIGet(c *gin.Context){
-
+/*
+流式对话
+中文乱码	确保 Go 后端设置 Content-Type: text/event-stream; charset=utf-8
+跨域（CORS）	在 Gin 中添加中间件：
+r.Use(cors.Default())（需 github.com/gin-contrib/cors）
+特殊字符（如 ?, &）	前端用 encodeURIComponent，后端自动解码
+长连接超时	可在后端定期发送 : ping\n\n 保活（可选）
+*/
+func AIChatSSE(c *gin.Context) {
+	msg := c.Query("message")
+	if msg == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "message is required"})
+		return
+	}
 }

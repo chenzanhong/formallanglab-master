@@ -363,3 +363,145 @@ func joinStates(states []model.State) string {
 	}
 	return fmt.Sprintf("%s", strings.Join(strs, ","))
 }
+
+func getReachableStates(fsm *model.Automaton) map[model.State]bool {
+	reachable := make(map[model.State]bool)
+	queue := []model.State{fsm.InitialState}
+	reachable[fsm.InitialState] = true
+
+	for len(queue) > 0 {
+		current := queue[0]
+		queue = queue[1:]
+
+		for _, t := range fsm.Transitions {
+			if t.FromState == current && !reachable[t.ToStates[0]] {
+				reachable[t.ToStates[0]] = true
+				queue = append(queue, t.ToStates[0])
+			}
+		}
+	}
+
+	return reachable
+}
+
+func findEquivalenceClasses(states []model.State, distinguishable map[[2]model.State]bool) [][]model.State {
+	// 初始化：每个状态自成一类
+	parent := make(map[model.State]model.State)
+	for _, s := range states {
+		parent[s] = s
+	}
+
+	// Union-Find 的 find 操作
+	var find func(x model.State) model.State
+	find = func(x model.State) model.State {
+		if parent[x] != x {
+			parent[x] = find(parent[x])
+		}
+		return parent[x]
+	}
+
+	// Union 操作
+	union := func(x, y model.State) {
+		px, py := find(x), find(y)
+		if px != py {
+			// 字典序小的作为根
+			if px < py {
+				parent[py] = px
+			} else {
+				parent[px] = py
+			}
+		}
+	}
+
+	// 所有“不可区分”的状态对进行 union
+	for i, p := range states {
+		for _, q := range states[i+1:] {
+			pair := [2]model.State{p, q}
+			if !distinguishable[pair] {
+				union(p, q)
+			}
+		}
+	}
+
+	// 收集等价类
+	classes := make(map[model.State][]model.State)
+	for _, s := range states {
+		root := find(s)
+		classes[root] = append(classes[root], s)
+	}
+
+	var result [][]model.State
+	for _, cls := range classes {
+		sort.Slice(cls, func(i, j int) bool {
+			return string(cls[i]) < string(cls[j])
+		}) // 排序，确保确定性，但不是必须的
+		result = append(result, cls)
+	}
+
+	return result
+}
+func buildMinimizedDFA(
+	fsm *model.Automaton,
+	classes [][]model.State,
+	acceptingSet map[model.State]bool,
+) *model.Automaton {
+	// 映射：状态 → 所属类
+	stateToClass := make(map[model.State][]model.State)
+	for _, cls := range classes {
+		for _, s := range cls {
+			stateToClass[s] = cls
+		}
+	}
+
+	// 新状态名：[q0,q1]
+	var newStates []model.State
+	var newAccepting []model.State
+	var newTransitions []model.Transition
+
+	for _, cls := range classes {
+		name := fmt.Sprintf("%v", cls) // 简单表示，如 "[q0 q1]"
+		newStates = append(newStates, model.State(name))
+
+		// 如果类中任一状态是接受状态，则新状态是接受状态
+		for _, s := range cls {
+			if acceptingSet[s] {
+				newAccepting = append(newAccepting, model.State(name))
+				break
+			}
+		}
+	}
+
+	// 构建转移
+	for _, cls := range classes {
+		fromState := cls[0] // 任取一个代表状态
+		fromName := fmt.Sprintf("%v", cls)
+
+		for _, a := range fsm.Alphabet {
+			next := getDFANextState(fsm, fromState, a)
+			if next == "" {
+				continue // 无转移（理论上不应发生）
+			}
+			nextCls := stateToClass[next]
+			toName := fmt.Sprintf("%v", nextCls)
+
+			newTransitions = append(newTransitions, model.Transition{
+				FromState: model.State(fromName),
+				Input:     a,
+				ToStates:  []model.State{model.State(toName)},
+			})
+		}
+	}
+
+	// 确定初始状态
+	initialCls := stateToClass[fsm.InitialState]
+	initialName := fmt.Sprintf("%v", initialCls)
+
+	return &model.Automaton{
+		States:          newStates,
+		Alphabet:        fsm.Alphabet,
+		Transitions:     newTransitions,
+		InitialState:    model.State(initialName),
+		AcceptingStates: newAccepting,
+		IsDFA:           true,
+	}
+}

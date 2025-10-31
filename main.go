@@ -2,6 +2,7 @@ package main
 
 import (
 	"backend/internal/api"
+	cf "backend/configs"
 	rep "backend/internal/repository"
 	"backend/logs"
 	"context"
@@ -23,7 +24,7 @@ func main() {
 	logs.InitZapSugarDefault()
 	fmt.Println("Init zap")
 	// 设置环境变量
-	api.SetEnvVariables()
+	cf.SetEnvVariables()
 
 	// 初始化数据库
 	if err := rep.InitDB(); err != nil {

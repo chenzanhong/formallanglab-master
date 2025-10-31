@@ -110,7 +110,7 @@ func getDFANextState2(fsm *model.Automaton, from model.State, input model.Symbol
 	// 使用 TransMap 提高查找效率
 	if stateMap, exists := fsm.TransMap[from]; exists {
 		if targets, exists := stateMap[input]; exists && len(targets) == 1 {
-			return targets[0]
+			return targets[0] //
 		}
 	}
 	return ""

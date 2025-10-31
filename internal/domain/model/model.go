@@ -1,6 +1,9 @@
 package model
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 /* 用户 */
 type User struct {
@@ -81,6 +84,13 @@ type Automaton struct {
 	TransMap        map[State]map[Symbol][]State // Map存储状态转移规则，识别字符串时效率高
 }
 
+var ValidCSet []byte // 正则表达式支持的符合，包括0~1，a~z，A~Z，|，（，），*，？，·，
+
+type Regex struct {
+	Patten string
+	CSet   []byte
+}
+
 // 按字符集以及最长匹配原则切分字符串
 func (a *Automaton) SplitString(s string) ([]Symbol, error) {
 	if len(s) == 0 {
@@ -138,19 +148,91 @@ func (a *Automaton) InitTransMap() {
 		if _, exists := a.TransMap[t.FromState]; !exists {
 			a.TransMap[t.FromState] = make(map[Symbol][]State)
 		}
-		// 注意：DFA 才能这样赋值！NFA 不适用（见下文警告）
 		if len(t.ToStates) > 0 {
-			a.TransMap[t.FromState][t.Input] = t.ToStates // DFA 假设唯一目标
+			a.TransMap[t.FromState][t.Input] = append(a.TransMap[t.FromState][t.Input], t.ToStates...)
 		}
 	}
+}
+
+func (a *Automaton) ISValidate() (bool, error) {
+	// 使用 map 提高查找效率
+	stateSet := make(map[State]bool)
+	alphabetSet := make(map[Symbol]bool)
+
+	// 1. 检查状态集合不能为空
+	if len(a.States) == 0 {
+		return false, errors.New("状态集合不能为空")
+	}
+
+	// 构建状态集合
+	for _, s := range a.States {
+		if s == "" {
+			return false, errors.New("状态名不能为空字符串")
+		}
+		stateSet[s] = true
+	}
+
+	// 2. 检查初始状态是否在状态集合中
+	if !stateSet[a.InitialState] {
+		return false, fmt.Errorf("初始状态 '%s' 不在状态集合中", a.InitialState)
+	}
+
+	// 3. 检查接受状态是否都是合法状态
+	for _, acc := range a.AcceptingStates {
+		if !stateSet[acc] {
+			return false, fmt.Errorf("接受状态 '%s' 不在状态集合中", acc)
+		}
+	}
+
+	// 4. 构建字母表集合
+	for _, sym := range a.Alphabet {
+		alphabetSet[sym] = true
+	}
+	alphabetSet[Epsilon] = true // 允许空转移
+
+	// 5. 验证所有转移规则，检查所有转移符合和状态是否有定义，顺带确定isDFA
+	a.IsDFA = true
+	transitionMap := make(map[string]State) // key: state|symbol
+	for _, t := range a.Transitions {
+		// 5.1 检查起始状态是否已定义
+		if !stateSet[t.FromState] {
+			return false, fmt.Errorf("转移规则'%v'中起始状态 '%s' 未定义", t, t.FromState)
+		}
+		// 5.2 检查输入符号是否属于字母表（允许 ε）
+		if t.Input != Epsilon && !alphabetSet[t.Input] {
+			return false, fmt.Errorf("转移规则'%v'中输入符号 '%s' 不属于字母表", t, t.Input)
+		}
+		// 5.3 检查目标状态是否已定义
+		for _, to := range t.ToStates {
+			if !stateSet[to] {
+				return false, fmt.Errorf("转移规则'%v'中目标状态 '%s' 未定义", t, to)
+			}
+		}
+		if t.Input == Epsilon {
+			a.IsDFA = false
+		} else if a.IsDFA {
+			// 检查是否重复定义了同一 (fromState, input)
+			if len(t.ToStates) > 1 {
+				a.IsDFA = false
+				continue
+			}
+			key := string(t.FromState) + "|" + string(t.Input)
+			if to, exists := transitionMap[key]; exists && to != t.ToStates[0] {
+				a.IsDFA = false
+				continue
+			}
+			transitionMap[key] = t.ToStates[0]
+		}
+	}
+	return true, nil
 }
 
 // CompleteDFA 将自动机转换为等价的完备 DFA
 // 前提：调用者应确保 a 是一个有效的 DFA（可通过 a.CheckIsDFA() 验证）
 // 步骤：
-//   1. 移除不可达状态
-//   2. 添加陷阱状态（若需要）
-//   3. 补全所有缺失的转移
+//  1. 移除不可达状态
+//  2. 添加陷阱状态（若需要）
+//  3. 补全所有缺失的转移
 func (a *Automaton) CompleteDFA() error {
 	// Step 0: 确保是 DFA
 	if !a.IsDFA {

@@ -4,7 +4,7 @@ FSMValidate                             // 是否有效
 FSMCleanup                              // 去无效符号、不可达状态
 DFAMinimize                             // DFA 最小化
 FSMStringRecognize						// 字符串识别
-NFADeterminization                                // NFA 转 DFA
+NFADeterminization                     	// NFA 转 DFA
 */
 package api
 
@@ -31,7 +31,7 @@ func FSMValidate(c *gin.Context) { // 是否有效
 		return
 	}
 
-	ok, err := fsm_s.FSMValidate(&fsm)
+	ok, err := fsm.ISValidate()
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "无效的自动机", "result": ok, "error": err.Error()})
 		return
@@ -80,6 +80,7 @@ func FSMStringRecognize(c *gin.Context) { // 字符串识别，
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "参数解析错误", "result": false})
 		return
 	}
+	req.FSM.CheckIsDFA()                          // 先判断类型，确定isDFA
 	ok, err := fsm_s.Recognize(&req.FSM, req.Str) // 先对Str分词，再模拟状态转移
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "识别失败", "result": ok, "error": err.Error()})
