@@ -67,7 +67,7 @@ AI	本地运行 Ollama + Llama3，或调用阿里云 Qwen API
 | POST | `/gdesign/fsm/recognize`            | 字符串识别                     |
 | POST | `/gdesign/fsm/cleanup`              | 去无效符号、不可达符号          |
 | POST | `/gdesign/fsm/minimize`             | DFA 最小化                     |
-| POST | `/gdesign/fsm/determinization`      | NFA 转 DFA                     |
+| POST | `/gdesign/fsm/nfatodfa`      | NFA 转 DFA                     |
 
 ### 文法、自动机间的转换
 
@@ -89,11 +89,6 @@ AI	本地运行 Ollama + Llama3，或调用阿里云 Qwen API
 | 方法 | 路由                        | 功能描述             |
 |------|-----------------------------|----------------------|
 | GET  | `/gdesign/ai/`              | -获取AI相关信息或执行特定操作 |
-
-
-
-
-
 
 
 

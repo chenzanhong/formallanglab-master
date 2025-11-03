@@ -1,6 +1,7 @@
 package api
 
 import (
+	"backend/internal/api/email"
 	"backend/pkg/middleware"
 
 	mtr "backend/internal/metrics"
@@ -20,12 +21,12 @@ func SetupRouter() *gin.Engine {
 }
 
 func setupPublicRoutes(router *gin.Engine) {
-	router.GET("/gdesign/metrics", middleware.GlobalRateLimitMiddleware(), mtr.MetricsHandler())                 // prometheus.yml中加上 metrics_path: /gdesign/metrics
-	router.POST("/gdesign/register", middleware.GlobalRateLimitMiddleware(), Register)                           // 注册
-	router.POST("/gdesign/login", middleware.GlobalRateLimitMiddleware(), Login)                                 // 登录
-	router.POST("/gdesign/send_verification_code", middleware.GlobalRateLimitMiddleware(), SendVerificationCode) // 发送验证码（注册用）
-	router.POST("/gdesign/req_resetpassword", middleware.GlobalRateLimitMiddleware(), RequestResetPassword)      // 请求重置密码
-	router.POST("/gdesign/resetpassword", middleware.GlobalRateLimitMiddleware(), ResetPassword)                 // 重置密码
+	router.GET("/gdesign/metrics", mtr.MetricsHandler())                                                                       // prometheus.yml中加上 metrics_path: /gdesign/metrics
+	router.POST("/gdesign/register", middleware.GlobalRateLimitMiddleware(), Register)                                         // 注册
+	router.POST("/gdesign/login", middleware.GlobalRateLimitMiddleware(), Login)                                               // 登录
+	router.POST("/gdesign/send_verification_code", middleware.GlobalRateLimitMiddleware(), email.SendRegisterVerificationCode) // 发送验证码（注册用）
+	router.POST("/gdesign/req_resetpassword", middleware.GlobalRateLimitMiddleware(), email.SendResetPwdVerificationCode)      // 请求重置密码
+	router.POST("/gdesign/resetpassword", middleware.GlobalRateLimitMiddleware(), email.ResetPassword)                         // 重置密码
 }
 
 func setupAuthRoutes(router *gin.Engine) {
@@ -52,11 +53,11 @@ func setupAuthRoutes(router *gin.Engine) {
 	// 自动机相关接口
 	fsm := r.Group("/fsm")
 	{
-		fsm.POST("/validate", FSMValidate)               // 是否有效
-		fsm.POST("/recognize", FSMStringRecognize)       // 字符串识别
-		fsm.POST("/cleanup", FSMCleanup)                 // 去无效符号、不可达符号
-		fsm.POST("/minimize", DFAMinimize)               // DFA 最小化
-		fsm.POST("/determinization", NFADeterminization) // NFA 转 DFA，NFA确定化
+		fsm.POST("/validate", FSMValidate)         // 是否有效
+		fsm.POST("/recognize", FSMStringRecognize) // 字符串识别
+		fsm.POST("/cleanup", FSMCleanup)           // 去无效符号、不可达符号
+		fsm.POST("/minimize", DFAMinimize)         // DFA 最小化
+		fsm.POST("/nfatodfa", NFADeterminization)  // NFA 转 DFA，NFA确定化
 	}
 
 	// 文法、自动机间的转换

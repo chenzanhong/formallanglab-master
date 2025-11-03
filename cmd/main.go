@@ -1,9 +1,10 @@
 package main
 
 import (
-	"backend/internal/api"
 	cf "backend/configs"
+	api "backend/internal/api/formalLangLab"
 	rep "backend/internal/repository"
+	kafka_s "backend/internal/service/kafka_s"
 	"backend/logs"
 	"context"
 	"fmt"
@@ -19,6 +20,9 @@ func init() {
 	mtr.PrometheusRegister()
 }
 
+/*
+启动该main后需启动 backend\cmd\email-worker\main.go 开启kafka消费者
+*/
 func main() {
 	// 初始化zap日志配置
 	logs.InitZapSugarDefault()
@@ -30,6 +34,8 @@ func main() {
 	if err := rep.InitDB(); err != nil {
 		logs.Sugar.Fatalf("Failed to initialize database: %v", err)
 	}
+
+	kafka_s.InitProducerDefault()
 
 	// 注册路由
 	r := api.SetupRouter()

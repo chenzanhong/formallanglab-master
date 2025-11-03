@@ -1,7 +1,6 @@
-package logs
+package email
 
 import (
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -12,7 +11,7 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-var Sugar *zap.SugaredLogger
+var EmailSugar *zap.SugaredLogger
 
 func InitZapSugarDefault() {
 	_, filename, _, ok := runtime.Caller(0) // 获取调用者的文件名
@@ -23,7 +22,7 @@ func InitZapSugarDefault() {
 	// 获取当前文件所在的目录
 	currentDir := filepath.Dir(filename)
 
-	logPath := filepath.Join(currentDir, "logs.log")
+	logPath := filepath.Join(currentDir, "email.log")
 	_, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("创建/打开日志文件失败：%v", err.Error())
@@ -54,22 +53,5 @@ func InitZapSugarDefault() {
 
 	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 
-	Sugar = logger.Sugar()
-}
-
-func SetupZapSugar(writer io.Writer, level zapcore.Level) {
-	encoderConfig := zap.NewProductionEncoderConfig()
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	encoder := zapcore.NewJSONEncoder(encoderConfig)
-
-	core := zapcore.NewCore(
-		encoder,
-		zapcore.AddSync(writer),
-		level,
-	)
-
-	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
-	// logger := zap.New(core)
-
-	Sugar = logger.Sugar()
+	EmailSugar = logger.Sugar()
 }

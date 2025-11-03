@@ -26,7 +26,17 @@ smtp_server:
   SMTPServer_host: smtp.163.com # 服务提供商，须与email中的邮箱相匹配
   SMTPServer_port: 465
 
+kafka:
+  brokers: localhost:9092 # 多个broker用逗号','分割
+  topic: FormalLangLab-email
+
+jwt:
+  key: caohaitong_czh
+
 # 限流配置，每个用户 5 次/秒，突发 10 次
 rate: 
   user_rate: 5
   user_burst: 10
+
+
+

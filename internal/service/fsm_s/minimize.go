@@ -185,7 +185,6 @@ func minimizeByHopcroft(fsm *model.Automaton) *model.Automaton {
 }
 
 // ------------------ 辅助函数 ------------------
-
 func filterStates(states []model.State, reachable map[model.State]bool) []model.State {
 	var res []model.State
 	for _, s := range states {

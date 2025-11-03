@@ -101,7 +101,8 @@ func (a *Automaton) SplitString(s string) ([]Symbol, error) {
 		mp[string(sym)] = true
 	}
 	var res []Symbol
-	for i, j := 0, 1; i < len(s) && j <= len(s); {
+	i, j := 0, 1
+	for i < len(s) && j <= len(s) {
 		if mp[s[i:j]] {
 			j++ // 尝试更长的匹配
 		} else {
@@ -114,33 +115,36 @@ func (a *Automaton) SplitString(s string) ([]Symbol, error) {
 			}
 		}
 	}
+	if i < len(s) {
+		res = append(res, Symbol(s[i:]))
+	}
 	return res, nil
 }
 
 // CheckIsDFA 检查当前自动机是否真的是一个有效的 DFA
 // 如果是，则返回 true，并将 IsDFA 设为 true
 // 否则返回 false，并将 IsDFA 设为 false
-func (a *Automaton) CheckIsDFA() (bool, error) {
-	// 构建转移映射：fromState + input -> toState（用于检查完备性和唯一性）
-	transitionMap := make(map[string]State) // key: state|symbol
+// func (a *Automaton) CheckIsDFA() (bool, error) {
+// 	// 构建转移映射：fromState + input -> toState（用于检查完备性和唯一性）
+// 	transitionMap := make(map[string]State) // key: state|symbol
 
-	// 遍历所有转移
-	for _, t := range a.Transitions {
-		if t.Input == Epsilon {
-			return false, fmt.Errorf("包含空转移，不是DFA")
-		}
-		// 检查是否重复定义了同一 (fromState, input)
-		key := string(t.FromState) + "|" + string(t.Input)
-		if prev, exists := transitionMap[key]; exists {
-			a.IsDFA = false
-			return false, fmt.Errorf("DFA 中状态 '%s' 对输入 '%s' 定义了多个转移（已存在: %s）", t.FromState, t.Input, prev) // 重复定义
-		}
-		transitionMap[key] = t.ToStates[0]
-	}
-	// 所有条件满足，是 DFA
-	a.IsDFA = true
-	return true, nil
-}
+// 	// 遍历所有转移
+// 	for _, t := range a.Transitions {
+// 		if t.Input == Epsilon {
+// 			return false, fmt.Errorf("包含空转移，不是DFA")
+// 		}
+// 		// 检查是否重复定义了同一 (fromState, input)
+// 		key := string(t.FromState) + "|" + string(t.Input)
+// 		if prev, exists := transitionMap[key]; exists {
+// 			a.IsDFA = false
+// 			return false, fmt.Errorf("DFA 中状态 '%s' 对输入 '%s' 定义了多个转移（已存在: %s）", t.FromState, t.Input, prev) // 重复定义
+// 		}
+// 		transitionMap[key] = t.ToStates[0]
+// 	}
+// 	// 所有条件满足，是 DFA
+// 	a.IsDFA = true
+// 	return true, nil
+// }
 
 func (a *Automaton) InitTransMap() {
 	a.TransMap = make(map[State]map[Symbol][]State)
@@ -236,8 +240,11 @@ func (a *Automaton) ISValidate() (bool, error) {
 func (a *Automaton) CompleteDFA() error {
 	// Step 0: 确保是 DFA
 	if !a.IsDFA {
-		if ok, err := a.CheckIsDFA(); !ok {
-			return fmt.Errorf("cannot complete non-DFA: %w", err)
+		if _, err := a.ISValidate(); err != nil {
+			return fmt.Errorf("failed to determine the validity of the fsm: %w", err)
+		}
+		if !a.IsDFA {
+			return fmt.Errorf("cannot complete non-DFA")
 		}
 	}
 

@@ -42,16 +42,22 @@ type RateConfig struct {
 	UserBurst int `yaml:"user_burst"`
 }
 
+type KafkaConfig struct {
+	Brokers string `yaml:"brokers"`
+	Topic   string `yaml:"topic"`
+}
+
 type Config struct {
 	PG         PGConfig         `yaml:"pg"`
 	Redis      RedisConfig      `yaml:"redis"`
 	Email      EMAILConfig      `yaml:"email"`
 	SMTPServer SMTPServerConfig `yaml:"smtp_server"`
 	Rate       RateConfig       `yaml:"rate"`
+	Kafka      KafkaConfig      `yaml:"kafka"`
 }
 
-// getDBConfigPath 获取数据库配置文件的路径
-func getDBConfigPath() string {
+// getConfigPath 获取数据库配置文件的路径
+func getConfigPath() string {
 	_, filename, _, ok := runtime.Caller(2) // 获取调用者的文件名
 	if !ok {
 		log.Fatal("无法获取运行时调用者信息")
@@ -74,14 +80,14 @@ func getDBConfigPath() string {
 	return simplifiedPath
 }
 
-// GetDBConfigPath 返回数据库配置文件的路径
-func GetDBConfigPath() string {
-	return getDBConfigPath()
+// GetConfigPath 返回数据库配置文件的路径
+func GetConfigPath() string {
+	return getConfigPath()
 }
 
 // LoadConfig 加载配置文件并返回 DBConfig
 func LoadConfig() (*Config, error) {
-	configPath := GetDBConfigPath()
+	configPath := GetConfigPath()
 	yamlFile, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, err
@@ -134,4 +140,9 @@ func SetEnvVariables() {
 	// Rate Limiting
 	setEnvIfNotSet("RATE_USER_RATE", strconv.Itoa(config.Rate.UserRate))
 	setEnvIfNotSet("RATE_USER_BURST", strconv.Itoa(config.Rate.UserBurst))
+
+	// Kafka
+	setEnvIfNotSet("KAFKA_BROKER", config.Kafka.Brokers)
+	setEnvIfNotSet("KAFKA_TOPIC", config.Kafka.Topic)
+
 }

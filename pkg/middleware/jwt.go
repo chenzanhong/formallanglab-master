@@ -9,7 +9,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var JwtKey = []byte("czh2022150215")
+var jwtKey []byte
+
+func SetJWTKey(key string) {
+	jwtKey = []byte(key)
+}
+
+func GetJWTKey() string {
+	return string(jwtKey)
+}
 
 type Claims struct {
 	Username string `json:"username"`
@@ -52,7 +60,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
-			return JwtKey, nil
+			return jwtKey, nil
 		})
 		if err != nil || !token.Valid {
 			c.JSON(http.StatusUnauthorized, gin.H{
@@ -78,5 +86,5 @@ func GenerateToken(username string) (string, error) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(JwtKey)
+	return token.SignedString(jwtKey)
 }
