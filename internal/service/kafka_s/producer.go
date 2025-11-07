@@ -10,43 +10,46 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-var (
+type KafkaProducerService interface {
+	SendEmailEvent(ctx context.Context, event *KafkaEmailEvent) error
+}
+
+type KafkaServiceImpl struct {
 	producer *kafka.Writer
-)
+}
 
-func InitProducerDefault() {
+func NewKafkaProducerService(producer *kafka.Writer) *KafkaServiceImpl {
+	return &KafkaServiceImpl{
+		producer: producer,
+	}
+}
+
+func NewDefaultKafkaProducerService() *KafkaServiceImpl {
 	topic := os.Getenv("KAFKA_TOPIC")
-	brokers:= strings.Split(strings.TrimSpace(os.Getenv("KAFKA_BROKERS")),",")
-	producer = &kafka.Writer{
-		Addr:         kafka.TCP(brokers...),
-		Topic:        topic,
-		Balancer:     &kafka.LeastBytes{},
-		RequiredAcks: kafka.RequireOne, // 根据需要调整
+	brokers := strings.Split(strings.TrimSpace(os.Getenv("KAFKA_BROKERSS")), ",")
+	return &KafkaServiceImpl{
+		producer: &kafka.Writer{
+			Addr:         kafka.TCP(brokers...),
+			Topic:        topic,
+			Balancer:     &kafka.LeastBytes{},
+			RequiredAcks: kafka.RequireAll, // 根据需要调整
+		},
 	}
 }
 
-func InitProducer(brokers []string, topic string) {
-	producer = &kafka.Writer{
-		Addr:         kafka.TCP(brokers...),
-		Topic:        topic,
-		Balancer:     &kafka.LeastBytes{},
-		RequiredAcks: kafka.RequireAll, // 根据需要调整
+func (k *KafkaServiceImpl) Close() {
+	if k.producer != nil {
+		k.producer.Close()
 	}
 }
 
-func CloseProducer() {
-	if producer != nil {
-		producer.Close()
-	}
-}
-
-func SendEmailEvent(ctx context.Context, event *EmailEvent) error {
+func (k *KafkaServiceImpl) SendEmailEvent(ctx context.Context, event *KafkaEmailEvent) error {
 	data, err := json.Marshal(event)
 	if err != nil {
 		return err
 	}
 
-	return producer.WriteMessages(ctx, kafka.Message{
+	return k.producer.WriteMessages(ctx, kafka.Message{
 		Value: data,
 	})
 }

@@ -1,3 +1,5 @@
 *.yaml
 *.log
 logs/*.log
+ai.go
+ai/

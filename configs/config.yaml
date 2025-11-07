@@ -27,7 +27,7 @@ smtp_server:
   SMTPServer_port: 465
 
 kafka:
-  brokers: localhost:9092 # 多个broker用逗号','分割
+  brokers: "localhost:9092,localhost:9093,localhost:9094" # localhost:9092 # 多个broker用逗号','分割
   topic: FormalLangLab-email
 
 jwt:
@@ -38,5 +38,12 @@ rate:
   user_rate: 5
   user_burst: 10
 
+# AI Service Configuration
+ai:
+  dashscope_api_key: sk-8e8cd1ec376d4847b12904f6ad44baae
+  dashscope_base_url: https://dashscope.aliyuncs.com/compatible-mode/v1  # Optional
+  dashscope_model: qwen-max  # Optional
+  chroma_url: http://localhost:8000
+  chroma_collection: FormalLangLab_knowledge
 
 

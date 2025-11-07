@@ -10,6 +10,7 @@ GrammarTree				// 生成树（是否实现待确定）
 package api
 
 import (
+	"backend/internal/domain/dto"
 	"backend/internal/domain/model"
 	"backend/internal/metrics"
 	"backend/internal/service/grammar_s"
@@ -63,29 +64,40 @@ func GrammarValidate(c *gin.Context) { // 文法校验——是否有效
 	defer func() {
 		metrics.ObserveOperationDuration("grammar", "validate", time.Since(start).Seconds())
 	}()
-	var grammar model.Grammar
+	var req dto.GrammarValidateRequest
 
-	if err := c.ShouldBindJSON(&grammar); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "参数解析失败", "error": err.Error()})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.GrammarValidateResponse{
+			Valid: false,
+			Msg:   "参数解析失败",
+			Error: err.Error(),
+		})
 		metrics.IncOperation("grammar", "validate", "failure: parameter parsing error")
 		return
 	}
 
 	// 先统一 ε 表示
-	fmt.Printf("%+v\n", grammar)
-	normalizeGrammar(&grammar)
-	fmt.Printf("%+v\n", grammar)
+	fmt.Printf("%+v\n", req.Grammar)
+	normalizeGrammar(&req.Grammar)
+	fmt.Printf("%+v\n", req.Grammar)
 	// 如果文法结构不完整，先完善结构
-	// grammar = *grammar_s.CompleteGrammarStructure(&grammar)
+	// req.Grammar = *grammar_s.CompleteGrammarStructure(&req.Grammar)
 
-	if !grammar_s.IsValidGrammar(&grammar) {
-		c.JSON(http.StatusBadRequest, gin.H{"valid": false, "msg": "invalid grammar"})
+	if !grammar_s.IsValidGrammar(&req.Grammar) {
+		c.JSON(http.StatusBadRequest, dto.GrammarValidateResponse{
+			Valid: false,
+			Msg:   "invalid grammar",
+		})
 		metrics.IncOperation("grammar", "validate", "failure: invalid grammar")
 		return
 	}
-	
+
 	metrics.IncOperation("grammar", "validate", "success")
-	c.JSON(http.StatusOK, gin.H{"valid": true, "msg": "grammar is valid"})
+	c.JSON(http.StatusOK, dto.GrammarValidateResponse{
+		Valid: true,
+		Msg:   "grammar is valid",
+		Type:  req.Grammar.GrammarType,
+	})
 }
 
 func GrammarAmbiguityCheck(c *gin.Context) { // 正则文法二义性判断，其他型的文法的二义性是不可判定问题
@@ -93,52 +105,52 @@ func GrammarAmbiguityCheck(c *gin.Context) { // 正则文法二义性判断，�
 	defer func() {
 		metrics.ObserveOperationDuration("grammar", "ambiguity_check", time.Since(start).Seconds())
 	}()
-	var grammar model.Grammar
+	var req dto.GrammarAmbiguityCheckRequest
 
-	if err := c.ShouldBindJSON(&grammar); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"msg":   "参数解析失败",
-			"error": err.Error(),
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.GrammarAmbiguityCheckResponse{
+			Msg:   "参数解析失败",
+			Error: err.Error(),
 		})
 		metrics.IncOperation("grammar", "ambiguity_check", "failure: parameter parsing error")
 		return
 	}
 
 	// 先统一 ε 表示
-	normalizeGrammar(&grammar)
+	normalizeGrammar(&req.Grammar)
 	// 如果文法结构不完整，先完善结构
-	// grammar = *grammar_s.CompleteGrammarStructure(&grammar)
+	// req.Grammar = *grammar_s.CompleteGrammarStructure(&req.Grammar)
 
 	// 可选：先校验文法有效性
-	if !grammar_s.IsValidGrammar(&grammar) {
-		c.JSON(http.StatusOK, gin.H{
-			"type":     -1,
-			"typeName": "无效文法",
+	if !grammar_s.IsValidGrammar(&req.Grammar) {
+		c.JSON(http.StatusOK, dto.GrammarAmbiguityCheckResponse{
+			Msg:  "无效文法",
+			Type: model.InvalidGrammar,
 		})
 		metrics.IncOperation("grammar", "ambiguity_check", "failure: invalid grammar")
 		return
 	}
 
 	// === 1. 先判断文法类型 ===
-	grammarType := grammar_s.TypeDetermine(&grammar)
+	grammarType := grammar_s.TypeDetermine(&req.Grammar)
 
-	if grammarType != grammar_s.Type3 {
-		c.JSON(http.StatusOK, gin.H{
-			"msg":         "文法类型不是正则文法（3型），其二义性为不可判定问题",
-			"type":        grammarType,
-			"isAmbiguous": nil, // 无法判断
-			"isRegular":   false,
+	if grammarType != model.RegularGrammar {
+		c.JSON(http.StatusOK, dto.GrammarAmbiguityCheckResponse{
+			Msg:         "文法类型不是正则文法（3型），其二义性为不可判定问题",
+			Type:        grammarType,
+			IsAmbiguous: nil, // 无法判断
 		})
 		metrics.IncOperation("grammar", "ambiguity_check", "failure: not regular grammar")
 		return
 	}
 
 	// === 2. 检查正则文法是否二义 ===
-	isAmbiguous, err := grammar_s.IsAmbiguousRegular(&grammar)
+	isAmbiguous, err := grammar_s.IsAmbiguousRegular(&req.Grammar)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"msg":   "二义性判断出错",
-			"error": err.Error(),
+		c.JSON(http.StatusInternalServerError, dto.GrammarAmbiguityCheckResponse{
+			Msg:   "二义性判断出错",
+			Type:  model.RegularGrammar,
+			Error: err.Error(),
 		})
 		metrics.IncOperation("grammar", "ambiguity_check", "failure: ambiguity check error")
 		return
@@ -151,13 +163,12 @@ func GrammarAmbiguityCheck(c *gin.Context) { // 正则文法二义性判断，�
 	} else {
 		resultMsg = "该正则文法是无二义的"
 	}
-	
+
 	metrics.IncOperation("grammar", "ambiguity_check", "success")
-	c.JSON(http.StatusOK, gin.H{
-		"msg":         resultMsg,
-		"isAmbiguous": isAmbiguous,
-		"isRegular":   true,
-		"type":        3,
+	c.JSON(http.StatusOK, dto.GrammarAmbiguityCheckResponse{
+		Msg:         resultMsg,
+		IsAmbiguous: &isAmbiguous,
+		Type:        model.RegularGrammar,
 	})
 }
 
@@ -166,12 +177,7 @@ func GrammarStringRecognize(c *gin.Context) { // 字符串识别——是否被�
 	defer func() {
 		metrics.ObserveOperationDuration("grammar", "string_recognize", time.Since(start).Seconds())
 	}()
-	var req struct {
-		Grammar   model.Grammar `json:"grammar" binding:"required"`
-		Input     string        `json:"input" binding:"required"`
-		ShowSteps bool          `json:"showSteps"` // 是否返回分析步骤
-		Mode      string        `json:"mode"`      // 分析模式: "auto", "ll1", "ll1_recovery", "recursive_descent", "lr0", "lr1", "bfs"
-	}
+	var req dto.GrammarStringRecognizeRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -190,7 +196,7 @@ func GrammarStringRecognize(c *gin.Context) { // 字符串识别——是否被�
 	// 可选：先校验文法有效性
 	if !grammar_s.IsValidGrammar(&req.Grammar) {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"type":     -1,
+			"type":     model.InvalidGrammar,
 			"typeName": "无效文法",
 		})
 		metrics.IncOperation("grammar", "string_recognize", "failure: invalid grammar")
@@ -206,29 +212,29 @@ func GrammarStringRecognize(c *gin.Context) { // 字符串识别——是否被�
 	if input == "" {
 		input = "ε"
 	}
-	inputSymbols := stringToSymbols(input, &req.Grammar)
+	inputSymbols := req.Grammar.StringToSymbols(input)
 
 	// 使用新的统一分析接口
 	result := grammar_s.ParseStringWithMode(&req.Grammar, inputSymbols, req.Mode, req.ShowSteps)
-	
+
 	metrics.IncOperation("grammar", "string_recognize", "success")
 
 	// 返回结果
-	response := gin.H{
-		"accepted": result.Accepted,
-		"method":   result.Method,
+	response := dto.GrammarStringRecognizeResponse{
+		Accepted: result.Accepted,
+		Method:   result.Method,
 	}
 
 	if result.Message != "" {
-		response["message"] = result.Message
+		response.Message = result.Message
 	}
 
 	if req.ShowSteps && len(result.Steps) > 0 {
-		response["steps"] = result.Steps
+		response.Steps = result.Steps
 	}
 
 	if result.Error != "" {
-		response["error"] = result.Error
+		response.Error = result.Error
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -239,43 +245,46 @@ func GrammarTypeDetermine(c *gin.Context) { // 判断所给文法的类型
 	defer func() {
 		metrics.ObserveOperationDuration("grammar", "type_determine", time.Since(start).Seconds())
 	}()
-	var grammar model.Grammar
+	var req dto.GrammarTypeDetermineRequest
 
-	if err := c.ShouldBindJSON(&grammar); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "参数解析失败", "error": err.Error()})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.GrammarTypeDetermineResponse{
+			Type:  model.InvalidGrammar,
+			Error: err.Error(),
+		})
 		metrics.IncOperation("grammar", "type_determine", "failure: parameter parsing error")
 		return
 	}
 
 	// 先统一 ε 表示
-	normalizeGrammar(&grammar)
+	normalizeGrammar(&req.Grammar)
 	// 如果文法结构不完整，先完善结构
-	// grammar = *grammar_s.CompleteGrammarStructure(&grammar)
+	// req.Grammar = *grammar_s.CompleteGrammarStructure(&req.Grammar)
 
 	// 可选：先校验文法有效性
-	if !grammar_s.IsValidGrammar(&grammar) {
-		c.JSON(http.StatusOK, gin.H{
-			"type":     -1,
-			"typeName": "无效文法",
+	if !grammar_s.IsValidGrammar(&req.Grammar) {
+		c.JSON(http.StatusOK, dto.GrammarTypeDetermineResponse{
+			Type:     -1,
+			TypeName: "无效文法",
 		})
 		metrics.IncOperation("grammar", "type_determine", "failure: invalid grammar")
 		return
 	}
 
-	typ := grammar_s.TypeDetermine(&grammar)
+	grammarType := grammar_s.TypeDetermine(&req.Grammar)
 
 	typeName := map[int]string{
-		grammar_s.Type3: "3型文法（正则文法）",
-		grammar_s.Type2: "2型文法（上下文无关文法）",
-		grammar_s.Type1: "1型文法（上下文有关文法）",
-		grammar_s.Type0: "0型文法（无限制文法）",
-		-1:              "无效文法",
-	}[typ]
-	
+		model.RegularGrammar:          "3型文法（正则文法）",
+		model.ContextFreeGrammar:      "2型文法（上下文无关文法）",
+		model.ContextSensitiveGrammar: "1型文法（上下文有关文法）",
+		model.PhraseStructureGrammar:  "0型文法（短语结构文法）",
+		model.InvalidGrammar:          "无效文法",
+	}[grammarType]
+
 	metrics.IncOperation("grammar", "type_determine", "success")
-	c.JSON(http.StatusOK, gin.H{
-		"type":     typ,
-		"typeName": typeName,
+	c.JSON(http.StatusOK, dto.GrammarTypeDetermineResponse{
+		Type:     grammarType,
+		TypeName: typeName,
 	})
 }
 
@@ -291,7 +300,10 @@ func GrammarEquivalenceCheck(c *gin.Context) { // 判断所给的两个正则文
 	var req Req
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "参数解析失败", "error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
+			Msg:   "参数解析失败",
+			Error: err.Error(),
+		})
 		metrics.IncOperation("grammar", "equivalence_check", "failure: parameter parsing error")
 		return
 	}
@@ -308,34 +320,53 @@ func GrammarEquivalenceCheck(c *gin.Context) { // 判断所给的两个正则文
 
 	// 先判断两个文法是否有效，且为正则文法
 	if !grammar_s.IsValidGrammar(&req.G1) {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "invalid grammar1", "isEquivalent": false})
+		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
+			Msg:          "invalid grammar1",
+			Error:        "invalid grammar1",
+			IsEquivalent: false,
+		})
 		metrics.IncOperation("grammar", "equivalence_check", "failure: invalid grammar1")
 		return
 	}
-	if grammar_s.TypeDetermine(&req.G1) != 3 { // 非正则文法
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "grammar1 is not regular grammar", "isEquivalent": false})
+	if grammar_s.TypeDetermine(&req.G1) != model.RegularGrammar { // 非正则文法
+		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
+			Msg:          "grammar1 is not regular grammar",
+			IsEquivalent: false,
+		})
 		metrics.IncOperation("grammar", "equivalence_check", "failure: grammar1 not regular")
 		return
 	}
 	if !grammar_s.IsValidGrammar(&req.G2) {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "invalid grammar2", "isEquivalent": false})
+		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
+			Msg:          "invalid grammar2",
+			IsEquivalent: false,
+		})
 		metrics.IncOperation("grammar", "equivalence_check", "failure: invalid grammar2")
 		return
 	}
-	if grammar_s.TypeDetermine(&req.G2) != 3 { // 非正则文法
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "grammar2 is not regular grammar", "isEquivalent": false})
+	if grammar_s.TypeDetermine(&req.G2) != model.RegularGrammar { // 非正则文法
+		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
+			Msg:          "grammar2 is not regular grammar",
+			IsEquivalent: false,
+		})
 		metrics.IncOperation("grammar", "equivalence_check", "failure: grammar2 not regular")
 		return
 	}
 
 	// 再判断是否等价
 	if !grammar_s.IsEquivalent(&req.G1, &req.G2) {
-		c.JSON(http.StatusOK, gin.H{"msg": "this two grammars are not equivalent", "isEquivalent": false})
+		c.JSON(http.StatusOK, dto.GrammarEquivalenceCheckResponse{
+			Msg:          "this two grammars are not equivalent",
+			IsEquivalent: false,
+		})
 		metrics.IncOperation("grammar", "equivalence_check", "success: not equivalent")
 		return
 	}
 	metrics.IncOperation("grammar", "equivalence_check", "success: equivalent")
-	c.JSON(http.StatusOK, gin.H{"msg": "this two grammars are equivalent", "isEquivalent": true})
+	c.JSON(http.StatusOK, dto.GrammarEquivalenceCheckResponse{
+		Msg:          "this two grammars are equivalent",
+		IsEquivalent: true,
+	})
 }
 
 func GrammarSimplify(c *gin.Context) { // 文法的化简——去无用符号（不可派生、不可达）、单一产生式、空产生式
@@ -346,7 +377,10 @@ func GrammarSimplify(c *gin.Context) { // 文法的化简——去无用符号�
 	var grammar model.Grammar
 
 	if err := c.ShouldBindJSON(&grammar); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "参数解析失败", "error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.GrammarSimplifyResponse{
+			Msg:   "参数解析失败",
+			Error: err.Error(),
+		})
 		metrics.IncOperation("grammar", "simplify", "failure: parameter parsing error")
 		return
 	}
@@ -358,9 +392,8 @@ func GrammarSimplify(c *gin.Context) { // 文法的化简——去无用符号�
 
 	// 可选：先校验文法有效性
 	if !grammar_s.IsValidGrammar(&grammar) {
-		c.JSON(http.StatusOK, gin.H{
-			"type": -1,
-			"msg":  "无效文法",
+		c.JSON(http.StatusOK, dto.GrammarSimplifyResponse{
+			Msg: "无效文法",
 		})
 		metrics.IncOperation("grammar", "simplify", "failure: invalid grammar")
 		return
@@ -368,57 +401,8 @@ func GrammarSimplify(c *gin.Context) { // 文法的化简——去无用符号�
 
 	new_grammar := grammar_s.Simplify(&grammar)
 	metrics.IncOperation("grammar", "simplify", "success")
-	c.JSON(http.StatusOK, gin.H{"msg": "简化成功", "grammar": new_grammar.ToReactFlow()})
-}
-
-// 辅助函数：根据文法中定义的符号来分割字符串
-// 使用最长匹配原则，优先匹配较长的终结符
-// 例如：如果文法中有 "if" 和 "i" 两个终结符，则 "if" 会被优先匹配为一个符号，而不是 "i" + "f"
-func stringToSymbols(s string, grammar *model.Grammar) []model.Symbol {
-	if s == "" || s == "ε" {
-		return []model.Symbol{model.Epsilon}
-	}
-
-	// 收集文法中所有的终结符，并按长度排序（最长先匹配）
-	var terminals []string
-
-	// 从 Grammar.Terminals 获取定义的终结符
-	for _, terminal := range grammar.Terminals {
-		termStr := string(terminal)
-		if termStr != "" && termStr != "ε" { // 排除空符号
-			terminals = append(terminals, termStr)
-		}
-	}
-
-	// 按长度降序排序，确保最长匹配
-	for i := 0; i < len(terminals)-1; i++ {
-		for j := i + 1; j < len(terminals); j++ {
-			if len(terminals[i]) < len(terminals[j]) {
-				terminals[i], terminals[j] = terminals[j], terminals[i]
-			}
-		}
-	}
-
-	// 按最长匹配原则分割字符串
-	var symbols []model.Symbol
-	i := 0
-	for i < len(s) {
-		matched := false
-		// 从最长的符号开始尝试匹配
-		for _, terminal := range terminals {
-			if i+len(terminal) <= len(s) && s[i:i+len(terminal)] == terminal {
-				symbols = append(symbols, model.Symbol(terminal))
-				i += len(terminal)
-				matched = true
-				break
-			}
-		}
-		// 如果没有匹配到任何已定义的终结符，按单字符处理
-		if !matched {
-			symbols = append(symbols, model.Symbol(string(s[i])))
-			i++
-		}
-	}
-
-	return symbols
+	c.JSON(http.StatusOK, dto.GrammarSimplifyResponse{
+		Msg:     "简化成功",
+		Grammar: *new_grammar,
+	})
 }

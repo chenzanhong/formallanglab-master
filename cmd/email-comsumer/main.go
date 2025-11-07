@@ -29,12 +29,14 @@ import (
 func main() {
 	elogs.InitZapSugarDefault()
 	eConfig.SetEmailEnvVariables()
-	brokers := strings.Split(strings.TrimSpace(os.Getenv("KAFKA_BROKER")), ",") // 从配置读取
+	
+	brokers := strings.Split(strings.TrimSpace(os.Getenv("KAFKA_BROKERS")), ",") // 从配置读取
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: brokers,
 		Topic:   os.Getenv("KAFKA_TOPIC"),
 		GroupID: "email-service-group",
 	})
+	fmt.Println(os.Getenv("KAFKA_TOPIC"))
 
 	// 优雅关闭
 	ctx, cancel := context.WithCancel(context.Background())
@@ -52,7 +54,6 @@ func main() {
 		case <-ctx.Done():
 			elogs.EmailSugar.Info("Shutting down email worker...")
 			reader.Close()
-			kafka_s.CloseProducer()
 			return
 		default:
 			// fmt.Println(1)
@@ -63,7 +64,7 @@ func main() {
 				continue
 			}
 
-			var event kafka_s.EmailEvent
+			var event kafka_s.KafkaEmailEvent
 			if err := json.Unmarshal(msg.Value, &event); err != nil {
 				elogs.EmailSugar.Infof("Failed to unmarshal email event: %v", err)
 				continue

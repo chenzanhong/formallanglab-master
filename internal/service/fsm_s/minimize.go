@@ -11,7 +11,7 @@ import (
 // 可根据需要切换为 Hopcroft 算法（如通过配置 flag）
 func DFAMinimize(fsm *model.Automaton) *model.Automaton {
 	// 可选：未来可加 algo := config.GetMinimizationAlgo()
-	// minimizeByHopcroft(fsm)
+	// return minimizeByHopcroft(fsm)
 	return minimizeByTableFilling(fsm)
 }
 
@@ -224,7 +224,11 @@ func markDistinguishablePairs(fsm *model.Automaton, acceptingSet map[model.State
 			pAcc := acceptingSet[p]
 			qAcc := acceptingSet[q]
 			if pAcc != qAcc {
-				distinguishable[[2]model.State{p, q}] = true
+				if p <= q {
+					distinguishable[[2]model.State{p, q}] = true
+				} else {
+					distinguishable[[2]model.State{q, p}] = true
+				}
 			}
 		}
 	}
@@ -243,7 +247,13 @@ func markDistinguishablePairs(fsm *model.Automaton, acceptingSet map[model.State
 					nextP := getDFANextState(fsm, p, a)
 					nextQ := getDFANextState(fsm, q, a)
 					if nextP == "" || nextQ == "" {
-						continue
+						if nextP == "" && nextQ == "" { // 都没有转移，先跳过
+							continue
+						} else { // 有一个没有转移，标记为不同
+							distinguishable[pair] = true
+							changed = true
+							break
+						}
 					}
 					var nextPair [2]model.State
 					if nextP <= nextQ {

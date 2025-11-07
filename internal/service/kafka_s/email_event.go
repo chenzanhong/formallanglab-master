@@ -1,7 +1,7 @@
 // backend/internal/service/kafka_s/email_event.go
 package kafka
 
-type EmailEvent struct {
+type KafkaEmailEvent struct {
 	To          string `json:"to"`
 	Subject     string `json:"subject"`
 	ContentType string `json:"content_type"` // e.g., "text/html"

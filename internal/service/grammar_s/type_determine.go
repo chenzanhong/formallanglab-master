@@ -5,14 +5,6 @@ import (
 	"fmt"
 )
 
-const (
-	Type3       = 3
-	Type2       = 2
-	Type1       = 1
-	Type0       = 0
-	TypeInvalid = -1
-)
-
 // TypeDetermine 判断文法的Chomsky类型（0、1、2、3型）
 // 算法思路：
 // 1. 首先检查文法是否有效
@@ -39,7 +31,7 @@ const (
 func TypeDetermine(g *model.Grammar) int {
 	if g == nil || !IsValidGrammar(g) {
 		fmt.Println("无效文法")
-		return TypeInvalid
+		return model.InvalidGrammar
 	}
 
 	// === 第一步：判断是否为 2型或3型（即：所有产生式左部是否都只有一个非终结符）===
@@ -47,19 +39,19 @@ func TypeDetermine(g *model.Grammar) int {
 		// 左部都是单个非终结符 → 可能是 Type2 或 Type3
 		if isRegular, _ := IsRegular(g); isRegular {
 			fmt.Println("三型文法")
-			return Type3
+			return model.RegularGrammar
 		}
 		fmt.Println("二型文法")
-		return Type2
+		return model.ContextFreeGrammar
 	}
 
 	// === 第二步：不是 CFG → 判断是 Type1 还是 Type0 ===
 	if isContextSensitive(g) {
 		fmt.Println("一型文法")
-		return Type1
+		return model.ContextSensitiveGrammar
 	}
 	fmt.Println("零型文法")
-	return Type0
+	return model.PhraseStructureGrammar
 }
 
 // isContextFreeForm 检查是否所有产生式左部都是“单个非终结符”

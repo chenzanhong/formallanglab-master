@@ -2,18 +2,16 @@
 package email
 
 import (
-	"backend/internal/domain/model"
-	r_init "backend/internal/repository"
+	myErrors "backend/internal/errors"
+	"backend/internal/repository"
 	kafka_s "backend/internal/service/kafka_s"
-	"backend/internal/utils"
 	"backend/logs"
+	"backend/pkg/token"
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
@@ -28,124 +26,105 @@ const (
 	VerificationTokenTTL = 1 * time.Minute
 )
 
-const charset = "0123456789"
+type EmailService interface {
+	// 发送注册的验证码
+	SendRegisterVerificationCode(ctx context.Context, email string) error
 
-func GenerateRandomToken(length int) string {
-	source := rand.NewSource(time.Now().UnixNano())
-	r := rand.New(source)
-	token := make([]byte, length)
-	for i := range token {
-		token[i] = charset[r.Intn(len(charset))]
+	// 发送找回密码的验证码
+	SendResetPwdVerificationCode(ctx context.Context, email string) error
+}
+
+type EmailServiceImpl struct {
+	emailRepo     repository.EmailRepository
+	userRepo      repository.UserRepository
+	kafkaProducer kafka_s.KafkaProducerService
+}
+
+func NewEmailService(emailRepo repository.EmailRepository, userRepo repository.UserRepository, kafkaProducer kafka_s.KafkaProducerService) EmailService {
+	return &EmailServiceImpl{
+		emailRepo:     emailRepo,
+		userRepo:      userRepo,
+		kafkaProducer: kafkaProducer,
 	}
-
-	return string(token)
 }
 
 // ======================= 服务 =======================
 
 // 服务：注册账号，发送验证码
-func SendRegisterVerificationCodeService(email string) error {
+func (s *EmailServiceImpl) SendRegisterVerificationCode(ctx context.Context, email string) error {
 	// 限制频率，验证码有效期一分钟，不能重复发送
-	if hasRegisterVerificationToken(email) {
-		logs.Sugar.Errorw("发送注册验证码", "detail", "操作太频繁，请稍后重试")
+	if has, _ := s.emailRepo.HasRegisterVerificationToken(ctx, email); has {
+		// logs.Sugar.Errorw("发送注册验证码", "detail", "操作太频繁，请稍后重试")
 		return errors.New("操作太频繁，请稍后重试")
 	}
 
 	// 检查邮箱是否存在
-	var existingUser model.User
-	if err := r_init.DB.Where("email = ?", email).First(&existingUser).Error; err == nil {
-		logs.Sugar.Errorw("发送注册验证码", "detail", "邮箱已存在")
+	exists, err := s.userRepo.ExistsByEmail(ctx, email)
+	if err != nil {
+		logs.Sugar.Errorw("数据库查询失败", "error", err)
+		return errors.New("系统异常")
+	}
+	if exists {
 		return errors.New("邮箱已存在")
-	} else if err != gorm.ErrRecordNotFound {
-		logs.Sugar.Errorw("发送注册验证码", "detail", "数据库查询失败")
-		return errors.New("数据库查询失败")
 	}
 
 	// 生成验证码
-	verificationCode := GenerateRandomToken(6)
+	verificationCode := token.GenerateRandomToken(6)
 	logs.Sugar.Infow("发送注册验证码", "email", email, "code", verificationCode)
 
 	// 保存token到Redis，过期时间1分钟
-	if err := saveRegisterVerificationToken(email, verificationCode); err != nil {
+	if err := s.emailRepo.SaveRegisterVerificationToken(ctx, email, verificationCode); err != nil {
 		return errors.New("保存验证码失败")
 	}
 
-	// （内部）异步
-	return SendRegisterEmail(email, verificationCode)
+	// 异步发送注册验证码邮件
+	return s.sendRegisterEmail(email, verificationCode)
 }
 
-// 服务：处理重置密码请求
-func SendResetPwdVerificationCodeService(email string) error {
+// 服务：处理重置密码请求，发送验证码
+func (s *EmailServiceImpl) SendResetPwdVerificationCode(ctx context.Context, email string) error {
 	// 限制频率，验证码有效期一分钟，不能重复发送
-	if hasResetPwdToken(email) {
+	if has, _ := s.emailRepo.HasResetPwdToken(ctx, email); has {
 		logs.Sugar.Errorw("发送重置密码验证码", "detail", "操作太频繁，请稍后重试")
 		return errors.New("操作太频繁，请稍后重试")
 	}
 
-	// 查找用户
-	var user model.User
-	err := r_init.DB.Where("email = ?", email).First(&user).Error
+	// 检查邮箱是否存在
+	exists, err := s.userRepo.ExistsByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			logs.Sugar.Errorw("重置密码请求", "detail", "用户未找到。")
-			return errors.New("用户未找到")
+			return myErrors.ErrUserNotFound
 		} else {
 			logs.Sugar.Errorw("重置密码请求", "detail", "数据库查询失败。")
-			return errors.New("数据库查询失败")
+			return myErrors.ErrInternal
 		}
+	}
+	if !exists {
+		return myErrors.ErrUserNotFound
 	}
 
 	// 生成 6 位数字 token
-	token := GenerateRandomToken(6)
+	token := token.GenerateRandomToken(6)
 	logs.Sugar.Infow("生成找回密码 token", "email", email, "token", token)
 
 	// 保存到 Redis，1 分钟过期
-	if err := saveResetPwdToken(token, email); err != nil {
+	if err := s.emailRepo.SaveResetPwdToken(ctx, token, email); err != nil {
 		logs.Sugar.Errorw("保存找回密码 token 失败", "error", err)
-		return errors.New("系统繁忙，请稍后重试")
+		return myErrors.ErrInternal
 	}
 
-	// 发送重置密码邮件（异步）
-	SendResetPwdEmail(email, token)
+	// 发送重置密码邮件（异步），不处理错误，发送失败用户一分钟后重试
+	s.sendResetPwdEmail(email, token)
 
 	logs.Sugar.Infow("重置密码请求", "detail", "重置密码请求成功。")
-	return nil
-}
-
-// 服务：重置密码
-func ResetPassword(token, newPassword string) error {
-	email, err := getEmailByResetPwdToken(token)
-	if err != nil {
-		logs.Sugar.Errorw("无效或过期的重置 token", "token", token)
-		return errors.New("无效或过期的重置链接")
-	}
-
-	// 根据 email 查用户
-	var user model.User
-	if err = r_init.DB.Where("email = ?", email).First(&user).Error; err != nil {
-		logs.Sugar.Errorw("根据 email 查不到用户", "email", email)
-		return errors.New("用户异常")
-	}
-
-	// 更新密码
-	hashedPassword, err := utils.HashPassword(newPassword)
-	if err != nil {
-		logs.Sugar.Errorw("密码加密失败", "error", err)
-		return errors.New("密码加密失败")
-	}
-	if err := r_init.DB.Model(&user).Update("password", hashedPassword).Error; err != nil {
-		logs.Sugar.Errorw("密码更新失败", "error", err)
-		return errors.New("密码更新失败")
-	}
-
-	logs.Sugar.Infow("重置密码", "detail", "重置密码成功。")
 	return nil
 }
 
 // ======================= 邮件生产者=======================
 
 // 发送注册验证码邮件
-func SendRegisterEmail(email, code string) error {
+func (s *EmailServiceImpl) sendRegisterEmail(email, code string) error {
 	subject := "FormalLangLab 注册验证码"
 	body := fmt.Sprintf(`
 		<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f7f9fc;">
@@ -168,11 +147,11 @@ func SendRegisterEmail(email, code string) error {
 		</div>
 	`, code)
 
-	return SendEmailViaKafka(email, subject, "text/html", body)
+	return s.sendEmailViaKafka(email, subject, "text/html", body)
 }
 
 // 发送重置密码的验证码邮件
-func SendResetPwdEmail(email, token string) error {
+func (s *EmailServiceImpl) sendResetPwdEmail(email, token string) error {
 	subject := "FormalLangLab 重置密码"
 	body := fmt.Sprintf(`
 		<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f7f9fc;">
@@ -195,12 +174,12 @@ func SendResetPwdEmail(email, token string) error {
 		</div>
 	`, token)
 
-	return SendEmailViaKafka(email, subject, "text/html", body)
+	return s.sendEmailViaKafka(email, subject, "text/html", body)
 }
 
 // SendEmailViaKafka 发送邮件事件到 Kafka
-func SendEmailViaKafka(email, subject, contextType, body string) error {
-	event := &kafka_s.EmailEvent{
+func (s *EmailServiceImpl) sendEmailViaKafka(email, subject, contextType, body string) error {
+	event := &kafka_s.KafkaEmailEvent{
 		To:          email,
 		Subject:     subject,
 		ContentType: contextType,
@@ -209,99 +188,9 @@ func SendEmailViaKafka(email, subject, contextType, body string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if err := kafka_s.SendEmailEvent(ctx, event); err != nil {
+	if err := s.kafkaProducer.SendEmailEvent(ctx, event); err != nil {
 		return fmt.Errorf("发送邮件事件到 Kafka 失败: %w", err)
 	}
 
 	return nil
-}
-
-// ======================= Redis Token 管理函数 =======================
-
-// ============= 注册相关 ==============
-
-// 保存注册验证码到Redis，过期时间10分钟
-func saveRegisterVerificationToken(email, token string) error {
-	ctx := context.Background()
-	key := fmt.Sprintf("register_verification_token:%s", email)
-
-	err := r_init.RedisClient.Set(ctx, key, token, VerificationTokenTTL).Err()
-	if err != nil {
-		logs.Sugar.Errorw("保存注册验证码到Redis", "detail", "保存验证码失败", "error", err,"email", email, "token", token)
-		return err
-	}
-
-	logs.Sugar.Infow("注册验证码保存成功", "detail", "保存注册验证码成功", "email", email, "token", token)
-	return nil
-}
-
-func hasRegisterVerificationToken(email string) bool {
-	ctx := context.Background()
-	key := fmt.Sprintf("register_verification_token:%s", email)
-
-	_, err := r_init.RedisClient.Get(ctx, key).Result()
-	return err == nil
-}
-
-// 校验注册验证码
-func ValidateRegisterVerificationToken(email, token string) bool {
-	ctx := context.Background()
-	key := fmt.Sprintf("register_verification_token:%s", email)
-
-	storedToken, err := r_init.RedisClient.Get(ctx, key).Result()
-	if err != nil {
-		logs.Sugar.Errorw("获取注册验证码失败", "detail", "获取注册验证码失败", "error", err, "email", email, "token", token)
-		return false
-	}
-
-	return storedToken == token
-}
-
-// 删除注册验证码
-func DeleteRegisterVerificationToken(email, token string) error {
-	ctx := context.Background()
-	key := fmt.Sprintf("register_verification_token:%s", email)
-
-	err := r_init.RedisClient.Del(ctx, key).Err()
-	if err != nil {
-		logs.Sugar.Errorw("删除注册验证码失败", "detail", "删除注册验证码失败", "error", err, "email", email, "token", token)
-		return err
-	}
-	logs.Sugar.Infow("注册验证码删除成功", "detail", "删除注册验证码成功", "email", email, "token", token)
-	return nil
-}
-
-// ============= 找回密码相关 ==============
-
-// saveResetPwdToken 保存找回密码 reset_pwd_token:token -> email
-func saveResetPwdToken(token, email string) error {
-	ctx := context.Background()
-	key := fmt.Sprintf("reset_pwd_token:%s", token)
-	return r_init.RedisClient.Set(ctx, key, email, VerificationTokenTTL).Err()
-}
-
-func hasResetPwdToken(token string) bool {
-	ctx := context.Background()
-	key := fmt.Sprintf("reset_pwd_token:%s", token)
-
-	_, err := r_init.RedisClient.Get(ctx, key).Result()
-	return err == nil
-}
-
-// 通过 token 获取 email
-func getEmailByResetPwdToken(token string) (string, error) {
-	ctx := context.Background()
-	key := fmt.Sprintf("reset_pwd_token:%s", token)
-	email, err := r_init.RedisClient.Get(ctx, key).Result()
-	if err == redis.Nil {
-		return "", errors.New("token 不存在或已过期")
-	}
-	return email, err
-}
-
-// 删除 token（可选，非必须，因为会自动过期）
-func deleteResetPwdToken(token string) error {
-	ctx := context.Background()
-	key := fmt.Sprintf("reset_pwd_token:%s", token)
-	return r_init.RedisClient.Del(ctx, key).Err()
 }

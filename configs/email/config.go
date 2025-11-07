@@ -64,6 +64,6 @@ func SetEmailEnvVariables() {
 	setEnvIfNotSet("SMTP_SERVER_PORT", config.SMTPServer.Port)
 
 	// Kafka
-	setEnvIfNotSet("KAFKA_BROKER", config.Kafka.Brokers)
+	setEnvIfNotSet("KAFKA_BROKERS", config.Kafka.Brokers)
 	setEnvIfNotSet("KAFKA_TOPIC", config.Kafka.Topic)
 }

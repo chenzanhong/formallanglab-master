@@ -5,66 +5,21 @@ import (
 	"fmt"
 )
 
-/* 用户 */
-type User struct {
-	ID       uint   `json:"id" gorm:"primarykey"`
-	Name     string `json:"name"`
-	Password string `json:"password"`
-	Token    string `json:"token"`
-	Email    string `json:"email"`
-}
+type AutomatonType bool
 
-// Symbol 表示一个符号，可以是终结符、非终结符或者自动机所识别的一个符号
-type Symbol string
-
-const Epsilon Symbol = "ε" // 定义ε作为特殊输入符号，表示空转移符号
-
-// 工具函数：将用户输入映射为标准 ε
-func NormalizeSymbol(s string) Symbol {
-	switch s {
-	case "ε", "epsilon", "e", "E", "", "λ", "eps":
-		return Epsilon
-	default:
-		return Symbol(s)
-	}
-}
-
-/* 文法 */
-// Production 规定了一个产生式
-type Production struct {
-	Left  []Symbol `json:"left"`  // 左部，通常是单个非终结符，但也可以是多个符号
-	Right []Symbol `json:"right"` // 右部，可以包含多个符号
-}
-
-// Grammar 表示整个文法
-type Grammar struct {
-	StartSymbol  Symbol       `json:"startSymbol"`  // 起始符号
-	Terminals    []Symbol     `json:"terminals"`    // 终结符集合
-	NonTerminals []Symbol     `json:"nonTerminals"` // 非终结符集合
-	Productions  []Production `json:"productions"`  // 产生式集合
-}
-
-func (g *Grammar) CheckIsTerminal(s Symbol) bool {
-	for _, v := range g.Terminals {
-		if v == s {
-			return true
-		}
-	}
-	return false
-}
-
-func (g *Grammar) CheckIsNonTerminal(s Symbol) bool {
-	for _, v := range g.NonTerminals {
-		if v == s {
-			return true
-		}
-	}
-	return false
-}
+const (
+	DFA AutomatonType = true  // 确定有限自动机
+	NFA AutomatonType = false // 非确定有限自动机
+)
 
 /* 自动机 */
+// Symbol 表示自动机中的输入符号
+// type Symbol string
+
 // State 表示自动机中的一个状态
 type State string
+
+// const Epsilon Symbol = "ε" // 定义ε作为特殊输入符号，表示空转移符号
 
 // Transition 表示一个状态转移规则
 type Transition struct {
@@ -80,15 +35,8 @@ type Automaton struct {
 	Transitions     []Transition                 `json:"transitions"`     // 状态转移规则集合
 	InitialState    State                        `json:"initialState"`    // 初始状态
 	AcceptingStates []State                      `json:"acceptingStates"` // 接受状态集合
-	IsDFA           bool                         `json:"isDFA"`           // 是否为DFA，否则为NFA
+	IsDFA           AutomatonType                `json:"isDFA"`           // 是否为DFA，否则为NFA
 	TransMap        map[State]map[Symbol][]State // Map存储状态转移规则，识别字符串时效率高
-}
-
-var ValidCSet []byte // 正则表达式支持的符合，包括0~1，a~z，A~Z，|，（，），*，？，·，
-
-type Regex struct {
-	Patten string
-	CSet   []byte
 }
 
 // 按字符集以及最长匹配原则切分字符串
@@ -121,31 +69,6 @@ func (a *Automaton) SplitString(s string) ([]Symbol, error) {
 	return res, nil
 }
 
-// CheckIsDFA 检查当前自动机是否真的是一个有效的 DFA
-// 如果是，则返回 true，并将 IsDFA 设为 true
-// 否则返回 false，并将 IsDFA 设为 false
-// func (a *Automaton) CheckIsDFA() (bool, error) {
-// 	// 构建转移映射：fromState + input -> toState（用于检查完备性和唯一性）
-// 	transitionMap := make(map[string]State) // key: state|symbol
-
-// 	// 遍历所有转移
-// 	for _, t := range a.Transitions {
-// 		if t.Input == Epsilon {
-// 			return false, fmt.Errorf("包含空转移，不是DFA")
-// 		}
-// 		// 检查是否重复定义了同一 (fromState, input)
-// 		key := string(t.FromState) + "|" + string(t.Input)
-// 		if prev, exists := transitionMap[key]; exists {
-// 			a.IsDFA = false
-// 			return false, fmt.Errorf("DFA 中状态 '%s' 对输入 '%s' 定义了多个转移（已存在: %s）", t.FromState, t.Input, prev) // 重复定义
-// 		}
-// 		transitionMap[key] = t.ToStates[0]
-// 	}
-// 	// 所有条件满足，是 DFA
-// 	a.IsDFA = true
-// 	return true, nil
-// }
-
 func (a *Automaton) InitTransMap() {
 	a.TransMap = make(map[State]map[Symbol][]State)
 	for _, t := range a.Transitions {
@@ -162,7 +85,7 @@ func (a *Automaton) ISValidate() (bool, error) {
 	// 使用 map 提高查找效率
 	stateSet := make(map[State]bool)
 	alphabetSet := make(map[Symbol]bool)
-
+	fmt.Printf("%+v", a.States)
 	// 1. 检查状态集合不能为空
 	if len(a.States) == 0 {
 		return false, errors.New("状态集合不能为空")
@@ -384,6 +307,8 @@ func (a *Automaton) FindReachableStates() []State {
 	return reachable
 }
 
+// =================== 自动机转换为 ReactFlow 格式 ===================
+
 type ReactFlowNode struct {
 	ID   string `json:"id"`
 	Type string `json:"type"` // "initial" | "default"
@@ -467,81 +392,20 @@ func (a *Automaton) ToReactFlow() *ReactFlowAutomaton {
 	return &ReactFlowAutomaton{Nodes: nodes, Edges: edges}
 }
 
-// ParseStep 表示文法分析过程中的一个步骤
-type ParseStep struct {
-	StepType    string      `json:"stepType"`    // "init", "match", "predict", "accept", "error"
-	Description string      `json:"description"` // 步骤描述
-	Stack       []Symbol    `json:"stack"`       // 当前栈状态
-	Input       []Symbol    `json:"input"`       // 剩余输入
-	InputPos    int         `json:"inputPos"`    // 输入指针位置
-	Action      string      `json:"action"`      // 执行的动作描述
-	Production  *Production `json:"production"`  // 使用的产生式（如果有）
+// =================== 自动机识别字符串的过程记录 ===================
+type RecognitionStep struct {
+	Step      int    `json:"step"`
+	State     State  `json:"state"`
+	Input     Symbol `json:"input"`
+	NextState State  `json:"nextState"`
 }
 
-// ParseResult 表示文法分析的完整结果
-type ParseResult struct {
-	Accepted bool        `json:"accepted"` // 是否接受输入串
-	Method   string      `json:"method"`   // 使用的分析方法
-	Steps    []ParseStep `json:"steps"`    // 分析步骤（可选）
-	Error    string      `json:"error"`    // 错误信息（如果有）
-	Message  string      `json:"message"`  // 额外信息
-}
-
-// ToReactFlow 返回格式化后的产生式字符串，用于前端展示
-func (g *Grammar) ToReactFlow() []string {
-	productions := make([]string, 0, len(g.Productions))
-
-	for _, prod := range g.Productions {
-		// 格式化左部
-		left := string(prod.Left[0]) // 通常左部只有一个符号
-
-		// 格式化右部
-		right := ""
-		if len(prod.Right) == 0 || (len(prod.Right) == 1 && prod.Right[0] == Epsilon) {
-			right = string(Epsilon)
-		} else {
-			for i, symbol := range prod.Right {
-				if i > 0 {
-					right += " "
-				}
-				if symbol == Epsilon {
-					right += string(Epsilon)
-				} else {
-					right += string(symbol)
-				}
-			}
-		}
-
-		// 组合成产生式字符串
-		productions = append(productions, left+" -> "+right)
-	}
-
-	return productions
+type RecognitionResult struct {
+	IsAccepted bool              `json:"isAccepted"`
+	Steps      []RecognitionStep `json:"steps"`
 }
 
 /*
-
-前端传给后端的文法格式：：
-{
-  "startSymbol": "S",
-  "terminals": ["a", "b", "ε"],
-  "nonTerminals": ["S", "A", "B"],
-  "productions": [
-    {
-      "left": "S",
-      "right": ["a", "A", "b"]
-    },
-    {
-      "left": "A",
-      "right": ["b", "B"]
-    },
-    {
-      "left": "B",
-      "right": ["ε"]
-    }
-  ]
-}
-
 前端传给后端的自动机格式：
 {
   "states": ["q0", "q1", "q2"],

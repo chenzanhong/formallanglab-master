@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -70,7 +71,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
+		fmt.Println(claims.Username)
 		// 保存用户名到上下文中
 		c.Set("username", claims.Username)
 		c.Next()

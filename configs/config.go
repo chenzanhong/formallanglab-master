@@ -47,6 +47,14 @@ type KafkaConfig struct {
 	Topic   string `yaml:"topic"`
 }
 
+type AIConfig struct {
+	DashscopeAPIKey  string `yaml:"dashscope_api_key"`
+	DashscopeBaseURL string `yaml:"dashscope_base_url"`
+	DashscopeModel   string `yaml:"dashscope_model"`
+	ChromaURL        string `yaml:"chroma_url"`
+	ChromaCollection string `yaml:"chroma_collection"`
+}
+
 type Config struct {
 	PG         PGConfig         `yaml:"pg"`
 	Redis      RedisConfig      `yaml:"redis"`
@@ -54,6 +62,7 @@ type Config struct {
 	SMTPServer SMTPServerConfig `yaml:"smtp_server"`
 	Rate       RateConfig       `yaml:"rate"`
 	Kafka      KafkaConfig      `yaml:"kafka"`
+	AI         AIConfig         `yaml:"ai"`
 }
 
 // getConfigPath 获取数据库配置文件的路径
@@ -142,7 +151,13 @@ func SetEnvVariables() {
 	setEnvIfNotSet("RATE_USER_BURST", strconv.Itoa(config.Rate.UserBurst))
 
 	// Kafka
-	setEnvIfNotSet("KAFKA_BROKER", config.Kafka.Brokers)
+	setEnvIfNotSet("KAFKA_BROKERS", config.Kafka.Brokers)
 	setEnvIfNotSet("KAFKA_TOPIC", config.Kafka.Topic)
 
+	// AI Service
+	setEnvIfNotSet("DASHSCOPE_API_KEY", config.AI.DashscopeAPIKey)
+	setEnvIfNotSet("DASHSCOPE_BASE_URL", config.AI.DashscopeBaseURL)
+	setEnvIfNotSet("DASHSCOPE_MODEL", config.AI.DashscopeModel)
+	setEnvIfNotSet("CHROMA_URL", config.AI.ChromaURL)
+	setEnvIfNotSet("CHROMA_COLLECTION", config.AI.ChromaCollection)
 }

@@ -2,7 +2,15 @@ pg:
   host: localhost
   port: 5432
   user: postgres
-  password: 
+  password:
   name: gdesign
   max_conn: 10
   max_idle_conn: 5
+
+# AI Service Configuration
+ai:
+  qwen_api_key: "your-qwen-api-key"
+  qwen_base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"  # Optional
+  qwen_model: "qwen-max"  # Optional
+  chroma_url: "http://localhost:8000"
+  chroma_collection: "automata_knowledge"

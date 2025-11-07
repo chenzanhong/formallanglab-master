@@ -7,6 +7,7 @@
 package api
 
 import (
+	"backend/internal/domain/dto"
 	"backend/internal/metrics"
 	"backend/internal/service/convert_s"
 	re "backend/internal/service/regex_s"
@@ -46,12 +47,12 @@ func RegexToNFA(c *gin.Context) {
 	defer func() {
 		metrics.ObserveOperationDuration("convert", "regex_to_nfa", time.Since(start).Seconds())
 	}()
-	type Req struct {
-		Pattern string `json:"pattern" binding:"required"`
-	}
-	var req Req
+	var req dto.RegexToNFARequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": "Invalid request: " + err.Error()})
+		c.JSON(400, dto.RegexToNFAResponse{
+			Msg:    "Invalid request: " + err.Error(),
+			Result: false,
+		})
 		metrics.IncOperation("convert", "regex_to_nfa", "failure: parameter parsing error")
 		return
 	}
@@ -59,19 +60,31 @@ func RegexToNFA(c *gin.Context) {
 	// 先检验是否为有效的正则表达式
 	_, err := re.RegexValidate(req.Pattern)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "invalid regular expression", "valid": false, "error": err})
+		c.JSON(http.StatusBadRequest, dto.RegexToNFAResponse{
+			Msg:    "invalid regular expression",
+			Result: false,
+			Error:  err.Error(),
+		})
 		metrics.IncOperation("convert", "regex_to_nfa", "failure: invalid regex")
 		return
 	}
 
-	nfa, err := convert_s.RegexToNFA(req.Pattern)
+	nfa, err := convert_s.RegexToNFA(string(req.Pattern))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "转换失败，输入为空或无效的正则表达式", "result": false, "error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.RegexToNFAResponse{
+			Msg:    "转换失败，输入为空或无效的正则表达式",
+			Result: false,
+			Error:  err.Error(),
+		})
 		metrics.IncOperation("convert", "regex_to_nfa", "failure: conversion failed")
 		return
 	}
 	metrics.IncOperation("convert", "regex_to_nfa", "success")
-	c.JSON(http.StatusOK, gin.H{"msg": "转换成功", "result": true, "fsm": nfa.ToReactFlow()})
+	c.JSON(http.StatusOK, dto.RegexToNFAResponse{
+		Msg:     "转换成功",
+		Result:  true,
+		FSMFlow: nfa.ToReactFlow(),
+	})
 }
 
 // 自动机到正则表达式的转换
