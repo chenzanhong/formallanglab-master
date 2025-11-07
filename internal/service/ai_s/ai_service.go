@@ -4,15 +4,14 @@ import (
 	"backend/internal/domain/dto"
 	"backend/internal/domain/model"
 	"backend/internal/repository"
-	"backend/logs"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/openai/openai-go/v2"
+	"github.com/openai/openai-go/v2/packages/ssestream"
 )
 
 const (
@@ -25,7 +24,8 @@ const (
 )
 
 type AIService interface {
-	StreamChat(ctx context.Context, username string, req *dto.AIChatRequest) (<-chan string, error)
+	StreamChat(ctx context.Context, username string, req *dto.AIChatRequest) (*ssestream.Stream[openai.ChatCompletionChunk], *model.AISession, error)
+	SaveSession(ctx context.Context, username string, session *model.AISession) error
 }
 
 type AIServiceImpl struct {
@@ -37,11 +37,11 @@ func NewAIService(client *openai.Client, repo repository.AIRepository) AIService
 	return &AIServiceImpl{client: client, repo: repo}
 }
 
-func (s *AIServiceImpl) StreamChat(ctx context.Context, username string, req *dto.AIChatRequest) (<-chan string, error) {
+func (s *AIServiceImpl) StreamChat(ctx context.Context, username string, req *dto.AIChatRequest) (*ssestream.Stream[openai.ChatCompletionChunk], *model.AISession, error) {
 	// 1. 加载会话（不变）
 	session, err := s.repo.GetSession(ctx, username, string(req.Page))
 	if err != nil {
-		return nil, fmt.Errorf("failed to load session: %w", err)
+		return nil, nil, fmt.Errorf("failed to load session: %w", err)
 	}
 	if session == nil {
 		session = &model.AISession{Page: req.Page}
@@ -75,33 +75,11 @@ func (s *AIServiceImpl) StreamChat(ctx context.Context, username string, req *dt
 		},
 	)
 
-	tokenChan := make(chan string, 100)
+	return stream, session, nil
+}
 
-	go func() {
-		defer close(tokenChan)
-		var aiResp strings.Builder
-
-		for stream.Next() {
-			content := stream.Current().Choices[0].Delta.Content
-			tokenChan <- content
-			aiResp.WriteString(content)
-		}
-		if err := stream.Err(); err != nil {
-			logs.Sugar.Errorf("AI stream error: %v", err)
-		}
-
-		go func() {
-			ctx := context.Background()
-			session.RecentTurns = append(session.RecentTurns, model.QAPair{
-				User: req.Question,
-				AI:   aiResp.String(),
-			})
-			session.Trim()
-			s.repo.SaveSession(ctx, username, session)
-		}()
-	}()
-
-	return tokenChan, nil
+func (s *AIServiceImpl) SaveSession(ctx context.Context, username string, session *model.AISession) error {
+	return s.repo.SaveSession(ctx, username, session)
 }
 
 func (s *AIServiceImpl) buildContextualPrompt(req *dto.AIChatRequest) string {

@@ -1,5 +1,4 @@
 *.yaml
 *.log
 logs/*.log
-ai.go
-ai/
+/test/ai
