@@ -69,7 +69,7 @@ func (s *AIServiceImpl) StreamChat(ctx context.Context, username string, req *dt
 
 	// 3. 调用流式 API
 	stream := s.client.Chat.Completions.NewStreaming(
-		context.TODO(), openai.ChatCompletionNewParams{
+		ctx, openai.ChatCompletionNewParams{
 			Messages: messages,
 			Model:    os.Getenv("DASHSCOPE_MODEL"),
 		},
@@ -96,9 +96,7 @@ func (s *AIServiceImpl) StreamChat(ctx context.Context, username string, req *dt
 				User: req.Question,
 				AI:   aiResp.String(),
 			})
-			if len(session.RecentTurns) > model.MaxTurns {
-				session.RecentTurns = session.RecentTurns[len(session.RecentTurns)-model.MaxTurns:]
-			}
+			session.Trim()
 			s.repo.SaveSession(ctx, username, session)
 		}()
 	}()

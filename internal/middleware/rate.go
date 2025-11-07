@@ -36,7 +36,7 @@ func UserRateLimitMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userStr, exists := c.Get("username")
 		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization required"})
 			c.Abort()
 			return
 		}
