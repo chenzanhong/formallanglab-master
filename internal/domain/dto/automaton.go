@@ -2,34 +2,34 @@ package dto
 
 import "backend/internal/domain/model"
 
-// FSM相关请求响应结构
+// Automaton相关请求响应结构
 
-// FSMValidateRequest FSM验证请求结构
-type FSMValidateRequest struct {
+// AutomatonValidateRequest Automaton验证请求结构
+type AutomatonValidateRequest struct {
 	Automaton model.Automaton `json:"automaton" binding:"required"`
 }
 
-// FSMValidateResponse FSM验证响应结构
-type FSMValidateResponse struct {
-	Msg     string                    `json:"msg"`
-	Result  bool                      `json:"result"`
-	FSM     model.Automaton           `json:"fsm,omitempty"`
-	FSMFlow *model.ReactFlowAutomaton `json:"fsmFlow,omitempty"`
-	Error   string                    `json:"error,omitempty"`
+// AutomatonValidateResponse Automaton验证响应结构
+type AutomatonValidateResponse struct {
+	Msg           string                    `json:"msg"`
+	Result        bool                      `json:"result"`
+	Automaton     *model.Automaton           `json:"automaton,omitempty"`
+	AutomatonFlow *model.ReactFlowAutomaton `json:"automatonFlow,omitempty"`
+	Error         string                    `json:"error,omitempty"`
 }
 
-// FSMCleanupRequest FSM清理请求结构
-type FSMCleanupRequest struct {
+// AutomatonCleanupRequest Automaton清理请求结构
+type AutomatonCleanupRequest struct {
 	Automaton model.Automaton `json:"automaton" binding:"required"`
 }
 
-// FSMCleanupResponse FSM清理响应结构
-type FSMCleanupResponse struct {
-	Msg     string                    `json:"msg"`
-	Result  bool                      `json:"result"`
-	FSM     model.Automaton           `json:"fsm,omitempty"`
-	FSMFlow *model.ReactFlowAutomaton `json:"fsmFlow,omitempty"`
-	Error   string                    `json:"error,omitempty"`
+// AutomatonCleanupResponse Automaton清理响应结构
+type AutomatonCleanupResponse struct {
+	Msg           string                    `json:"msg"`
+	Result        bool                      `json:"result"`
+	Automaton     *model.Automaton           `json:"automaton,omitempty"`
+	AutomatonFlow *model.ReactFlowAutomaton `json:"automatonFlow,omitempty"`
+	Error         string                    `json:"error,omitempty"`
 }
 
 // DFAMinimizeRequest DFA最小化请求结构
@@ -39,24 +39,25 @@ type DFAMinimizeRequest struct {
 
 // DFAMinimizeResponse DFA最小化响应结构
 type DFAMinimizeResponse struct {
-	Msg     string                    `json:"msg"`
-	Result  bool                      `json:"result"`
-	FSM     model.Automaton           `json:"fsm,omitempty"`
-	FSMFlow *model.ReactFlowAutomaton `json:"fsmFlow,omitempty"`
-	Error   string                    `json:"error,omitempty"`
+	Msg           string                    `json:"msg"`
+	Result        bool                      `json:"result"`
+	Automaton     *model.Automaton           `json:"automaton,omitempty"`
+	AutomatonFlow *model.ReactFlowAutomaton `json:"automatonFlow,omitempty"`
+	Error         string                    `json:"error,omitempty"`
 }
 
-// FSMStringRecognizeRequest FSM字符串识别请求结构
-type FSMStringRecognizeRequest struct {
-	FSM model.Automaton `json:"fsm" binding:"required"`
-	Str string          `json:"str" binding:"required"`
+// AutomatonStringRecognizeRequest Automaton字符串识别请求结构
+type AutomatonStringRecognizeRequest struct {
+	Automaton model.Automaton `json:"automaton" binding:"required"`
+	Str       string          `json:"str" binding:"required"`
 }
 
-// FSMStringRecognizeResponse FSM字符串识别响应结构
-type FSMStringRecognizeResponse struct {
-	Msg    string                  `json:"msg"`
-	Error  string                  `json:"error,omitempty"`
-	Result model.RecognitionResult `json:"result,omitempty"`
+// AutomatonStringRecognizeResponse Automaton字符串识别响应结构
+type AutomatonStringRecognizeResponse struct {
+	Msg             string                  `json:"msg"`
+	Error           string                  `json:"error,omitempty"`
+	RecognitionResult *model.RecognitionResult `json:"recognitionResult,omitempty"`
+	Result          bool                    `json:"result"`
 }
 
 // NFADeterminizationRequest NFA确定化请求结构
@@ -66,9 +67,9 @@ type NFADeterminizationRequest struct {
 
 // NFADeterminizationResponse NFA确定化响应结构
 type NFADeterminizationResponse struct {
-	Msg     string                    `json:"msg"`
-	Result  bool                      `json:"result"`
-	FSM     model.Automaton           `json:"fsm,omitempty"`
-	FSMFlow *model.ReactFlowAutomaton `json:"fsmFlow,omitempty"`
-	Error   string                    `json:"error,omitempty"`
+	Msg           string                    `json:"msg"`
+	Result        bool                      `json:"result"`
+	Automaton     *model.Automaton           `json:"automaton,omitempty"`
+	AutomatonFlow *model.ReactFlowAutomaton `json:"automatonFlow,omitempty"`
+	Error         string                    `json:"error,omitempty"`
 }

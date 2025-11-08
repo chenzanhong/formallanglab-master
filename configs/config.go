@@ -1,7 +1,6 @@
 package configs
 
 import (
-	"backend/logs"
 	"log"
 	"os"
 	"path/filepath"
@@ -55,6 +54,18 @@ type AIConfig struct {
 	ChromaCollection string `yaml:"chroma_collection"`
 }
 
+type LogConfig struct {
+	Level        string `yaml:"level"`
+	Output       string `yaml:"output"`  // "console", "file", "both"
+	Format       string `yaml:"format"`  // "json", "console" (只对终端输出生效)
+	FilePath     string `yaml:"file_path"`
+	MaxSize      int    `yaml:"max_size"`
+	MaxBackups   int    `yaml:"max_backups"`
+	MaxAge       int    `yaml:"max_age"`
+	Compress     bool   `yaml:"compress"`
+	Sampling     bool   `yaml:"sampling"`
+}
+
 type Config struct {
 	PG         PGConfig         `yaml:"pg"`
 	Redis      RedisConfig      `yaml:"redis"`
@@ -63,6 +74,7 @@ type Config struct {
 	Rate       RateConfig       `yaml:"rate"`
 	Kafka      KafkaConfig      `yaml:"kafka"`
 	AI         AIConfig         `yaml:"ai"`
+	Log        LogConfig        `yaml:"log"`
 }
 
 // getConfigPath 获取数据库配置文件的路径
@@ -113,7 +125,7 @@ func LoadConfig() (*Config, error) {
 func SetEnvVariables() {
 	config, err := LoadConfig()
 	if err != nil {
-		logs.Sugar.Fatalf("加载配置失败：%v", err.Error())
+		log.Fatalf("加载配置失败：%v", err.Error())
 	}
 
 	// 辅助函数：如果 envVar 未设置，则用 fallback 值设置它
@@ -160,4 +172,15 @@ func SetEnvVariables() {
 	setEnvIfNotSet("DASHSCOPE_MODEL", config.AI.DashscopeModel)
 	setEnvIfNotSet("CHROMA_URL", config.AI.ChromaURL)
 	setEnvIfNotSet("CHROMA_COLLECTION", config.AI.ChromaCollection)
+
+	// Log
+	setEnvIfNotSet("LOG_LEVEL", config.Log.Level)
+	setEnvIfNotSet("LOG_OUTPUT", config.Log.Output)
+	setEnvIfNotSet("LOG_FORMAT", config.Log.Format)
+	setEnvIfNotSet("LOG_FILE_PATH", config.Log.FilePath)
+	setEnvIfNotSet("LOG_MAX_SIZE", strconv.Itoa(config.Log.MaxSize))
+	setEnvIfNotSet("LOG_MAX_BACKUPS", strconv.Itoa(config.Log.MaxBackups))
+	setEnvIfNotSet("LOG_MAX_AGE", strconv.Itoa(config.Log.MaxAge))
+	setEnvIfNotSet("LOG_COMPRESS", strconv.FormatBool(config.Log.Compress))
+	setEnvIfNotSet("LOG_SAMPLING", strconv.FormatBool(config.Log.Sampling))
 }

@@ -28,11 +28,12 @@ func (h *UserHandler) Register(c *gin.Context) {
 	}()
 	var req dto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.RegisterResponse{
-			Code:    400,
-			Message: "请求数据格式错误",
-		})
 		metrics.IncOperation("user", "register", "failure: parameter parsing error")
+		logs.Sugar.Errorw("请求数据格式错误", "detail", err.Error())
+		c.JSON(http.StatusBadRequest, dto.RegisterResponse{
+			Result: false,
+			Msg:    "请求数据格式错误",
+		})
 		return
 	}
 
@@ -40,36 +41,40 @@ func (h *UserHandler) Register(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case myErrors.ErrPasswordHashFailed:
-			c.JSON(http.StatusInternalServerError, dto.RegisterResponse{
-				Code:    500,
-				Message: "密码加密失败",
-			})
 			metrics.IncOperation("user", "register", "failure: password encryption error")
+			logs.Sugar.Errorw("密码加密失败")
+			c.JSON(http.StatusInternalServerError, dto.RegisterResponse{
+				Result: false,
+				Msg:    "密码加密失败",
+			})
 			return
 		case myErrors.ErrUserCreationFailed:
-			c.JSON(http.StatusInternalServerError, dto.RegisterResponse{
-				Code:    500,
-				Message: "用户创建失败",
-			})
 			metrics.IncOperation("user", "register", "failure: user creation error")
+			logs.Sugar.Errorw("用户创建失败")
+			c.JSON(http.StatusInternalServerError, dto.RegisterResponse{
+				Result: false,
+				Msg:    "用户创建失败",
+			})
 			return
 		default:
-			c.JSON(http.StatusInternalServerError, dto.RegisterResponse{
-				Code:    500,
-				Message: "注册失败",
-				Error:   err.Error(),
-			})
 			metrics.IncOperation("user", "register", "failure: unknown error")
+			logs.Sugar.Errorw("注册失败", "detail", err.Error())
+			c.JSON(http.StatusInternalServerError, dto.RegisterResponse{
+				Result: false,
+				Msg:    "注册失败",
+				Error:  err.Error(),
+			})
 			return
 		}
 	}
 
 	metrics.IncOperation("user", "register", "success")
+	logs.Sugar.Infow("注册成功", "user_id", newUser.ID, "username", newUser.Name)
 	c.JSON(http.StatusOK, dto.RegisterResponse{
-		Code:    200,
-		Message: "注册成功",
-		ID:      newUser.ID,
-		Name:    newUser.Name,
+		Result: true,
+		Msg:    "注册成功",
+		ID:     newUser.ID,
+		Name:   newUser.Name,
 	})
 }
 
@@ -80,12 +85,13 @@ func (h *UserHandler) Login(c *gin.Context) {
 	}()
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.LoginResponse{
-			Code:    400,
-			Message: "登录数据解析失败",
-			Error:   err.Error(),
-		})
 		metrics.IncOperation("user", "login", "failure: parameter parsing error")
+		logs.Sugar.Errorw("登录数据解析失败", "detail", err.Error())
+		c.JSON(http.StatusBadRequest, dto.LoginResponse{
+			Result: false,
+			Msg:    "登录数据解析失败",
+			Error:  err.Error(),
+		})
 		return
 	}
 
@@ -94,37 +100,41 @@ func (h *UserHandler) Login(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case myErrors.ErrUserNotFound:
-			c.JSON(http.StatusUnauthorized, dto.LoginResponse{
-				Code:    401,
-				Message: "用户名或密码错误",
-			})
 			metrics.IncOperation("user", "login", "failure: user not found")
+			logs.Sugar.Warnw("用户名或密码错误", "username", req.Name)
+			c.JSON(http.StatusUnauthorized, dto.LoginResponse{
+				Result: false,
+				Msg:    "用户名或密码错误",
+			})
 			return
 		case myErrors.ErrUserCreationFailed:
-			c.JSON(http.StatusUnauthorized, dto.LoginResponse{
-				Code:    401,
-				Message: "用户名或密码错误",
-			})
 			metrics.IncOperation("user", "login", "failure: invalid password")
+			logs.Sugar.Warnw("用户名或密码错误", "username", req.Name)
+			c.JSON(http.StatusUnauthorized, dto.LoginResponse{
+				Result: false,
+				Msg:    "用户名或密码错误",
+			})
 			return
 		default:
-			c.JSON(http.StatusInternalServerError, dto.LoginResponse{
-				Code:    500,
-				Message: "登录失败",
-				Error:   err.Error(),
-			})
 			metrics.IncOperation("user", "login", "failure: unknown error")
+			logs.Sugar.Errorw("登录失败", "detail", err.Error())
+			c.JSON(http.StatusInternalServerError, dto.LoginResponse{
+				Result: false,
+				Msg:    "登录失败",
+				Error:  err.Error(),
+			})
 			return
 		}
 	}
 
 	metrics.IncOperation("user", "login", "success")
+	logs.Sugar.Infow("登录成功", "user_id", user.ID, "username", user.Name)
 	c.JSON(http.StatusOK, dto.LoginResponse{
-		Code:    200,
-		Message: "登录成功",
-		Token:   tokenString,
-		Name:    user.Name,
-		ID:      user.ID,
+		Result: true,
+		Msg:    "登录成功",
+		Token:  tokenString,
+		Name:   user.Name,
+		ID:     user.ID,
 	})
 }
 
@@ -134,22 +144,21 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 	defer func() {
 		metrics.ObserveOperationDuration("email", "reset_password", time.Since(start).Seconds())
 	}()
+	usernameStr, _ := c.Get("username")
 	// 实现重置密码的逻辑
-	var request struct {
-		Token       string `json:"token"`
-		NewPassword string `json:"new_password"`
-	}
+	var request dto.ResetPasswordRequest
 
 	if err := c.BindJSON(&request); err != nil {
-		logs.Sugar.Errorw("重置密码", "detail", "解析请求数据失败，请检查请求格式是否正确")
-		c.JSON(http.StatusBadRequest, gin.H{"message": "请求数据格式错误"})
 		metrics.IncOperation("email", "reset_password", "failure: parameter parsing error")
+		logs.Sugar.Errorw("重置密码失败", "detail", "解析请求数据失败", "username", usernameStr.(string))
+		c.JSON(http.StatusBadRequest, dto.ResetPasswordResponse{Msg: "请求数据格式错误", Result: false})
 		return
 	}
 
 	if request.NewPassword == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "新密码不能为空"})
 		metrics.IncOperation("email", "reset_password", "failure: empty password")
+		logs.Sugar.Errorw("重置密码失败", "detail", "新密码为空", "username", usernameStr.(string))
+		c.JSON(http.StatusBadRequest, dto.ResetPasswordResponse{Msg: "新密码不能为空", Result: false})
 		return
 	}
 
@@ -158,28 +167,36 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case myErrors.ErrInvalidToken:
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "验证码错误或已过期"})
 			metrics.IncOperation("email", "reset_password", "failure: invalid token")
+			logs.Sugar.Warnw("重置密码失败", "detail", "验证码错误或已过期", "username", usernameStr.(string))
+			c.JSON(http.StatusUnauthorized, dto.ResetPasswordResponse{Msg: "验证码错误或已过期", Result: false})
 			return
 		case myErrors.ErrPasswordHashFailed:
-			c.JSON(http.StatusInternalServerError, gin.H{"message": "密码加密失败", "code": 500})
 			metrics.IncOperation("email", "reset_password", "failure: password encryption error")
+			logs.Sugar.Errorw("重置密码失败", "detail", "密码加密失败", "username", usernameStr.(string))
+			c.JSON(http.StatusInternalServerError, dto.ResetPasswordResponse{Msg: "密码加密失败", Result: false})
 			return
 		case myErrors.ErrUserNotFound:
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "用户不存在"})
 			metrics.IncOperation("email", "reset_password", "failure: user not found")
+			logs.Sugar.Warnw("重置密码失败", "detail", "用户不存在", "username", usernameStr.(string))
+			c.JSON(http.StatusUnauthorized, dto.ResetPasswordResponse{Msg: "用户不存在", Result: false})
 			return
 		default:
-			logs.Sugar.Errorw("重置密码", "detail", "重置密码失败")
-			c.JSON(http.StatusInternalServerError, gin.H{"message": "重置密码失败", "code": 500})
 			metrics.IncOperation("email", "reset_password", "failure: reset password error")
+			logs.Sugar.Errorw("重置密码失败", "detail", err.Error(), "username", usernameStr.(string))
+			c.JSON(http.StatusInternalServerError, dto.ResetPasswordResponse{Msg: "重置密码失败", Result: false})
 			return
 		}
 	}
 
-	logs.Sugar.Infow("重置密码", "detail", "重置密码成功。")
 	metrics.IncOperation("email", "reset_password", "success")
-	c.JSON(http.StatusOK, gin.H{
-		"message": "重置密码成功",
+	logs.Sugar.Infow("重置密码成功", "username", usernameStr.(string))
+	c.JSON(http.StatusOK, dto.ResetPasswordResponse{
+		Msg:    "重置密码成功",
+		Result: true,
 	})
+}
+
+func (h *UserHandler) CheckMe(c *gin.Context) {
+	// 不做任何处理，只是借助JWT判断token是否还有效
 }

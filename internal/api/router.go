@@ -15,9 +15,20 @@ import (
 
 func SetupRouter(userService userSvc.UserService, emailService emailSvc.EmailService, aiService aiSvc.AIService, enable_pprof string) *gin.Engine {
 
-	router := gin.Default()
-	router.Use(mtr.HTTPMiddleware(), middleware.CORSMiddleware())
-
+	router := gin.New()
+	// 1. 恢复中间件 - 最先使用，捕获所有panic
+	router.Use(gin.Recovery()) 
+	// 2. 请求ID中间件 - 尽早设置，让后续中间件都能使用
+	router.Use(middleware.RequestID())
+	// 3. 全局速率限制 - 在处理请求初期进行限制，避免资源浪费，
+	// 但为了与UserRateLimitMiddleware不重复，只在后面的公共路由组添加
+	// router.Use(middleware.GlobalRateLimitMiddleware())
+	// 4. CORS中间件 - 尽早处理跨域请求，避免不必要的后续处理
+	router.Use(middleware.CORSMiddleware())
+	// 5. 日志中间件 - 在业务逻辑前记录请求，在业务逻辑后记录响应。日志中间件，但是感觉有点笨重，暂时不使用
+	// router.Use(middleware.Logging(middleware.DefaultLoggingConfig))
+	// 6. 指标收集 - 收集所有处理过程的指标
+	router.Use(mtr.HTTPMiddleware())
 	if enable_pprof == "true" {
 		setupPprof(router)
 	}
@@ -28,7 +39,7 @@ func SetupRouter(userService userSvc.UserService, emailService emailSvc.EmailSer
 	setupPublicRoutes(router, userHandler, emailHandler) // 注册公开路由
 
 	aiHandler := NewAIHandler(aiService)
-	setupAuthRoutes(router, aiHandler) // 注册需要认证的路由
+	setupAuthRoutes(router, userHandler, aiHandler) // 注册需要认证的路由
 
 	return router
 }
@@ -59,7 +70,7 @@ func setupPprof(router *gin.Engine) {
 }
 
 func setupPublicRoutes(router *gin.Engine, userHandler *UserHandler, emailHandler *EmailHandler) {
-	router.GET("/gdesign/metrics", mtr.MetricsHandler())                                                                              // prometheus.yml中加上 metrics_path: /gdesign/metrics
+	router.GET("/gdesign/metrics", mtr.MetricsHandler()) // 不需要限速                                                                        // prometheus.yml中加上 metrics_path: /gdesign/metrics
 	router.POST("/gdesign/register", middleware.GlobalRateLimitMiddleware(), userHandler.Register)                                    // 注册
 	router.POST("/gdesign/login", middleware.GlobalRateLimitMiddleware(), userHandler.Login)                                          // 登录
 	router.POST("/gdesign/send_verification_code", middleware.GlobalRateLimitMiddleware(), emailHandler.SendRegisterVerificationCode) // 发送验证码（注册用）
@@ -67,8 +78,9 @@ func setupPublicRoutes(router *gin.Engine, userHandler *UserHandler, emailHandle
 	router.POST("/gdesign/resetpassword", middleware.GlobalRateLimitMiddleware(), userHandler.ResetPassword)                          // 重置密码
 }
 
-func setupAuthRoutes(router *gin.Engine, aiHandler *AIhandler) {
+func setupAuthRoutes(router *gin.Engine, userHandler *UserHandler, aiHandler *AIhandler) {
 	// 使用 JWT、Rate 中间件保护这些路由
+	router.GET("/gdesign/user/me", middleware.JWTAuthMiddleware(), userHandler.CheckMe)
 	r := router.Group("/gdesign", middleware.JWTAuthMiddleware(), middleware.UserRateLimitMiddleware())
 
 	// 文法相关接口
@@ -89,22 +101,22 @@ func setupAuthRoutes(router *gin.Engine, aiHandler *AIhandler) {
 	}
 
 	// 自动机相关接口
-	fsm := r.Group("/fsm")
+	automaton := r.Group("/automaton")
 	{
-		fsm.POST("/validate", FSMValidate)         // 是否有效
-		fsm.POST("/recognize", FSMStringRecognize) // 字符串识别
-		fsm.POST("/cleanup", FSMCleanup)           // 去无效符号、不可达符号
-		fsm.POST("/minimize", DFAMinimize)         // DFA 最小化
-		fsm.POST("/nfatodfa", NFADeterminization)  // NFA 转 DFA，NFA确定化
+		automaton.POST("/validate", AutomatonValidate)         // 是否有效
+		automaton.POST("/recognize", AutomatonStringRecognize) // 字符串识别
+		automaton.POST("/cleanup", AutomatonCleanup)           // 去无效符号、不可达符号
+		automaton.POST("/minimize", DFAMinimize)               // DFA 最小化
+		automaton.POST("/nfatodfa", NFADeterminization)        // NFA 转 DFA，NFA确定化
 	}
 
 	// 文法、自动机间的转换
 	convert := r.Group("/convert")
 	{
-		convert.POST("/grammartonfa", GrammarToNFA) // 文法转成 NFA
-		convert.POST("/fatogrammar", FAToGrammar)   // FA 转成文法
-		convert.POST("/regextonfa", RegexToNFA)     // 正则表达式转为NFA
-		convert.POST("/fatoregex", FAToRegex)       // FA转为正则表达式
+		convert.POST("/grammar-to-nfa", GrammarToNFA) // 右线性文法转成 NFA
+		convert.POST("/fa-to-grammar", FAToGrammar)   // FA 转成文法
+		convert.POST("/regex-to-nfa", RegexToNFA)     // 正则表达式转为NFA
+		convert.POST("/fa-to-regex", FAToRegex)       // FA转为正则表达式
 	}
 
 	// 知识学习

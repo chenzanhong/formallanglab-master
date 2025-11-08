@@ -9,11 +9,11 @@ type RegexToNFARequest struct {
 
 // 正则表达式转NFA响应
 type RegexToNFAResponse struct {
-	Msg     string          `json:"msg"`
-	Result  bool            `json:"result"`
-	FSM     model.Automaton `json:"fsm,omitempty"`
-	FSMFlow interface{}     `json:"fsmFlow,omitempty"` // ToReactFlow的结果
-	Error   string          `json:"error,omitempty"`
+	Msg           string          `json:"msg"`
+	Result        bool            `json:"result"`
+	Automaton     *model.Automaton `json:"automaton,omitempty"`
+	AutomatonFlow *model.ReactFlowAutomaton  `json:"automatonFlow,omitempty"` // ToReactFlow的结果
+	Error         string          `json:"error,omitempty"`
 }
 
 // 文法转NFA请求
@@ -23,11 +23,11 @@ type GrammarToNFARequest struct {
 
 // 文法转NFA响应
 type GrammarToNFAResponse struct {
-	Msg     string                    `json:"msg"`
-	Result  bool                      `json:"result"`
-	FSM     model.Automaton           `json:"fsm,omitempty"`
-	FSMFlow *model.ReactFlowAutomaton `json:"fsmFlow,omitempty"` // ToReactFlow的结果
-	Error   string                    `json:"error,omitempty"`
+	Msg           string                    `json:"msg"`
+	Result        bool                      `json:"result"`
+	Automaton     *model.Automaton           `json:"automaton,omitempty"`
+	AutomatonFlow *model.ReactFlowAutomaton `json:"automatonFlow,omitempty"` // ToReactFlow的结果
+	Error         string                    `json:"error,omitempty"`
 }
 
 // 自动机转文法请求
@@ -39,7 +39,7 @@ type FAToGrammarRequest struct {
 type FAToGrammarResponse struct {
 	Msg     string      `json:"msg"`
 	Result  bool        `json:"result"`
-	Grammar interface{} `json:"grammar,omitempty"`
+	Grammar *model.Grammar `json:"grammar,omitempty"`
 	Error   string      `json:"error,omitempty"`
 }
 

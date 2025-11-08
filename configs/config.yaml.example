@@ -9,8 +9,26 @@ pg:
 
 # AI Service Configuration
 ai:
-  qwen_api_key: "your-qwen-api-key"
-  qwen_base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"  # Optional
-  qwen_model: "qwen-max"  # Optional
+  dashscope_api_key: "your-dashscope-api-key"
+  dashscope_base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"  # Optional
+  dashscope_model: "qwen-max"  # Optional
   chroma_url: "http://localhost:8000"
   chroma_collection: "automata_knowledge"
+
+# Log Configuration
+log:
+  level: "info"  # debug, info, warn, error
+  format: "json"  # json, console
+  file_path: "./logs/app.log"
+  max_size: 50  # MB
+  max_backups: 10
+  max_age: 30  # days
+  compress: true
+  console: true
+  log_injection: true
+  sampling: true
+  fields:
+    app_name: "GDesign"
+    environment: "development"
+    version: "1.0.0"
+    instance_id: "dev-001"

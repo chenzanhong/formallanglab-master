@@ -49,7 +49,7 @@ func RegexToNFA(c *gin.Context) {
 	}()
 	var req dto.RegexToNFARequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, dto.RegexToNFAResponse{
+		c.JSON(http.StatusBadRequest, dto.RegexToNFAResponse{
 			Msg:    "Invalid request: " + err.Error(),
 			Result: false,
 		})
@@ -63,7 +63,6 @@ func RegexToNFA(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.RegexToNFAResponse{
 			Msg:    "invalid regular expression",
 			Result: false,
-			Error:  err.Error(),
 		})
 		metrics.IncOperation("convert", "regex_to_nfa", "failure: invalid regex")
 		return
@@ -74,16 +73,16 @@ func RegexToNFA(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.RegexToNFAResponse{
 			Msg:    "转换失败，输入为空或无效的正则表达式",
 			Result: false,
-			Error:  err.Error(),
 		})
 		metrics.IncOperation("convert", "regex_to_nfa", "failure: conversion failed")
 		return
 	}
 	metrics.IncOperation("convert", "regex_to_nfa", "success")
 	c.JSON(http.StatusOK, dto.RegexToNFAResponse{
-		Msg:     "转换成功",
-		Result:  true,
-		FSMFlow: nfa.ToReactFlow(),
+		Msg:           "正则表达式转NFA成功",
+		Result:        true,
+		Automaton:     nfa,
+		AutomatonFlow: nfa.ToReactFlow(),
 	})
 }
 

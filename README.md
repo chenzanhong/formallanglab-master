@@ -18,19 +18,45 @@ FormalLangLab 是一个基于 Web 的交互式形式语言与自动机学习系�
     
 
 
-后端	Golang（Gin 框架）、JSON API
-数据库	PostgreSQL（用于保存用户信息和相关历史记录）
-AI	本地运行 Ollama + Llama3，或调用阿里云 Qwen API
-相关算法	参考开源库/工具，如 go-graphviz、ANTLR
+## 技术栈
+
+- **框架**: Golang (Gin)
+- **数据库**: PostgreSQL
+- **认证**: JWT
+- **消息队列**: Kafka（用于邮件异步处理）
+- **AI集成**: 支持本地 Ollama + Llama3 或远程 API（通义千问等）
+- **日志**: 结构化日志系统
+- **配置管理**: YAML 配置文件
 
 ---
 
 
 
 
-# 项目功能板块
+## 项目结构
 
-以下是本项目提供的所有接口及其功能说明：
+```
+backend/
+├── cmd/                 # 应用入口
+│   ├── main.go          # 主服务器入口
+│   └── email-comsumer/  # 邮件消费者
+├── configs/             # 配置文件
+│   ├── config.go        # 配置加载
+│   └── config.yaml.example # 配置示例
+├── internal/            # 内部包
+│   ├── api/             # API 处理层
+│   ├── domain/          # 领域模型
+│   ├── service/         # 业务逻辑层
+│   ├── repository/      # 数据访问层
+│   └── middleware/      # 中间件
+├── knowledge/           # 知识库数据
+├── logs/                # 日志配置
+├── migrations/          # 数据库迁移
+├── pkg/                 # 公共工具包
+└── test/                # 测试文件
+```
+
+## API 接口说明
 
 ## 公开路由
 
@@ -63,20 +89,20 @@ AI	本地运行 Ollama + Llama3，或调用阿里云 Qwen API
 
 | 方法 | 路由                                | 功能描述                       |
 |------|-------------------------------------|--------------------------------|
-| POST | `/gdesign/fsm/validate`             | 是否有效                       |
-| POST | `/gdesign/fsm/recognize`            | 字符串识别                     |
-| POST | `/gdesign/fsm/cleanup`              | 去无效符号、不可达符号          |
-| POST | `/gdesign/fsm/minimize`             | DFA 最小化                     |
-| POST | `/gdesign/fsm/nfatodfa`      | NFA 转 DFA                     |
+| POST | `/gdesign/automaton/validate`             | 是否有效                       |
+| POST | `/gdesign/automaton/recognize`            | 字符串识别                     |
+| POST | `/gdesign/automaton/cleanup`              | 去无效符号、不可达符号          |
+| POST | `/gdesign/automaton/minimize`             | DFA 最小化                     |
+| POST | `/gdesign/automaton/nfatodfa`      | NFA 转 DFA                     |
 
 ### 文法、自动机间的转换
 
 | 方法 | 路由                                | 功能描述                       |
 |------|-------------------------------------|--------------------------------|
-| POST | `/gdesign/convert/grammartonfa`     | -文法转成 NFA                   |
-| POST | `/gdesign/convert/fatogrammar`      | -FA 转成文法                   |
-| POST | `/gdesign/convert/regextonfa  `     | -正则表达式转成NFA               |
-| POST | `/gdesign/convert/fatoregex  `      | -FA转成正则表达式               |
+| POST | `/gdesign/convert/grammar-to-nfa`   | -文法转成 NFA                   |
+| POST | `/gdesign/convert/fa-to-grammar`    | -FA 转成文法                   |
+| POST | `/gdesign/convert/regex-to-nfa`     | -正则表达式转成NFA               |
+| POST | `/gdesign/convert/fa-to-regex`      | -FA转成正则表达式               |
 
 ### 知识学习
 
@@ -88,32 +114,42 @@ AI	本地运行 Ollama + Llama3，或调用阿里云 Qwen API
 
 | 方法 | 路由                        | 功能描述             |
 |------|-----------------------------|----------------------|
-| GET  | `/gdesign/ai/`              | -获取AI相关信息或执行特定操作 |
+| POST  | `/gdesign/ai/sse`           | 流式AI聊天接口 |
 
 
 
 
-### 2. **后端（Golang）**
+## 核心功能模块
 
-| 功能 | 技术推荐 | 说明 |
-|------|-----------|------|
-| 框架 | **Gin ** | 轻量级高性能框架，适合 RESTful API |
-| 文法解析 | **自行实现 LL(1) 分析器** | ANTLR可快速构建词法分析器和语法树 |
-| 自动机构建 | **手动实现 NFA/DFA 转换 / 最小化 DFA / ε-NFA 消除** | 结合编译原理知识实现核心算法 |
-| 数据库 | **PostgreSQL + GORM** | ORM 或原生 SQL 操作 |
-| AI 接口 | **HTTP Client (net/http) / Qwen SDK / Ollama API** | 与本地或远程大模型通信 |
-| 日志 | **Zap** | 提升日志可读性和性能 |
+### 1. 用户管理
+- 用户注册、登录认证
+- JWT token 管理
+- 邮件验证功能
 
----
+### 2. 文法处理
+- 文法合法性验证
+- 文法类型判断
+- 文法简化（去无用符号、单一产生式等）
+- 字符串识别与分析
 
-### 3. **AI 模块（可选）**
+### 3. 自动机操作
+- DFA/NFA 构造与验证
+- NFA 转 DFA 算法实现
+- DFA 最小化
+- 自动机字符串接受判断
 
-| 功能 | 技术推荐 | 说明 |
-|------|-----------|------|
-| 本地运行 | **Ollama + Llama3 / Phi3 / Mistral** | 本地部署小型语言模型 |
-| API 调用 | **阿里云 Qwen API / OpenAI API / 百度千帆 / Moonshot** | 使用成熟大模型服务 |
-| 封装接口 | **自定义中间层封装 AI 请求逻辑** | 对接前端与后端，返回自然语言结果 |
-| 示例功能 | **文法解释、错误修正、自动补全、练习题生成** | 提升系统智能化程度 |
+### 4. 正则表达式
+- 正则表达式验证
+- 正则表达式与自动机互转
+
+### 5. 知识学习
+- 形式语言与自动机理论知识库
+- 学习资料管理
+
+### 6. AI 辅助功能
+- 文法解释与错误修复
+- 自动补全与智能提示
+- 学习指导与辅助
 
 步骤	操作
 1️⃣ 选择模型	下载 Qwen 或 DeepSeek 开源模型
@@ -128,7 +164,7 @@ AI Copilot 不是外挂的聊天窗口，而是系统的“智能大脑”，它
 🔍 自动感知上下文（用户正在操作的自动机、输入的字符串、当前页面状态）
 🧠 构造专业 Prompt（将结构化数据转为高质量提示词）
 
-使用React-Chatbot-Kit 实现ai对话组件，后端调用通义千问模型。
+使用自定义实现的AI对话组件，后端调用通义千问模型或本地部署的Ollama模型。
 
 
 ---

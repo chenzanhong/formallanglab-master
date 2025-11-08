@@ -164,7 +164,7 @@ func (a *Automaton) CompleteDFA() error {
 	// Step 0: 确保是 DFA
 	if !a.IsDFA {
 		if _, err := a.ISValidate(); err != nil {
-			return fmt.Errorf("failed to determine the validity of the fsm: %w", err)
+			return fmt.Errorf("failed to determine the validity of the Automaton: %w", err)
 		}
 		if !a.IsDFA {
 			return fmt.Errorf("cannot complete non-DFA")

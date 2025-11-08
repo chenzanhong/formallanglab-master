@@ -1,7 +1,10 @@
 package kafka
 
-import "context"
+import (
+	"backend/internal/domain/model"
+	"context"
+)
 
 type KafkaEmailConsumerService interface {
-	ReadEmail(ctx context.Context) (*KafkaEmailEvent, error)
+	ReadEmail(ctx context.Context) (*model.KafkaEmailEvent, error)
 }

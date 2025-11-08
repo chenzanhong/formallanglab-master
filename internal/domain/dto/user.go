@@ -10,11 +10,11 @@ type RegisterRequest struct {
 
 // 用户注册响应
 type RegisterResponse struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-	ID      uint   `json:"id,omitempty"`
-	Name    string `json:"name,omitempty"`
-	Error   string `json:"error,omitempty"`
+	Result bool   `json:"result"`
+	Msg    string `json:"msg"`
+	ID     uint   `json:"id,omitempty"`
+	Name   string `json:"name,omitempty"`
+	Error  string `json:"error,omitempty"`
 }
 
 // 用户登录请求
@@ -25,17 +25,22 @@ type LoginRequest struct {
 
 // 用户登录响应
 type LoginResponse struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-	Token   string `json:"token,omitempty"`
-	Name    string `json:"name,omitempty"`
-	ID      uint   `json:"id,omitempty"`
-	Error   string `json:"error,omitempty"`
+	Result bool   `json:"result"`
+	Msg    string `json:"msg"`
+	Token  string `json:"token,omitempty"`
+	Name   string `json:"name,omitempty"`
+	ID     uint   `json:"id,omitempty"`
+	Error  string `json:"error,omitempty"`
 }
 
-// 学习相关响应
-type LearnGetResponse struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data,omitempty"`
+// 用户重置密码
+type ResetPasswordRequest struct {
+	Token       string `json:"token"` // 邮件收到的验证码，不是登录token
+	NewPassword string `json:"newPwd"`
+}
+
+type ResetPasswordResponse struct {
+	Result bool   `json:"result"`
+	Msg    string `json:"msg"`
+	Error  string `json:"error,omitempty"`
 }

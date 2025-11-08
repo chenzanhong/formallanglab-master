@@ -2,6 +2,7 @@
 package email
 
 import (
+	"backend/internal/domain/model"
 	myErrors "backend/internal/errors"
 	"backend/internal/repository"
 	kafka_s "backend/internal/service/kafka_s"
@@ -179,7 +180,7 @@ func (s *EmailServiceImpl) sendResetPwdEmail(email, token string) error {
 
 // SendEmailViaKafka 发送邮件事件到 Kafka
 func (s *EmailServiceImpl) sendEmailViaKafka(email, subject, contextType, body string) error {
-	event := &kafka_s.KafkaEmailEvent{
+	event := &model.KafkaEmailEvent{
 		To:          email,
 		Subject:     subject,
 		ContentType: contextType,

@@ -9,7 +9,7 @@ import (
 )
 
 // ============ 统一的业务操作指标 ============
-// module: grammar、fsm、regex、email、ai、learn、user
+// module: grammar、Automaton、regex、email、ai、learn、user
 var (
 	// operation_result_total 记录业务操作的总次数，按模块、操作类型和结果分类
 	// 例如: operation_result_total{module="grammar", operation="validate", result="success"}
@@ -22,7 +22,7 @@ var (
 	)
 
 	// operation_duration_seconds 记录业务操作的执行时间分布，按模块和操作类型分类
-	// 例如: operation_duration_seconds{module="fsm", operation="minimize"}
+	// 例如: operation_duration_seconds{module="automaton", operation="minimize"}
 	operationDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name:    "operation_duration_seconds",
@@ -46,7 +46,7 @@ var (
 	)
 
 	// httpRequestDuration 记录HTTP请求的响应时间分布，按方法和路径分类
-	// 例如: http_request_duration_seconds{method="POST", path="/api/fsm/minimize"}
+	// 例如: http_request_duration_seconds{method="POST", path="/api/automaton/minimize"}
 	httpRequestDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name:    "http_request_duration_seconds",
@@ -64,7 +64,7 @@ func PrometheusRegister() {
 
 // IncOperation 增加业务操作计数器
 // 参数:
-//   - module: 模块名称 (如 "grammar", "fsm")
+//   - module: 模块名称 (如 "grammar", "automaton")
 //   - operation: 操作类型 (如 "validate", "minimize")
 //   - result: 操作结果 (如 "success", "failure")
 func IncOperation(module, operation, result string) {
@@ -73,7 +73,7 @@ func IncOperation(module, operation, result string) {
 
 // ObserveOperationDuration 记录业务操作的执行时间
 // 参数:
-//   - module: 模块名称 (如 "grammar", "fsm")
+//   - module: 模块名称 (如 "grammar", "automaton")
 //   - operation: 操作类型 (如 "validate", "minimize")
 //   - seconds: 操作执行时间(秒)
 func ObserveOperationDuration(module, operation string, seconds float64) {

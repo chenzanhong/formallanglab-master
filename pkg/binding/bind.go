@@ -8,19 +8,19 @@ import (
 )
 
 const ( // 用户当前停留的页面
-	PageRegex   = "regex"
-	PageGrammar = "grammar"
-	PageFSM     = "fsm"
-	PageLearn   = "learn"
-	PageHome    = "home"
+	PageRegex     = "regex"
+	PageGrammar   = "grammar"
+	PageAutomaton = "automaton"
+	PageLearn     = "learn"
+	PageHome      = "home"
 )
 
 var validPages = map[string]bool{
-	PageRegex:   true,
-	PageGrammar: true,
-	PageFSM:     true,
-	PageLearn:   true,
-	PageHome:    true,
+	PageRegex:     true,
+	PageGrammar:   true,
+	PageAutomaton: true,
+	PageLearn:     true,
+	PageHome:      true,
 }
 
 type PageType string

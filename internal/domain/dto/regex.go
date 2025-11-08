@@ -13,6 +13,7 @@ type RegexValidateResponse struct {
 	Msg     string      `json:"msg"`
 	Pattern model.Regex `json:"pattern,omitempty"`
 	Error   interface{} `json:"error,omitempty"`
+	Result  bool        `json:"result"`
 }
 
 // 正则表达式识别请求
@@ -26,4 +27,5 @@ type RegexRecognizeResponse struct {
 	Matched bool        `json:"matched"`
 	Msg     string      `json:"msg"`
 	Error   interface{} `json:"error,omitempty"`
+	Result  bool        `json:"result"`
 }

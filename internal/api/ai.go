@@ -25,24 +25,17 @@ func NewAIHandler(aiService aiSvc.AIService) *AIhandler {
 	return &AIhandler{aiService: aiService}
 }
 
-/*
-流式对话
-中文乱码	确保 Go 后端设置 Content-Type: text/event-stream; charset=utf-8
-跨域（CORS）	在 Gin 中添加中间件：已添加
-特殊字符（如 ?, &）	前端用 encodeURIComponent，后端自动解码
-长连接超时	可在后端定期发送 : ping\n\n 保活（可选）
-*/
-
 func (h *AIhandler) AIChatSSE(c *gin.Context) {
 	start := time.Now()
 	defer func() {
 		metrics.ObserveOperationDuration("ai", "chat_sse", time.Since(start).Seconds())
 	}()
 
-	var req dto.AIChatRequest // 给我5行四字成语，一行一个
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "message is required"})
-		metrics.IncOperation("ai", "chat_sse", "failure: message required")
+	var req dto.AIChatRequest
+	if err := c.BindJSON(&req); err != nil {
+		metrics.IncOperation("ai", "chat_sse", "failure: request body required")
+		logs.Sugar.Errorw("AI对话请求失败", "detail", "请求体不能为空")
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "request body is required", "result": false})
 		return
 	}
 
@@ -51,8 +44,9 @@ func (h *AIhandler) AIChatSSE(c *gin.Context) {
 	username := usernameVal.(string)
 	stream, session, err := h.aiService.StreamChat(c.Request.Context(), username, &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		metrics.IncOperation("ai", "chat_sse", "failure: service error")
+		logs.Sugar.Errorw("AI对话请求失败", "detail", "AI服务调用失败")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "result": false})
 		return
 	}
 
@@ -67,25 +61,25 @@ func (h *AIhandler) AIChatSSE(c *gin.Context) {
 	// 用于缓冲待发送的内容（提升性能）
 	var buffer strings.Builder
 
-	ticker := time.NewTicker(50 * time.Millisecond)
+	ticker := time.NewTicker(64 * time.Millisecond)
 	defer ticker.Stop()
 
 	done := make(chan bool)
 	go func() {
-		defer close(done)
 		for {
 			select {
-			case <-c.Request.Context().Done():
-				return
 			case <-ticker.C:
 				if buffer.Len() > 0 {
 					// 写入客户端
+					// 不使用c.SSE，ai响应本身就是流式，无需再SSE
 					c.Writer.Write([]byte(buffer.String()))
 					c.Writer.Flush()
 					// 同步到完整响应记录
 					aiResp.WriteString(buffer.String())
 					buffer.Reset()
 				}
+			case <-done:
+				return
 			}
 		}
 	}()
@@ -94,16 +88,21 @@ func (h *AIhandler) AIChatSSE(c *gin.Context) {
 		buffer.WriteString(stream.Current().Choices[0].Delta.Content)
 	}
 
+	// 停止ticker并关闭done通道
+	ticker.Stop()
+	close(done)
+
 	// 最终 flush 剩余内容
 	if buffer.Len() > 0 {
 		c.Writer.Write([]byte(buffer.String()))
 		c.Writer.Flush()
 		aiResp.WriteString(buffer.String())
+		buffer.Reset()
 	}
-	<-done
 
 	if err := stream.Err(); err != nil {
-		logs.Sugar.Errorf("AI stream error: %v", err)
+		metrics.IncOperation("ai", "chat_sse", "failure: stream error")
+		logs.Sugar.Errorw("AI流式传输失败", "detail", "流式传输过程中发生错误")
 	}
 
 	go func() {
@@ -114,9 +113,11 @@ func (h *AIhandler) AIChatSSE(c *gin.Context) {
 		})
 		session.Trim()
 		if err := h.aiService.SaveSession(ctx, username, session); err != nil {
-			logs.Sugar.Errorf("Failed to save AI session for user %s: %v", username, err)
+			metrics.IncOperation("ai", "chat_sse", "failure: save session error")
+			logs.Sugar.Errorw("AI会话保存失败", "detail", "无法保存用户会话信息")
 		}
 	}()
 
 	metrics.IncOperation("ai", "chat_sse", "success")
+	logs.Sugar.Infow("AI对话请求成功")
 }

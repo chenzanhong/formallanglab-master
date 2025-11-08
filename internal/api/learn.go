@@ -2,6 +2,7 @@ package api
 
 import (
 	"backend/internal/metrics"
+	"backend/logs"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -14,4 +15,5 @@ func LearnGet(c *gin.Context) {
 	}()
 
 	metrics.IncOperation("learn", "get", "success")
+	logs.Sugar.Infow("学习资源获取成功")
 }

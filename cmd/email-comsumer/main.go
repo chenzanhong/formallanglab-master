@@ -20,7 +20,7 @@ import (
 	elogs "backend/logs/email"
 
 	eConfig "backend/configs/email"
-	kafka_s "backend/internal/service/kafka_s"
+	"backend/internal/domain/model"
 
 	"github.com/segmentio/kafka-go"
 	"gopkg.in/gomail.v2"
@@ -29,7 +29,7 @@ import (
 func main() {
 	elogs.InitZapSugarDefault()
 	eConfig.SetEmailEnvVariables()
-	
+
 	brokers := strings.Split(strings.TrimSpace(os.Getenv("KAFKA_BROKERS")), ",") // 从配置读取
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: brokers,
@@ -64,7 +64,7 @@ func main() {
 				continue
 			}
 
-			var event kafka_s.KafkaEmailEvent
+			var event model.KafkaEmailEvent
 			if err := json.Unmarshal(msg.Value, &event); err != nil {
 				elogs.EmailSugar.Infof("Failed to unmarshal email event: %v", err)
 				continue

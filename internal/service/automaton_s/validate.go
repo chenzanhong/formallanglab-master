@@ -1,8 +1,8 @@
-package fsm_s
+package automaton_s
 
-import (
-	"backend/internal/domain/model" // 根据你的项目路径调整
-)
+import "backend/internal/domain/model"
+
+// 根据你的项目路径调整
 
 /*
 1. 状态集合非空	len(States) > 0 且无空状态名	NFA/DFA
@@ -13,8 +13,8 @@ import (
 6. DFA 确定性	len(ToStates) == 1 且无重复 (from, input)	仅 DFA
 */
 
-// FSMValidate 验证一个自动机是否有效
+// automatonValidate 验证一个自动机是否有效
 // 返回：是否有效，以及错误信息（如果无效）
-func FSMValidate(fsm *model.Automaton) (bool, error) {
-	return fsm.ISValidate()
+func AutomatonValidate(automaton *model.Automaton) (bool, error) {
+	return automaton.ISValidate()
 }

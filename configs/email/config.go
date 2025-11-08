@@ -16,7 +16,7 @@ type EmailWorkerConfig struct {
 	Kafka      configs.KafkaConfig      `yaml:"kafka"`
 }
 
-// LoadConfig 加载配置文件并返回 DBConfig
+// LoadEmailWorkerConfig 加载配置文件并返回 EmailWorkerConfig
 func LoadEmailWorkerConfig() (*EmailWorkerConfig, error) {
 	_, filename, _, ok := runtime.Caller(0) // 获取当前的文件名
 	if !ok {

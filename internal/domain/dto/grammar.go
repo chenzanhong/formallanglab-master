@@ -9,10 +9,11 @@ type GrammarValidateRequest struct {
 
 // 文法验证响应
 type GrammarValidateResponse struct {
-	Valid bool   `json:"valid"`
-	Msg   string `json:"msg"`
-	Error string `json:"error,omitempty"`
-	Type  int    `json:"type"`
+	Valid  bool   `json:"valid"`
+	Msg    string `json:"msg"`
+	Error  string `json:"error,omitempty"`
+	Type   int    `json:"type"`
+	Result bool   `json:"result"`
 }
 
 // 文法二义性检查请求
@@ -24,9 +25,9 @@ type GrammarAmbiguityCheckRequest struct {
 type GrammarAmbiguityCheckResponse struct {
 	Msg         string `json:"msg"`
 	IsAmbiguous *bool  `json:"isAmbiguous,omitempty"` // 使用指针类型以支持nil值（无法判断）
-	// IsRegular   bool   `json:"isRegular"`
-	Type  int    `json:"type"`
-	Error string `json:"error,omitempty"`
+	Type   int    `json:"type"`
+	Error  string `json:"error,omitempty"`
+	Result bool   `json:"result"`
 }
 
 // 字符串识别请求
@@ -41,9 +42,10 @@ type GrammarStringRecognizeRequest struct {
 type GrammarStringRecognizeResponse struct {
 	Accepted bool              `json:"accepted"`
 	Method   string            `json:"method"`
-	Message  string            `json:"message,omitempty"`
+	Msg      string            `json:"msg,omitempty"`
 	Steps    []model.ParseStep `json:"steps,omitempty"`
 	Error    string            `json:"error,omitempty"`
+	Result   bool              `json:"result"`
 }
 
 type GrammarTypeDetermineRequest struct {
@@ -55,12 +57,13 @@ type GrammarTypeDetermineResponse struct {
 	Type     int    `json:"type"`
 	TypeName string `json:"typeName"`
 	Error    string `json:"error,omitempty"`
+	Result   bool   `json:"result"`
 }
 
 // 文法等价性检查请求
 type GrammarEquivalenceCheckRequest struct {
-	G1 model.Grammar `json:"g1" binding:"required"`
-	G2 model.Grammar `json:"g2" binding:"required"`
+	Grammar1 model.Grammar `json:"grammar1" binding:"required"`
+	Grammar2 model.Grammar `json:"grammar2" binding:"required"`
 }
 
 // 文法等价性检查响应
@@ -68,6 +71,7 @@ type GrammarEquivalenceCheckResponse struct {
 	Msg          string `json:"msg"`
 	IsEquivalent bool   `json:"isEquivalent"`
 	Error        string `json:"error,omitempty"`
+	Result       bool   `json:"result"`
 }
 
 // 文法化简请求
@@ -77,8 +81,8 @@ type GrammarSimplifyRequest struct {
 
 // 文法化简响应
 type GrammarSimplifyResponse struct {
-	Msg     string      `json:"msg"`
-	Grammar model.Grammar `json:"grammar,omitempty"`
-	// Type    int         `json:"type,omitempty"`
-	Error   string      `json:"error,omitempty"`
+	Msg     string       `json:"msg"`
+	Grammar *model.Grammar `json:"grammar,omitempty"`
+	Error   string       `json:"error,omitempty"`
+	Result  bool         `json:"result"`
 }

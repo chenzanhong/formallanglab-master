@@ -25,10 +25,10 @@ import (
 )
 
 func init() {
-	mtr.PrometheusRegister()     // 初m始化Prometheus
+	mtr.PrometheusRegister()     // 初始化Prometheus
 	binding.RegisterValidation() // 注册自定义验证器
-	logs.InitZapSugarDefault()   // 初始化zap日志配置
-	cf.SetEnvVariables()         // 设置环境变量
+	cf.SetEnvVariables()         // 初始化配置以及环境变量设置
+	logs.InitLoggerFromEnv()
 }
 
 /*

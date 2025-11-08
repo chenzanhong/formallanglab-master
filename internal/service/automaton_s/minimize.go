@@ -1,4 +1,4 @@
-package fsm_s
+package automaton_s
 
 import (
 	"backend/internal/domain/model"
@@ -9,16 +9,16 @@ import (
 
 // DFAMinimize 是 DFA 最小化的统一入口（默认使用表格填充法）
 // 可根据需要切换为 Hopcroft 算法（如通过配置 flag）
-func DFAMinimize(fsm *model.Automaton) *model.Automaton {
+func DFAMinimize(automaton *model.Automaton) *model.Automaton {
 	// 可选：未来可加 algo := config.GetMinimizationAlgo()
-	// return minimizeByHopcroft(fsm)
-	return minimizeByTableFilling(fsm)
+	// return minimizeByHopcroft(Automaton)
+	return minimizeByTableFilling(automaton)
 }
 
 // minimizeByTableFilling 使用表格填充法（Table-Filling Method）对 DFA 进行最小化
-func minimizeByTableFilling(fsm *model.Automaton) *model.Automaton {
+func minimizeByTableFilling(automaton *model.Automaton) *model.Automaton {
 	// 步骤 1: 去除不可达状态
-	reachable := getReachableStates(fsm)
+	reachable := getReachableStates(automaton)
 	var states []model.State
 	for s := range reachable {
 		states = append(states, s)
@@ -26,7 +26,7 @@ func minimizeByTableFilling(fsm *model.Automaton) *model.Automaton {
 
 	newAccepting := []model.State{}
 	acceptingSet := make(map[model.State]bool)
-	for _, s := range fsm.AcceptingStates {
+	for _, s := range automaton.AcceptingStates {
 		if reachable[s] {
 			newAccepting = append(newAccepting, s)
 			acceptingSet[s] = true
@@ -36,9 +36,9 @@ func minimizeByTableFilling(fsm *model.Automaton) *model.Automaton {
 	if len(states) <= 1 {
 		return &model.Automaton{
 			States:          states,
-			Alphabet:        fsm.Alphabet,
-			Transitions:     filterTransitions(fsm.Transitions, reachable),
-			InitialState:    fsm.InitialState,
+			Alphabet:        automaton.Alphabet,
+			Transitions:     filterTransitions(automaton.Transitions, reachable),
+			InitialState:    automaton.InitialState,
 			AcceptingStates: newAccepting,
 			IsDFA:           true,
 		}
@@ -47,9 +47,9 @@ func minimizeByTableFilling(fsm *model.Automaton) *model.Automaton {
 	// 构建仅含可达状态的子自动机（用于后续转移查询）
 	reduced := &model.Automaton{
 		States:          states,
-		Alphabet:        fsm.Alphabet,
-		Transitions:     filterTransitions(fsm.Transitions, reachable),
-		InitialState:    fsm.InitialState,
+		Alphabet:        automaton.Alphabet,
+		Transitions:     filterTransitions(automaton.Transitions, reachable),
+		InitialState:    automaton.InitialState,
 		AcceptingStates: newAccepting,
 		IsDFA:           true,
 	}
@@ -65,15 +65,15 @@ func minimizeByTableFilling(fsm *model.Automaton) *model.Automaton {
 }
 
 // minimizeByHopcroft 使用 Hopcroft 算法对 DFA 进行最小化（备用实现）
-func minimizeByHopcroft(fsm *model.Automaton) *model.Automaton {
+func minimizeByHopcroft(automaton *model.Automaton) *model.Automaton {
 	// Step 1: 移除不可达状态
-	reachable := getReachableStates(fsm)
+	reachable := getReachableStates(automaton)
 	reduced := &model.Automaton{
-		States:          filterStates(fsm.States, reachable),
-		Alphabet:        fsm.Alphabet,
-		Transitions:     filterTransitions(fsm.Transitions, reachable),
-		InitialState:    fsm.InitialState,
-		AcceptingStates: filterStates(fsm.AcceptingStates, reachable),
+		States:          filterStates(automaton.States, reachable),
+		Alphabet:        automaton.Alphabet,
+		Transitions:     filterTransitions(automaton.Transitions, reachable),
+		InitialState:    automaton.InitialState,
+		AcceptingStates: filterStates(automaton.AcceptingStates, reachable),
 		IsDFA:           true,
 	}
 
@@ -205,8 +205,8 @@ func filterTransitions(trans []model.Transition, reachable map[model.State]bool)
 	return res
 }
 
-func getDFANextState(fsm *model.Automaton, from model.State, input model.Symbol) model.State {
-	for _, t := range fsm.Transitions {
+func getDFANextState(automaton *model.Automaton, from model.State, input model.Symbol) model.State {
+	for _, t := range automaton.Transitions {
 		if t.FromState == from && t.Input == input {
 			return t.ToStates[0] // DFA only has one next state
 		}
@@ -214,8 +214,8 @@ func getDFANextState(fsm *model.Automaton, from model.State, input model.Symbol)
 	return "" // No transition (should not happen in complete DFA)
 }
 
-func markDistinguishablePairs(fsm *model.Automaton, acceptingSet map[model.State]bool) map[[2]model.State]bool {
-	states := fsm.States
+func markDistinguishablePairs(automaton *model.Automaton, acceptingSet map[model.State]bool) map[[2]model.State]bool {
+	states := automaton.States
 	distinguishable := make(map[[2]model.State]bool)
 
 	// 初始化：接受 vs 非接受
@@ -243,9 +243,9 @@ func markDistinguishablePairs(fsm *model.Automaton, acceptingSet map[model.State
 				if distinguishable[pair] {
 					continue
 				}
-				for _, a := range fsm.Alphabet {
-					nextP := getDFANextState(fsm, p, a)
-					nextQ := getDFANextState(fsm, q, a)
+				for _, a := range automaton.Alphabet {
+					nextP := getDFANextState(automaton, p, a)
+					nextQ := getDFANextState(automaton, q, a)
 					if nextP == "" || nextQ == "" {
 						if nextP == "" && nextQ == "" { // 都没有转移，先跳过
 							continue
@@ -273,9 +273,9 @@ func markDistinguishablePairs(fsm *model.Automaton, acceptingSet map[model.State
 	return distinguishable
 }
 
-func buildReverseTransitions(fsm *model.Automaton) map[model.State]map[model.Symbol][]model.State {
+func buildReverseTransitions(automaton *model.Automaton) map[model.State]map[model.Symbol][]model.State {
 	rev := make(map[model.State]map[model.Symbol][]model.State)
-	for _, t := range fsm.Transitions {
+	for _, t := range automaton.Transitions {
 		to := t.ToStates[0]
 		if rev[to] == nil {
 			rev[to] = make(map[model.Symbol][]model.State)
@@ -302,7 +302,7 @@ func equalSet(a, b []model.State) bool {
 }
 
 func buildMinimizedDFAFromClasses(
-	fsm *model.Automaton,
+	automaton *model.Automaton,
 	classes [][]model.State,
 	acceptingSet map[model.State]bool,
 	stateToClass map[model.State][]model.State,
@@ -336,8 +336,8 @@ func buildMinimizedDFAFromClasses(
 		fromState := cls[0]
 		fromName := model.State(fmt.Sprintf("[%s]", joinStates(cls)))
 
-		for _, a := range fsm.Alphabet {
-			next := getDFANextState(fsm, fromState, a)
+		for _, a := range automaton.Alphabet {
+			next := getDFANextState(automaton, fromState, a)
 			if next == "" {
 				continue
 			}
@@ -352,12 +352,12 @@ func buildMinimizedDFAFromClasses(
 		}
 	}
 
-	initialCls := stateToClass[fsm.InitialState]
+	initialCls := stateToClass[automaton.InitialState]
 	initialName := model.State(fmt.Sprintf("[%s]", joinStates(initialCls)))
 
 	return &model.Automaton{
 		States:          newStates,
-		Alphabet:        fsm.Alphabet,
+		Alphabet:        automaton.Alphabet,
 		Transitions:     newTransitions,
 		InitialState:    initialName,
 		AcceptingStates: newAccepting,
@@ -373,16 +373,16 @@ func joinStates(states []model.State) string {
 	return fmt.Sprintf("%s", strings.Join(strs, ","))
 }
 
-func getReachableStates(fsm *model.Automaton) map[model.State]bool {
+func getReachableStates(automaton *model.Automaton) map[model.State]bool {
 	reachable := make(map[model.State]bool)
-	queue := []model.State{fsm.InitialState}
-	reachable[fsm.InitialState] = true
+	queue := []model.State{automaton.InitialState}
+	reachable[automaton.InitialState] = true
 
 	for len(queue) > 0 {
 		current := queue[0]
 		queue = queue[1:]
 
-		for _, t := range fsm.Transitions {
+		for _, t := range automaton.Transitions {
 			if t.FromState == current && !reachable[t.ToStates[0]] {
 				reachable[t.ToStates[0]] = true
 				queue = append(queue, t.ToStates[0])
@@ -450,7 +450,7 @@ func findEquivalenceClasses(states []model.State, distinguishable map[[2]model.S
 	return result
 }
 func buildMinimizedDFA(
-	fsm *model.Automaton,
+	automaton *model.Automaton,
 	classes [][]model.State,
 	acceptingSet map[model.State]bool,
 ) *model.Automaton {
@@ -485,8 +485,8 @@ func buildMinimizedDFA(
 		fromState := cls[0] // 任取一个代表状态
 		fromName := fmt.Sprintf("%v", cls)
 
-		for _, a := range fsm.Alphabet {
-			next := getDFANextState(fsm, fromState, a)
+		for _, a := range automaton.Alphabet {
+			next := getDFANextState(automaton, fromState, a)
 			if next == "" {
 				continue // 无转移（理论上不应发生）
 			}
@@ -502,12 +502,12 @@ func buildMinimizedDFA(
 	}
 
 	// 确定初始状态
-	initialCls := stateToClass[fsm.InitialState]
+	initialCls := stateToClass[automaton.InitialState]
 	initialName := fmt.Sprintf("%v", initialCls)
 
 	return &model.Automaton{
 		States:          newStates,
-		Alphabet:        fsm.Alphabet,
+		Alphabet:        automaton.Alphabet,
 		Transitions:     newTransitions,
 		InitialState:    model.State(initialName),
 		AcceptingStates: newAccepting,
