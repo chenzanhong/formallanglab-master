@@ -15,9 +15,15 @@ import (
 
 func SetupRouter(userService userSvc.UserService, emailService emailSvc.EmailService, aiService aiSvc.AIService, enable_pprof string) *gin.Engine {
 
+	userHandler := NewUserHandler(userService)
+	emailHandler := NewEmailHandler(emailService)
+	aiHandler := NewAIHandler(aiService)
+
 	router := gin.New()
 	// 1. 恢复中间件 - 最先使用，捕获所有panic
 	router.Use(gin.Recovery())
+	router.GET("/gdesign/ai/ws", aiHandler.AIChatWS) // WebSocket聊天接口，不经过JWT中间件
+
 	// 2. 请求ID中间件 - 尽早设置，让后续中间件都能使用
 	router.Use(middleware.RequestID())
 	// 3. 全局速率限制 - 在处理请求初期进行限制，避免资源浪费，
@@ -33,12 +39,8 @@ func SetupRouter(userService userSvc.UserService, emailService emailSvc.EmailSer
 		setupPprof(router)
 	}
 
-	userHandler := NewUserHandler(userService)
-	emailHandler := NewEmailHandler(emailService)
-
 	setupPublicRoutes(router, userHandler, emailHandler) // 注册公开路由
 
-	aiHandler := NewAIHandler(aiService)
 	setupAuthRoutes(router, userHandler, aiHandler) // 注册需要认证的路由
 
 	return router
@@ -130,7 +132,6 @@ func setupAuthRoutes(router *gin.Engine, userHandler *UserHandler, aiHandler *AI
 	// AI 相关接口
 	ai := r.Group("/ai")
 	{
-		ai.POST("/sse", aiHandler.AIChatSSE)             // 流式AI聊天接口，SSE
-		router.GET("/gdesign/ai/ws", aiHandler.AIChatWS) // WebSocket聊天接口，不经过JWT中间件
+		ai.POST("/sse", aiHandler.AIChatSSE) // 流式AI聊天接口，SSE
 	}
 }

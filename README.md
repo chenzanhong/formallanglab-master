@@ -1,22 +1,18 @@
 # FormalLangLab
-FormalLangLab 是一个基于 Web 的交互式形式语言与自动机学习系统，旨在帮助计算机科学专业的学生更直观、高效地理解文法、正则表达式、自动机（DFA/NFA）、LL(1)/LR(1) 分析等编译原理核心概念。  该项目集成了自动机可视化、文法合法性检查、DFA/NFA 构造与转换、字符串接受判断、LL(1)/LR(1) 分析过程演示等功能，并通过 AI 模块提供智能辅助学习功能。
 
-该项目还未完成。
+FormalLangLab 是一个基于 Web 的交互式形式语言与自动机学习系统，旨在帮助计算机科学专业的学生更直观、高效地理解文法、正则表达式、自动机（DFA/NFA）、LL(1)/LR(1) 分析等编译原理核心概念。该项目集成了自动机可视化、文法合法性检查、DFA/NFA 构造与转换、字符串接受判断、LL(1)/LR(1) 分析过程演示等功能，并通过 AI 模块提供智能辅助学习功能。
 
 《支持自动机可视化的形式语言学习系统的设计与实现》
 
-功能模块：
-1、文法输入（判断是否合法、有效）
-2、基于文法或正则表达式生成DFA或NFA，可带ε——扩展部分：最小化DFA、NFA转DFA
-3、判断输入串是否被接受——扩展部分：LL(1)分析和LR(1)分析过程；ANTRL
-4、介绍自动机、文法的知识
-5、接入ai，可能的功能：
-	使用本地小模型（如 Ollama + Llama3）或调用大模型 API（如通义千问）：
-		文法解释助手（自然语言解释文法规则）
-		自动补全文法输入（类似 IDE 的语法提示）
-		错误文法智能修复
-    
+## 功能模块
 
+- **文法处理**：文法合法性验证、文法类型判断、文法简化（去无用符号、单一产生式等）、字符串识别与分析
+- **自动机操作**：DFA/NFA 构造与验证、NFA 转 DFA 算法实现、DFA 最小化、自动机字符串接受判断
+- **正则表达式**：正则表达式验证、正则表达式与自动机互转
+- **转换功能**：文法与自动机之间的相互转换、正则表达式与自动机之间的相互转换
+- **知识学习**：形式语言与自动机理论知识库、学习资料管理
+- **AI 辅助功能**：文法解释与错误修复、自动补全与智能提示、学习指导与辅助
+- **用户管理**：用户注册、登录认证、JWT token 管理、邮件验证功能
 
 ## 技术栈
 
@@ -27,161 +23,196 @@ FormalLangLab 是一个基于 Web 的交互式形式语言与自动机学习系�
 - **AI集成**: 支持本地 Ollama + Llama3 或远程 API（通义千问等）
 - **日志**: 结构化日志系统
 - **配置管理**: YAML 配置文件
-
----
-
-
-
+- **监控**: Prometheus + Grafana
 
 ## 项目结构
 
 ```
 backend/
-├── cmd/                 # 应用入口
-│   ├── main.go          # 主服务器入口
-│   └── email-comsumer/  # 邮件消费者
-├── configs/             # 配置文件
-│   ├── config.go        # 配置加载
-│   └── config.yaml.example # 配置示例
-├── internal/            # 内部包
-│   ├── api/             # API 处理层
-│   ├── domain/          # 领域模型
-│   ├── service/         # 业务逻辑层
-│   ├── repository/      # 数据访问层
-│   └── middleware/      # 中间件
-├── knowledge/           # 知识库数据
-├── logs/                # 日志配置
-├── migrations/          # 数据库迁移
-├── pkg/                 # 公共工具包
-└── test/                # 测试文件
+├── cmd/                    # 程序入口
+│   ├── main.go             # 主服务入口
+│   └── email/              # 邮件服务入口
+├── configs/                # 配置文件
+├── internal/               # 核心业务代码
+│   ├── api/                # HTTP 接口层
+│   ├── domain/             # 领域模型
+│   │   ├── dto/            # 数据传输对象
+│   │   └── model/          # 领域模型定义
+│   ├── service/            # 业务逻辑层
+│   │   ├── grammar_s/      # 文法相关服务
+│   │   ├── automaton_s/    # 自动机相关服务
+│   │   ├── convert_s/      # 转换相关服务
+│   │   ├── ai_s/           # AI 相关服务
+│   │   ├── user_s/         # 用户相关服务
+│   │   └── email_s/        # 邮件相关服务
+│   ├── repository/         # 数据访问层
+│   ├── middleware/         # 中间件
+│   └── errors/             # 错误定义
+├── pkg/                    # 公共包
+├── logs/                   # 日志文件
+├── migrations/             # 数据库迁移脚本
+├── scripts/                # 脚本文件
+└── test/                   # 测试文件
 ```
 
 ## API 接口说明
 
-## 公开路由
+### 公开路由
 
 | 方法 | 路由                | 功能描述             |
 |------|---------------------|----------------------|
-| POST | `/gdesign/register` | 用户注册             |
-| POST | `/gdesign/login`    | 用户登录             |
+| POST | /api/user/register  | 用户注册             |
+| POST | /api/user/login     | 用户登录             |
+| POST | /api/email/send     | 发送邮件验证码       |
+| POST | /api/email/verify   | 验证邮箱             |
 
+### 需要认证的路由
 
-## 需要认证的路由
-
-### 文法相关接口
+#### 文法相关接口
 
 | 方法 | 路由                                 | 功能描述                           |
 |------|--------------------------------------|------------------------------------|
-| POST | `/gdesign/grammar/validate`          | 文法校验——是否有效                 |
-| POST | `/gdesign/grammar/ambiguity`         | -正则文法的二义性判断                      |
-| POST | `/gdesign/grammar/recognize`         | 字符串识别——是否被指定文法所接受；（可选）扩展：返回递归下降分析、LL(1)分析、LR(0)分析或LR(1)分析的过程 |
-| POST | `/gdesign/grammar/type`              | 判断所给文法的类型                  |
-| POST | `/gdesign/grammar/equivalence`       | -判断所给的两个正则文法是否等价           |
-| POST | `/gdesign/grammar/simplify`          | 文法的化简——去无用符号（不可派生、不可达）、单一产生式、空产生式 |
+| POST | /api/grammar/validate                | 文法校验                           |
+| POST | /api/grammar/ambiguity-check         | 正则文法二义性判断                 |
+| POST | /api/grammar/string-recognize        | 字符串识别                         |
+| POST | /api/grammar/type-determine          | 判断所给文法的类型                 |
+| POST | /api/grammar/equivalence-check       | 判断所给的两个正则文法是否等价     |
+| POST | /api/grammar/simplify                | 文法的化简                         |
+| POST | /api/grammar/first-set               | 计算文法的First集                  |
+| POST | /api/grammar/follow-set              | 计算文法的Follow集                 |
 
-### 正则表达式相关接口
+#### 正则表达式相关接口
 
 | 方法 | 路由                                  | 功能描述                     |
 |------|---------------------------------------|------------------------------|
-| POST | `/gdesign/regex/validate`             | -判断是否为有效的正则表达式     |
+| POST | /api/regex/validate                   | 正则表达式验证               |
+| POST | /api/regex/string-recognize           | 正则表达式字符串识别         |
 
-### 自动机相关接口
-
-| 方法 | 路由                                | 功能描述                       |
-|------|-------------------------------------|--------------------------------|
-| POST | `/gdesign/automaton/validate`             | 是否有效                       |
-| POST | `/gdesign/automaton/recognize`            | 字符串识别                     |
-| POST | `/gdesign/automaton/cleanup`              | 去无效符号、不可达符号          |
-| POST | `/gdesign/automaton/minimize`             | DFA 最小化                     |
-| POST | `/gdesign/automaton/nfatodfa`      | NFA 转 DFA                     |
-
-### 文法、自动机间的转换
+#### 自动机相关接口
 
 | 方法 | 路由                                | 功能描述                       |
 |------|-------------------------------------|--------------------------------|
-| POST | `/gdesign/convert/grammar-to-nfa`   | -文法转成 NFA                   |
-| POST | `/gdesign/convert/fa-to-grammar`    | -FA 转成文法                   |
-| POST | `/gdesign/convert/regex-to-nfa`     | -正则表达式转成NFA               |
-| POST | `/gdesign/convert/fa-to-regex`      | -FA转成正则表达式               |
+| POST | /api/automaton/validate             | 自动机校验                     |
+| POST | /api/automaton/cleanup              | 去无效符号、不可达状态         |
+| POST | /api/automaton/minimize             | DFA 最小化                     |
+| POST | /api/automaton/string-recognize     | 自动机字符串识别               |
+| POST | /api/automaton/nfa-to-dfa           | NFA 转 DFA                     |
 
-### 知识学习
+#### 文法、自动机间的转换
+
+| 方法 | 路由                                | 功能描述                       |
+|------|-------------------------------------|--------------------------------|
+| POST | /api/convert/grammar-to-nfa         | 正则文法转 NFA                 |
+| POST | /api/convert/fa-to-grammar          | DFA 转文法                     |
+| POST | /api/convert/regex-to-nfa           | 正则表达式转 NFA               |
+| POST | /api/convert/fa-to-regex            | 自动机转正则表达式             |
+
+#### 知识学习
 
 | 方法 | 路由                            | 功能描述               |
 |------|---------------------------------|------------------------|
-| GET  | `/gdesign/learn/`               | -获取学习资料或信息      |
+| GET  | /api/learn/grammar              | 获取文法学习资料       |
+| GET  | /api/learn/automaton            | 获取自动机学习资料     |
+| GET  | /api/learn/regex                | 获取正则表达式学习资料 |
 
-### AI 相关接口
+#### AI 相关接口
 
 | 方法 | 路由                        | 功能描述             |
 |------|-----------------------------|----------------------|
-| POST  | `/gdesign/ai/sse`           | 流式AI聊天接口 |
+| POST | /api/ai/sse                | AI 流式对话              |
+| GET  | /api/ai/ws                  | AI 对话 WebSocket 连接    |
 
+## 核心功能模块详解
 
+### 1. 文法处理模块
 
+文法处理模块提供了完整的文法分析功能，包括：
 
-## 核心功能模块
+- **文法验证**：检查文法定义是否符合规范
+- **类型判断**：自动识别文法类型（0型、1型、2型、3型）
+- **文法简化**：去除无用符号、单一产生式和空产生式
+- **字符串识别**：支持多种分析方法（BFS、LL(1)、LR(0)、递归下降）
+- **First/Follow集计算**：计算文法符号的First和Follow集
 
-### 1. 用户管理
-- 用户注册、登录认证
-- JWT token 管理
-- 邮件验证功能
+### 2. 自动机处理模块
 
-### 2. 文法处理
-- 文法合法性验证
-- 文法类型判断
-- 文法简化（去无用符号、单一产生式等）
-- 字符串识别与分析
+自动机处理模块提供了完整的自动机构造和分析功能：
 
-### 3. 自动机操作
-- DFA/NFA 构造与验证
-- NFA 转 DFA 算法实现
-- DFA 最小化
-- 自动机字符串接受判断
+- **自动机验证**：检查自动机定义是否有效
+- **NFA转DFA**：使用子集构造法将NFA转换为DFA
+- **DFA最小化**：使用Hopcroft算法最小化DFA
+- **字符串识别**：判断字符串是否被自动机接受
+- **状态清理**：移除不可达状态和无效状态
 
-### 4. 正则表达式
-- 正则表达式验证
-- 正则表达式与自动机互转
+### 3. 转换模块
 
-### 5. 知识学习
-- 形式语言与自动机理论知识库
-- 学习资料管理
+转换模块实现了形式语言不同表示之间的相互转换：
 
-### 6. AI 辅助功能
-- 文法解释与错误修复
-- 自动补全与智能提示
-- 学习指导与辅助
+- **文法到自动机**：将正则文法转换为NFA
+- **自动机到文法**：将DFA转换为正则文法
+- **正则表达式到自动机**：使用Thompson构造法将正则表达式转换为NFA
+- **自动机到正则表达式**：将自动机转换为等价的正则表达式
 
-步骤	操作
-1️⃣ 选择模型	下载 Qwen 或 DeepSeek 开源模型
-2️⃣ 构建数据	收集/生成形式语言题目和答案
-3️⃣ 购买算力	租用云GPU（如 AutoDL）
-4️⃣ 微调模型	使用 LoRA 微调，让模型学会编译原理
-5️⃣ 部署使用	封装成 API 或本地运行
+### 4. AI辅助模块
 
-核心设计理念
-AI Copilot 不是外挂的聊天窗口，而是系统的“智能大脑”，它能：
+AI辅助模块为用户提供智能化学习支持：
+
+- **智能解释**：对文法和自动机提供自然语言解释
+- **错误修复**：自动检测并修复文法和自动机定义中的错误
+- **学习指导**：根据用户操作提供个性化的学习建议
+- **交互对话**：通过WebSocket实现与AI的实时交互
+
+## 部署指南
+
+### 环境要求
+
+- Go 1.21+
+- PostgreSQL 13+
+- Redis 6+
+- Kafka (可选，用于邮件异步处理)
+- Docker (可选，用于容器化部署)
+
+### 配置说明
+
+1. 复制配置文件：
+   ```bash
+   cp configs/config.yaml.example configs/config.yaml
+   ```
+
+2. 修改配置文件中的数据库连接信息、AI服务密钥等参数
+
+3. 设置环境变量：
+   ```bash
+   export DASHSCOPE_API_KEY=your_api_key
+   export DASHSCOPE_BASE_URL=your_base_url
+   ```
+
+### 启动服务
+
+```bash
+# 启动主服务
+go run cmd/main.go
+
+# 启动邮件服务（可选）
+go run cmd/email/main.go
+```
+
+### 容器化部署
+
+项目支持Docker容器化部署，具体配置文件位于`docker/`目录下。
+
+## 核心设计理念
+
+### AI Copilot 设计理念
+
+AI Copilot 不是外挂的聊天窗口，而是系统的"智能大脑"，它能：
 
 🔍 自动感知上下文（用户正在操作的自动机、输入的字符串、当前页面状态）
 🧠 构造专业 Prompt（将结构化数据转为高质量提示词）
 
-使用自定义实现的AI对话组件，后端调用通义千问模型或本地部署的Ollama模型。
+使用自定义实现的AI对话组件，后端调用通义千问模型。
 
-
----
-
-### 4. **部署相关**
-
-| 功能 | 技术推荐 | 说明 |
-|------|-----------|------|
-| 容器化 | **Docker** | 打包前后端、AI、数据库等组件 |
-| 编排 | **Kubernetes (k8s)** | 实现服务编排、负载均衡、自动伸缩 |
-| CI/CD | **GitHub Actions / GitLab CI / Jenkins** | 自动构建、部署流水线 |
-| 监控 | **Prometheus + Grafana** | 后端性能监控（可选） |
-| 域名 & HTTPS | **Nginx / Traefik / Let's Encrypt** | 提供公网访问能力（可选） |
-
----
-
-## 🛠️ 三、关键技术点难点梳理
+## 关键技术点难点梳理
 
 | 模块 | 技术点 | 难点 |
 |------|--------|------|
@@ -195,9 +226,7 @@ AI Copilot 不是外挂的聊天窗口，而是系统的“智能大脑”，它
 | 前端状态管理 | 管理自动机结构数据、文法变更联动 | 避免频繁重渲染、提升性能 |
 | 系统集成 | 前后端联调、AI 模块接入、部署配置 | 各模块协作顺畅是关键 |
 
----
-
-## 💡 四、建议的学习路径（按优先级排序）
+## 建议的学习路径（按优先级排序）
 
 1. **前端基础 + Monaco Editor + 自动机图形展示**
    - 学会基本的 React/Vue 项目搭建
@@ -218,9 +247,7 @@ AI Copilot 不是外挂的聊天窗口，而是系统的“智能大脑”，它
    - Kubernetes 配置部署文件（Deployment, Service, Ingress）
    - 配置 CI/CD 流水线
 
----
-
-## 🎯 五、结语
+## 结语
 
 项目具备以下几个亮点：
 

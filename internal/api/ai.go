@@ -13,6 +13,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -25,18 +26,18 @@ import (
 
 type AIhandler struct {
 	aiService aiSvc.AIService
+	upgrader  websocket.Upgrader
 }
 
 func NewAIHandler(aiService aiSvc.AIService) *AIhandler {
-	return &AIhandler{aiService: aiService}
-}
-
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true // 允许所有来源（生产环境应限制）
-	},
-	// origin := r.Header.Get("Origin")
-	// return origin == "https://yourdomain.com"
+	return &AIhandler{
+		aiService: aiService,
+		upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				return true // 允许所有来源（生产环境应限制）
+			},
+		},
+	}
 }
 
 func (h *AIhandler) AIChatSSE(c *gin.Context) {
@@ -133,19 +134,35 @@ func (h *AIhandler) AIChatSSE(c *gin.Context) {
 	}()
 
 	metrics.IncOperation("ai", "chat_sse", "success")
-	logs.Sugar.Infow("AI对话请求成功")
+	logs.Sugar.Infow("AI对话(SSE)请求成功")
 }
 
 // ================ WebSocket ================
 
 func (h *AIhandler) AIChatWS(c *gin.Context) {
+	fmt.Println("=======================AIChatWS")
 	start := time.Now()
 	defer func() {
 		metrics.ObserveOperationDuration("ai", "chat_ws", time.Since(start).Seconds())
 	}()
 
+	if c.Request.Header.Get("Upgrade") != "websocket" {
+		metrics.IncOperation("ai", "chat_ws", "failure: upgrade required")
+		logs.Sugar.Warnw("AI对话请求失败", "detail", "升级为WebSocket协议失败")
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "upgrade required", "result": false})
+		return
+	}
+
+	username, err := h.extractUsername(c) // 从JWT中提取用户名
+	if err != nil {
+		metrics.IncOperation("ai", "chat_ws", "failure: extract username error")
+		logs.Sugar.Warnw("AI对话请求失败", "detail", "无法从JWT中提取用户名"+err.Error())
+		c.JSON(http.StatusUnauthorized, gin.H{"msg": "invalid token", "result": false})
+		return
+	}
+
 	// 升级HTTP连接为WebSocket
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	conn, err := h.upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		logs.Sugar.Errorw("WebSocket upgrade failed", "error", err)
 		return
@@ -161,12 +178,6 @@ func (h *AIhandler) AIChatWS(c *gin.Context) {
 		// 设置写超时：10分钟内必须回复，否则断开
 		conn.SetWriteDeadline(time.Now().Add(10 * time.Minute))
 		return conn.WriteJSON(msg)
-	}
-
-	username, err := h.extractUsername(c)
-	if err != nil {
-		safeWrite(model.WsMessage{Type: model.MsgTypeError, Error: err.Error()})
-		return
 	}
 
 	type StreamControl struct {
@@ -189,15 +200,10 @@ func (h *AIhandler) AIChatWS(c *gin.Context) {
 		mu.Unlock()
 	}()
 
-	// 创建可取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	// 主消息循环
 	for {
 		// 设置读超时：5分钟内必须发消息，否则断开
 		conn.SetReadDeadline(time.Now().Add(5 * time.Minute))
-
 		_, msgBytes, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
@@ -208,19 +214,13 @@ func (h *AIhandler) AIChatWS(c *gin.Context) {
 
 		var incoming model.WsMessage
 		if err := json.Unmarshal(msgBytes, &incoming); err != nil {
+			fmt.Println(1)
 			safeWrite(model.WsMessage{Type: model.MsgTypeError, Error: "invalid JSON format"})
 			continue
 		}
 
 		switch incoming.Type {
 		case model.MsgTypeChat:
-			// 处理聊天消息
-			var req dto.AIChatRequest
-			if err := json.Unmarshal([]byte(incoming.Data), &req); err != nil {
-				safeWrite(model.WsMessage{Type: model.MsgTypeError, Error: "invalid JSON format"})
-				continue
-			}
-
 			// 如果已有流在运行，先取消它
 			mu.Lock()
 			if currentStream != nil {
@@ -228,8 +228,16 @@ func (h *AIhandler) AIChatWS(c *gin.Context) {
 				<-currentStream.done
 			}
 
+			// 处理聊天消息
+			var req dto.AIChatRequest
+			if err := json.Unmarshal([]byte(incoming.Data), &req); err != nil {
+				fmt.Println(2)
+				safeWrite(model.WsMessage{Type: model.MsgTypeError, Error: "invalid JSON format"})
+				continue
+			}
+
 			// 创建新的上下文和取消函数
-			ctx, cancel = context.WithCancel(context.Background())
+			ctx, cancel := context.WithCancel(context.Background())
 			doneChan := make(chan struct{})
 			currentStream = &StreamControl{
 				cancel: cancel,
@@ -243,6 +251,7 @@ func (h *AIhandler) AIChatWS(c *gin.Context) {
 
 				stream, session, err := h.aiService.StreamChat(ctx, username, &req)
 				if err != nil {
+					fmt.Println(3)
 					safeWrite(model.WsMessage{Type: model.MsgTypeError, Error: err.Error()})
 					return
 				}
@@ -252,15 +261,18 @@ func (h *AIhandler) AIChatWS(c *gin.Context) {
 					// 检查是否被取消
 					select {
 					case <-ctx.Done():
+						fmt.Println(4)
 						safeWrite(model.WsMessage{Type: model.MsgTypeStopped})
 						return
 					default:
 						// 继续发送chuck
 					}
 					content := stream.Current().Choices[0].Delta.Content
+					fmt.Println(content)
 					aiResp.WriteString(content)
 
 					conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+					fmt.Println(5)
 					if err := safeWrite(model.WsMessage{Type: model.MsgTypeChunk, Data: content}); err != nil {
 						logs.Sugar.Warnw("WebSocket write message failed", "error", err)
 						return
@@ -269,11 +281,13 @@ func (h *AIhandler) AIChatWS(c *gin.Context) {
 
 				// 流结束
 				if err := stream.Err(); err != nil {
+					fmt.Println(6)
 					safeWrite(model.WsMessage{Type: model.MsgTypeError, Error: err.Error()})
 				} else {
+					fmt.Println(7)
 					safeWrite(model.WsMessage{Type: model.MsgTypeDone})
 				}
-
+				fmt.Println("AI对话（StreamChat）请求成功")
 				// 异步保存会话
 				go func() {
 					session.RecentTurns = append(session.RecentTurns, model.QAPair{
@@ -295,13 +309,15 @@ func (h *AIhandler) AIChatWS(c *gin.Context) {
 				// 不等待done，立即响应
 			}
 			mu.Unlock()
+			fmt.Println(8)
 			safeWrite(model.WsMessage{Type: model.MsgTypeStopped})
 		case model.MsgTypePing:
 			// 处理心跳消息
-			conn.SetReadDeadline(time.Now().Add(5 * time.Minute))
+			fmt.Println(9)
 			conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			safeWrite(model.WsMessage{Type: model.MsgTypePong})
 		default:
+			fmt.Println(10)
 			safeWrite(model.WsMessage{Type: model.MsgTypeError, Error: "unknown message type"})
 		}
 	}
@@ -312,25 +328,23 @@ func (h *AIhandler) AIChatWS(c *gin.Context) {
 func (h *AIhandler) extractUsername(c *gin.Context) (string, error) {
 	// 从JWT中间件或查询参数获取username
 	username := ""
-	if usernameVal, exists := c.Get("username"); exists {
-		username = usernameVal.(string)
-	} else {
-		tokenStr := c.Query("token")
-		if tokenStr == "" {
-			return "", errors.New("missing token")
-		}
-		claims := &middleware.Claims{}
-		token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
-			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, jwt.ErrSignatureInvalid
-			}
-			return middleware.GetJWTKey(), nil
-		})
-		if err != nil || !token.Valid {
-			return "", errors.New("invalid or expired token")
-		}
-		username = claims.Username
+	tokenStr := c.Query("token")
+	if tokenStr == "" {
+		return "", errors.New("missing token")
 	}
+	fmt.Println("tokenStr:", tokenStr)
+
+	claims := &middleware.Claims{}
+	token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrSignatureInvalid
+		}
+		return middleware.GetJWTKey(), nil
+	})
+	if err != nil || !token.Valid {
+		return "", errors.New("invalid or expired token")
+	}
+	username = claims.Username
 
 	if username == "" {
 		return "", errors.New("missing username")

@@ -31,14 +31,14 @@ type QAPair struct {
 type WsMessageType string
 
 const (
-	MsgTypeChat    WsMessageType = "chat"
-	MsgTypeStop    WsMessageType = "stop"
-	MsgTypePing    WsMessageType = "ping"
-	MsgTypePong    WsMessageType = "pong"
-	MsgTypeDone    WsMessageType = "done"
-	MsgTypeChunk   WsMessageType = "chunk"
-	MsgTypeError   WsMessageType = "error"
-	MsgTypeStopped WsMessageType = "stopped"
+	MsgTypeChat    WsMessageType = "chat" // 客户端发送聊天消息
+	MsgTypeStop    WsMessageType = "stop" // 客户端请求停止生成
+	MsgTypePing    WsMessageType = "ping" // 客户端发送心跳包
+	MsgTypePong    WsMessageType = "pong" // 服务器响应心跳包
+	MsgTypeDone    WsMessageType = "done" // 服务器发送完成消息（流式结束）
+	MsgTypeChunk   WsMessageType = "chunk" // 服务器发送流式消息块
+	MsgTypeError   WsMessageType = "error" // 服务器发送错误消息
+	MsgTypeStopped WsMessageType = "stopped" // 通知客户端生成已停止
 )
 
 type WsMessage struct {

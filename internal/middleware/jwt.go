@@ -15,8 +15,8 @@ func SetJWTKey(key string) {
 	jwtKey = []byte(key)
 }
 
-func GetJWTKey() string {
-	return string(jwtKey)
+func GetJWTKey() []byte {
+	return jwtKey
 }
 
 type Claims struct {

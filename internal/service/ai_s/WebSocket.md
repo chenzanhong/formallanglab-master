@@ -174,7 +174,7 @@ func (h *AIhandler) AIChatWS(c *gin.Context) {
 
 ## 💻 四、前端改造（React）
 
-### 1. 修改 `aiChat` 函数为 WebSocket 版本
+### 1. 修改 `aiChatSSE` 函数为 WebSocket 版本
 
 ```ts
 // src/api/ai.ts
