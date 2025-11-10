@@ -12,7 +12,7 @@ type GrammarValidateResponse struct {
 	Valid  bool   `json:"valid"`
 	Msg    string `json:"msg"`
 	Error  string `json:"error,omitempty"`
-	Type   int    `json:"type"`
+	Type    model.GrammarType    `json:"type"`
 	Result bool   `json:"result"`
 }
 
@@ -25,7 +25,7 @@ type GrammarAmbiguityCheckRequest struct {
 type GrammarAmbiguityCheckResponse struct {
 	Msg         string `json:"msg"`
 	IsAmbiguous *bool  `json:"isAmbiguous,omitempty"` // 使用指针类型以支持nil值（无法判断）
-	Type   int    `json:"type"`
+	Type    model.GrammarType    `json:"type"`
 	Error  string `json:"error,omitempty"`
 	Result bool   `json:"result"`
 }
@@ -54,7 +54,7 @@ type GrammarTypeDetermineRequest struct {
 
 // 文法类型判断响应
 type GrammarTypeDetermineResponse struct {
-	Type     int    `json:"type"`
+	Type     model.GrammarType    `json:"type"`
 	TypeName string `json:"typeName"`
 	Error    string `json:"error,omitempty"`
 	Result   bool   `json:"result"`
@@ -85,4 +85,30 @@ type GrammarSimplifyResponse struct {
 	Grammar *model.Grammar `json:"grammar,omitempty"`
 	Error   string       `json:"error,omitempty"`
 	Result  bool         `json:"result"`
+}
+
+// 文法First集请求
+type GrammarFirstSetRequest struct {
+	Grammar model.Grammar `json:"grammar" binding:"required"`
+}
+
+// 文法First集响应
+type GrammarFirstSetResponse struct {
+	FirstSet map[string][]string `json:"firstSet"`
+	Msg      string              `json:"msg"`
+	Error    string              `json:"error,omitempty"`
+	Result   bool                `json:"result"`
+}
+
+// 文法Follow集请求
+type GrammarFollowSetRequest struct {
+	Grammar model.Grammar `json:"grammar" binding:"required"`
+}
+
+// 文法Follow集响应
+type GrammarFollowSetResponse struct {
+	FollowSet map[string][]string `json:"followSet"`
+	Msg       string              `json:"msg"`
+	Error     string              `json:"error,omitempty"`
+	Result    bool                `json:"result"`
 }

@@ -53,10 +53,10 @@ func testSimpleLL1Grammar() {
 	fmt.Println()
 
 	// 测试输入串 "acb"
-	input1 := []model.Symbol{"a", "c", "b"}
+	input1Str := "acb"
 	fmt.Println("测试输入: acb")
 
-	result1 := grammar_s.ParseStringWithMode(grammar1, input1, "ll1", true)
+	result1 := grammar_s.ParseStringWithMode(grammar1, input1Str, "ll1", true)
 
 	fmt.Printf("结果: %s\n", getResultString(result1.Accepted))
 	fmt.Printf("方法: %s\n", result1.Method)
@@ -80,10 +80,10 @@ func testSimpleLL1Grammar() {
 	fmt.Println("\n" + strings.Repeat("=", 50))
 
 	// 测试输入串 "ab" (应该匹配 A -> ε)
-	input2 := []model.Symbol{"a", "b"}
+	input2Str := "ab"
 	fmt.Println("测试输入: ab")
 
-	result2 := grammar_s.ParseStringWithMode(grammar1, input2, "ll1", true)
+	result2 := grammar_s.ParseStringWithMode(grammar1, input2Str, "ll1", true)
 
 	fmt.Printf("结果: %s\n", getResultString(result2.Accepted))
 	fmt.Printf("方法: %s\n", result2.Method)
@@ -135,10 +135,10 @@ func testArithmeticGrammar() {
 	fmt.Println()
 
 	// 测试输入: id + id * id
-	input := []model.Symbol{"id", "+", "id", "*", "id"}
+	inputStr := "id+id*id"
 	fmt.Println("测试输入: id + id * id")
 
-	result := grammar_s.ParseStringWithMode(grammar, input, "ll1", true)
+	result := grammar_s.ParseStringWithMode(grammar, inputStr, "ll1", true)
 
 	fmt.Printf("结果: %s\n", getResultString(result.Accepted))
 	fmt.Printf("方法: %s\n", result.Method)
@@ -182,10 +182,10 @@ func testRecursiveGrammar() {
 	fmt.Println()
 
 	// 测试输入: a a b b d c c
-	input := []model.Symbol{"a", "a", "b", "b", "d", "c", "c"}
+	inputStr := "aabbdcc"
 	fmt.Println("测试输入: a a b b d c c")
 
-	result := grammar_s.ParseStringWithMode(grammar, input, "auto", true)
+	result := grammar_s.ParseStringWithMode(grammar, inputStr, "auto", true)
 
 	fmt.Printf("结果: %s\n", getResultString(result.Accepted))
 	fmt.Printf("方法: %s\n", result.Method)
@@ -222,11 +222,11 @@ func testErrorHandling() {
 	fmt.Println()
 
 	// 测试错误输入
-	errorInputs := [][]model.Symbol{
-		{"a"},           // 输入不完整
-		{"b", "a"},      // 顺序错误
-		{"a", "b", "c"}, // 多余字符
-		{"c"},           // 无效字符
+	errorInputs := []string{
+		"a",           // 输入不完整
+		"ba",          // 顺序错误
+		"abc",         // 多余字符
+		"c",           // 无效字符
 	}
 
 	errorDescriptions := []string{

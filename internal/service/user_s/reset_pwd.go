@@ -10,13 +10,13 @@ import (
 func (s *UserServiceImpl) ResetPassword(ctx context.Context, token, newPassword string) error {
 	email, err := s.emailRepo.GetEmailByResetPwdToken(ctx, token)
 	if err != nil {
-		logs.Sugar.Errorw("无效或过期的重置 token", "token", token)
+		logs.Sugar.Warnw("无效或过期的重置 token", "token", token)
 		return errors.New("无效或过期的重置链接")
 	}
 
 	// 根据 email 查用户是否
 	if exists, err := s.userRepo.ExistsByEmail(ctx, email); err != nil || !exists {
-		logs.Sugar.Errorw("根据 email 查不到用户", "email", email)
+		logs.Sugar.Warnw("根据 email 查不到用户", "email", email)
 		return errors.New("用户异常")
 	}
 

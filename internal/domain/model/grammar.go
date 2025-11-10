@@ -1,18 +1,29 @@
 package model
 
+import "errors"
 
 // Symbol 表示一个符号，可以是终结符、非终结符或者自动机所识别的一个符号
 type Symbol string
 
 const Epsilon Symbol = "ε" // 定义ε作为特殊输入符号，表示空转移符号
 
+type GrammarType int
+
 const (
-	InvalidGrammar          = -1 // 无效文法
-	PhraseStructureGrammar  = 0  // 零型文法/短语结构文法
-	ContextSensitiveGrammar = 1  // 上下文敏感文法
-	RegularGrammar          = 2  // 正则文法
-	ContextFreeGrammar      = 3  // 上下文无关文法
+	InvalidGrammar          GrammarType = iota - 1 // iota=0 → 0-1 = -1
+	PhraseStructureGrammar                         // iota=1 → 1-1 = 0
+	ContextSensitiveGrammar                        // iota=2 → 2-1 = 1
+	ContextFreeGrammar                             // iota=3 → 3-1 = 2
+	RegularGrammar                                 // iota=4 → 4-1 = 3
 )
+
+var GrammarTypeNameMap = map[GrammarType]string{
+	RegularGrammar:          "3型文法（正则文法）",
+	ContextFreeGrammar:      "2型文法（上下文无关文法）",
+	ContextSensitiveGrammar: "1型文法（上下文有关文法）",
+	PhraseStructureGrammar:  "0型文法（短语结构文法）",
+	InvalidGrammar:          "无效文法",
+}
 
 // 工具函数：将用户输入映射为标准 ε
 func NormalizeSymbol(s string) Symbol {
@@ -37,25 +48,38 @@ type Grammar struct {
 	Terminals    []Symbol     `json:"terminals"`                             // 终结符集合
 	NonTerminals []Symbol     `json:"nonTerminals"`                          // 非终结符集合
 	Productions  []Production `json:"productions"`                           // 产生式集合
-	GrammarType  int          `json:"grammarType" default:"PhraseStructure"` // 文法类型
+	GrammarType  GrammarType  `json:"grammarType" default:"PhraseStructure"` // 文法类型
 }
 
-func (g *Grammar) CheckIsTerminal(s Symbol) bool {
-	for _, v := range g.Terminals {
-		if v == s {
-			return true
-		}
-	}
-	return false
+type CFGView struct {
+	StartSymbol  Symbol                `json:"startSymbol"`  // 起始符号
+	Terminals    []Symbol              `json:"terminals"`    // 终结符集合
+	NonTerminals []Symbol              `json:"nonTerminals"` // 非终结符集合
+	Productions  map[Symbol][][]Symbol `json:"productions"`  // 产生式集合
 }
 
-func (g *Grammar) CheckIsNonTerminal(s Symbol) bool {
-	for _, v := range g.NonTerminals {
-		if v == s {
-			return true
-		}
+func (g *Grammar) ToCFGView() (*CFGView, error) {
+	if g.GrammarType < PhraseStructureGrammar {
+		return nil, errors.New("无效文法类型")
 	}
-	return false
+
+	// 初始化 CFGView
+	cfgView := &CFGView{
+		StartSymbol:  g.StartSymbol,
+		Terminals:    g.Terminals,
+		NonTerminals: g.NonTerminals,
+		Productions:  make(map[Symbol][][]Symbol),
+	}
+
+	// 填充产生式
+	for _, prod := range g.Productions {
+		if len(prod.Left) != 1 || !g.CheckIsNonTerminal(prod.Left[0]) {
+			return nil, errors.New("左部必须是单个非终结符")
+		}
+		cfgView.Productions[prod.Left[0]] = append(cfgView.Productions[prod.Left[0]], prod.Right)
+	}
+
+	return cfgView, nil
 }
 
 // 辅助函数：根据文法中定义的符号来分割字符串
@@ -108,6 +132,24 @@ func (g *Grammar) StringToSymbols(s string) []Symbol {
 	}
 
 	return symbols
+}
+
+func (g *Grammar) CheckIsTerminal(s Symbol) bool {
+	for _, v := range g.Terminals {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+func (g *Grammar) CheckIsNonTerminal(s Symbol) bool {
+	for _, v := range g.NonTerminals {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }
 
 // ParseStep 表示文法分析过程中的一个步骤

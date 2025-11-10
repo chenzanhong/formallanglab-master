@@ -6,8 +6,9 @@ import (
 	"regexp"
 )
 
-func RegexValidate(pattern model.Regex) (bool, error) {
-	return pattern.IsValid()
+func RegexValidate(regex model.Regex) error {
+	// 调用 Regex 对象的 IsValid 方法进行验证
+	return regex.IsValid()
 }
 
 func RegexValidString(str string) (bool, error) {

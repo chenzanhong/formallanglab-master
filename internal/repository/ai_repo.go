@@ -25,7 +25,7 @@ func NewAIRepository(redisClient *redis.Client) AIRepository {
 
 func (r *AIRepositoryImpl) SaveSession(ctx context.Context, username string, session *model.AISession) error {
 	key := "ai:" + username + ":" + string(session.Page)
-	fmt.Println(key)
+	// fmt.Println(key)
 	data, err := json.Marshal(session)
 	if err != nil {
 		return err

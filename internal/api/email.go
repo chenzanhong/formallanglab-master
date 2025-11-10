@@ -32,7 +32,7 @@ func (h *EmailHandler) SendRegisterVerificationCode(c *gin.Context) {
 
 	if err := c.BindJSON(&request); err != nil {
 		metrics.IncOperation("email", "send_register_code", "failure: parameter parsing error")
-		logs.Sugar.Errorw("发送注册验证码失败", "detail", "解析请求失败，请检查请求格式是否正确", "username", usernameStr.(string))
+		logs.Sugar.Warnw("发送注册验证码失败", "detail", "解析请求失败，请检查请求格式是否正确", "username", usernameStr.(string))
 		c.JSON(http.StatusBadRequest, dto.VerificationCodeResponse{Msg: "请求数据格式错误", Result: false})
 		return
 	}
@@ -40,7 +40,7 @@ func (h *EmailHandler) SendRegisterVerificationCode(c *gin.Context) {
 	// 检查邮箱格式
 	if request.Email == "" {
 		metrics.IncOperation("email", "send_register_code", "failure: empty email")
-		logs.Sugar.Errorw("发送注册验证码失败", "detail", "邮箱为空", "username", usernameStr.(string))
+		logs.Sugar.Warnw("发送注册验证码失败", "detail", "邮箱为空", "username", usernameStr.(string))
 		c.JSON(http.StatusBadRequest, dto.VerificationCodeResponse{Msg: "请输入邮箱地址", Result: false})
 		return
 	}
@@ -68,36 +68,27 @@ func (h *EmailHandler) SendResetPwdVerificationCode(c *gin.Context) {
 	defer func() {
 		metrics.ObserveOperationDuration("email", "send_reset_password_code", time.Since(start).Seconds())
 	}()
-	usernameStr, _ := c.Get("username")
 
 	// 实现请求重置密码的逻辑
 	var request dto.SendResetPasswordVerificationCodeRequest
 
 	if err := c.BindJSON(&request); err != nil {
 		metrics.IncOperation("email", "send_reset_password_code", "failure: parameter parsing error")
-		logs.Sugar.Errorw("发送重置密码的验证码失败", "detail", "解析请求失败，请检查请求格式是否正确", "username", usernameStr.(string))
+		logs.Sugar.Warnw("发送重置密码的验证码失败", "detail", "解析请求失败，请检查请求格式是否正确", "username")
 		c.JSON(http.StatusBadRequest, dto.VerificationCodeResponse{Msg: "解析请求失败，请检查请求格式是否正确", Result: false})
-		return
-	}
-
-	// 检查邮箱格式
-	if request.Email == "" {
-		metrics.IncOperation("email", "send_reset_password_code", "failure: empty email")
-		logs.Sugar.Errorw("发送重置密码的验证码失败", "detail", "邮箱为空", "username", usernameStr.(string))
-		c.JSON(http.StatusBadRequest, dto.VerificationCodeResponse{Msg: "请输入邮箱地址", Result: false})
 		return
 	}
 
 	err := h.emailService.SendResetPwdVerificationCode(c.Request.Context(), request.Email)
 	if err != nil {
 		metrics.IncOperation("email", "send_reset_password_code", "failure: send code error")
-		logs.Sugar.Errorw("发送重置密码的验证码失败", "detail", err.Error(), "username", usernameStr.(string), "email", request.Email)
+		logs.Sugar.Errorw("发送重置密码的验证码失败", "detail", err.Error(), "email", request.Email)
 		c.JSON(http.StatusInternalServerError, dto.VerificationCodeResponse{Msg: "发送重置密码的验证码失败", Result: false})
 		return
 	}
 
 	metrics.IncOperation("email", "send_reset_password_code", "success")
-	logs.Sugar.Infow("发送重置密码的验证码成功", "username", usernameStr.(string), "email", request.Email)
+	logs.Sugar.Infow("发送重置密码的验证码成功", "email", request.Email)
 	c.JSON(http.StatusOK, dto.VerificationCodeResponse{
 		Msg:    "重置密码请求已发送，请检查邮箱",
 		Result: true,

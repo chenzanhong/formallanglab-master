@@ -12,3 +12,4 @@ type AIChatRequest struct {
 	Grammar   *model.Grammar   `json:"grammar,omitempty"`
 	Regex     *model.Regex     `json:"regex,omitempty"`
 }
+

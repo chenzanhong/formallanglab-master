@@ -1,6 +1,9 @@
 package automaton_s
 
-import "backend/internal/domain/model"
+import (
+	"backend/internal/domain/model"
+	"errors"
+)
 
 // 根据你的项目路径调整
 
@@ -15,6 +18,12 @@ import "backend/internal/domain/model"
 
 // automatonValidate 验证一个自动机是否有效
 // 返回：是否有效，以及错误信息（如果无效）
-func AutomatonValidate(automaton *model.Automaton) (bool, error) {
+func AutomatonValidate(automaton *model.Automaton) error {
+	// 1. 检查 automaton 是否为 nil
+	if automaton == nil {
+		return errors.New("automaton cannot be nil")
+	}
+
+	// 2. 调用 Automaton 对象的 ISValidate 方法进行验证
 	return automaton.ISValidate()
 }

@@ -42,30 +42,49 @@ type Automaton struct {
 // 按字符集以及最长匹配原则切分字符串
 func (a *Automaton) SplitString(s string) ([]Symbol, error) {
 	if len(s) == 0 {
-		return nil, fmt.Errorf("输入字符串为空")
+		return nil, errors.New("输入字符串为空")
 	}
-	var mp = make(map[string]bool, len(a.Alphabet))
+
+	// 构建字母表集合 + 计算最大符号长度（用于剪枝）
+	symSet := make(map[string]bool, len(a.Alphabet))
+	maxLen := 0
 	for _, sym := range a.Alphabet {
-		mp[string(sym)] = true
-	}
-	var res []Symbol
-	i, j := 0, 1
-	for i < len(s) && j <= len(s) {
-		if mp[s[i:j]] {
-			j++ // 尝试更长的匹配
-		} else {
-			if i == j-1 { // 连一个字符都匹配不上
-				return nil, fmt.Errorf("输入字符串包含无效字符")
-			} else if j > i+1 {
-				res = append(res, Symbol(s[i:j-1]))
-				i = j - 1
-				j++
-			}
+		strSym := string(sym)
+		symSet[strSym] = true
+		if len(strSym) > maxLen {
+			maxLen = len(strSym)
 		}
 	}
-	if i < len(s) {
-		res = append(res, Symbol(s[i:]))
+
+	var res []Symbol
+	i := 0
+	n := len(s)
+
+	for i < n {
+		// 确定本次最多尝试到哪：不能超过字符串末尾，也不能超过 maxLen
+		end := i + maxLen
+		if end > n {
+			end = n
+		}
+
+		matched := false
+		// 从最长可能子串开始，向短尝试（贪心最长匹配）
+		for j := end; j > i; j-- {
+			sub := s[i:j]
+			if symSet[sub] {
+				res = append(res, Symbol(sub))
+				i = j // 跳到匹配结束位置
+				matched = true
+				break
+			}
+		}
+
+		if !matched {
+			// 找不到任何以 s[i] 开头的合法符号
+			return nil, fmt.Errorf("在位置 %d 无法匹配任何符号，剩余字符串: '%s'", i, s[i:])
+		}
 	}
+
 	return res, nil
 }
 
@@ -81,33 +100,33 @@ func (a *Automaton) InitTransMap() {
 	}
 }
 
-func (a *Automaton) ISValidate() (bool, error) {
+func (a *Automaton) ISValidate() error {
 	// 使用 map 提高查找效率
 	stateSet := make(map[State]bool)
 	alphabetSet := make(map[Symbol]bool)
 	fmt.Printf("%+v", a.States)
 	// 1. 检查状态集合不能为空
 	if len(a.States) == 0 {
-		return false, errors.New("状态集合不能为空")
+		return errors.New("状态集合不能为空")
 	}
 
 	// 构建状态集合
 	for _, s := range a.States {
 		if s == "" {
-			return false, errors.New("状态名不能为空字符串")
+			return errors.New("状态名不能为空字符串")
 		}
 		stateSet[s] = true
 	}
 
 	// 2. 检查初始状态是否在状态集合中
 	if !stateSet[a.InitialState] {
-		return false, fmt.Errorf("初始状态 '%s' 不在状态集合中", a.InitialState)
+		return fmt.Errorf("初始状态 '%s' 不在状态集合中", a.InitialState)
 	}
 
 	// 3. 检查接受状态是否都是合法状态
 	for _, acc := range a.AcceptingStates {
 		if !stateSet[acc] {
-			return false, fmt.Errorf("接受状态 '%s' 不在状态集合中", acc)
+			return fmt.Errorf("接受状态 '%s' 不在状态集合中", acc)
 		}
 	}
 
@@ -123,16 +142,16 @@ func (a *Automaton) ISValidate() (bool, error) {
 	for _, t := range a.Transitions {
 		// 5.1 检查起始状态是否已定义
 		if !stateSet[t.FromState] {
-			return false, fmt.Errorf("转移规则'%v'中起始状态 '%s' 未定义", t, t.FromState)
+			return fmt.Errorf("转移规则'%v'中起始状态 '%s' 未定义", t, t.FromState)
 		}
 		// 5.2 检查输入符号是否属于字母表（允许 ε）
 		if t.Input != Epsilon && !alphabetSet[t.Input] {
-			return false, fmt.Errorf("转移规则'%v'中输入符号 '%s' 不属于字母表", t, t.Input)
+			return fmt.Errorf("转移规则'%v'中输入符号 '%s' 不属于字母表", t, t.Input)
 		}
 		// 5.3 检查目标状态是否已定义
 		for _, to := range t.ToStates {
 			if !stateSet[to] {
-				return false, fmt.Errorf("转移规则'%v'中目标状态 '%s' 未定义", t, to)
+				return fmt.Errorf("转移规则'%v'中目标状态 '%s' 未定义", t, to)
 			}
 		}
 		if t.Input == Epsilon {
@@ -151,7 +170,7 @@ func (a *Automaton) ISValidate() (bool, error) {
 			transitionMap[key] = t.ToStates[0]
 		}
 	}
-	return true, nil
+	return nil
 }
 
 // CompleteDFA 将自动机转换为等价的完备 DFA
@@ -163,7 +182,7 @@ func (a *Automaton) ISValidate() (bool, error) {
 func (a *Automaton) CompleteDFA() error {
 	// Step 0: 确保是 DFA
 	if !a.IsDFA {
-		if _, err := a.ISValidate(); err != nil {
+		if err := a.ISValidate(); err != nil {
 			return fmt.Errorf("failed to determine the validity of the Automaton: %w", err)
 		}
 		if !a.IsDFA {
@@ -334,7 +353,7 @@ type ReactFlowAutomaton struct {
 	Edges []ReactFlowEdge `json:"edges"`
 }
 
-// 转换函数
+// Automaton 转为 *ReactFlowAutomaton
 func (a *Automaton) ToReactFlow() *ReactFlowAutomaton {
 	nodes := make([]ReactFlowNode, len(a.States))
 	for i, state := range a.States {
@@ -390,6 +409,38 @@ func (a *Automaton) ToReactFlow() *ReactFlowAutomaton {
 	}
 
 	return &ReactFlowAutomaton{Nodes: nodes, Edges: edges}
+}
+
+// ReactFlowAutomaton 转为 *Automaton
+func (r *ReactFlowAutomaton) ToAutomaton() *Automaton {
+	var automaton Automaton
+
+	// 处理节点集合
+	for _, node := range r.Nodes {
+		automaton.States = append(automaton.States, State(node.Data.Label)) // 状态集
+		if node.Type == "initial" {                                         // 起始节点
+			automaton.InitialState = State(node.Data.Label)
+		}
+		if node.Data.IsAccepting { // 接收状态
+			automaton.AcceptingStates = append(automaton.AcceptingStates, State(node.Data.Label))
+		}
+	}
+
+	var symbolMap = make(map[string]bool)
+	//
+	for _, edge := range r.Edges {
+		if !symbolMap[edge.Label] {
+			automaton.Alphabet = append(automaton.Alphabet, Symbol(edge.Label)) // 符号集
+			symbolMap[edge.Label] = true
+		}
+		automaton.Transitions = append(automaton.Transitions, Transition{ // 状态转移
+			FromState: State(edge.Source),
+			Input:     Symbol(edge.Label),
+			ToStates:  []State{State(edge.Target)},
+		}) // 优先单符号单边，不合并起始节点和终止节点相同的边
+	}
+
+	return &automaton
 }
 
 // =================== 自动机识别字符串的过程记录 ===================

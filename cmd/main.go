@@ -35,7 +35,7 @@ func init() {
 启动该main后需启动 backend\cmd\email-worker\main.go 开启kafka消费者
 */
 func main() {
-	// 1. 初始化数据库和ai连接
+	// 1. 初始化数据库
 	repo, err := rep.Init()
 	if err != nil {
 		logs.Sugar.Fatalf("Failed to initialize database: %v", err)

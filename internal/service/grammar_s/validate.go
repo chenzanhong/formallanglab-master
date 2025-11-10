@@ -2,6 +2,8 @@ package grammar_s
 
 import (
 	"backend/internal/domain/model"
+	"errors"
+	"fmt"
 )
 
 // IsValidGrammar 判断一个 Grammar 是否为有效文法
@@ -15,25 +17,25 @@ import (
 //
 // 时间复杂度：O(n*m + k)，其中n为产生式数量，m为产生式平均长度，k为符号集合大小
 // 空间复杂度：O(1)
-func IsValidGrammar(g *model.Grammar) bool {
+func IsValidGrammar(g *model.Grammar) error {
 	if g == nil {
-		return false
+		return errors.New("文法对象为nil")
 	}
 
 	// 1. 非终结符和终结符都不能为空
 	if len(g.NonTerminals) == 0 {
-		return false
+		return errors.New("非终结符集合不能为空")
 	}
 	if len(g.Terminals) == 0 {
-		return false
+		return errors.New("终结符集合不能为空")
 	}
 
 	// 2. 起始符号必须是非终结符
 	if g.StartSymbol == "" {
-		return false
+		return errors.New("起始符号不能为空")
 	}
 	if !g.CheckIsNonTerminal(g.StartSymbol) {
-		return false
+		return fmt.Errorf("起始符号'%s'必须是非终结符", g.StartSymbol)
 	}
 
 	// 收集符号
@@ -52,7 +54,7 @@ func IsValidGrammar(g *model.Grammar) bool {
 	// 3. 非终结符和终结符不能有交集
 	for _, sym := range g.NonTerminals {
 		if g.CheckIsTerminal(sym) {
-			return false
+			return fmt.Errorf("符号'%s'同时存在于非终结符和终结符集合中", sym)
 		}
 	}
 
@@ -61,13 +63,13 @@ func IsValidGrammar(g *model.Grammar) bool {
 
 	// 5. 至少有一个产生式
 	if len(g.Productions) == 0 {
-		return false
+		return errors.New("文法必须至少包含一个产生式")
 	}
 
 	// 5. 每个产生式的左部至少包含一个非终结符，而且所使用的符号都在符号集里面
-	for _, p := range g.Productions {
+	for i, p := range g.Productions {
 		if len(p.Left) == 0 {
-			return false // 左部不能为空
+			return fmt.Errorf("产生式%d的左部不能为空", i+1)
 		}
 
 		hasNonTerminal := false
@@ -77,21 +79,21 @@ func IsValidGrammar(g *model.Grammar) bool {
 				break
 			}
 			if !symbolMap[sym] { // 是否是字符集里面的字符
-				return false
+				return fmt.Errorf("产生式%d左部中的符号'%s'不在符号集合中", i+1, sym)
 			}
 		}
 		if !hasNonTerminal {
-			return false // 左部没有非终结符
+			return fmt.Errorf("产生式%d的左部必须至少包含一个非终结符", i+1)
 		}
 		for _, sym := range p.Right {
 			if !symbolMap[sym] { // 是否是字符集里面的字符
-				return false
+				return fmt.Errorf("产生式%d右部中的符号'%s'不在符号集合中", i+1, sym)
 			}
 		}
 	}
 
 	// 全部通过
-	return true
+	return nil
 }
 
 // 工具函数：判断符号是否在集合中

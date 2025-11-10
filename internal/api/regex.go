@@ -29,7 +29,7 @@ func RegexValidate(c *gin.Context) {
 	// 绑定并验证请求数据
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("regex", "validate", "failure: parameter parsing error")
-		logs.Sugar.Errorw("正则表达式验证失败", "detail", "参数解析失败，请检查请求格式是否正确")
+		logs.Sugar.Warnw("正则表达式验证失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(400, dto.RegexValidateResponse{
 			Msg:    "Invalid request format: " + err.Error(),
 			Valid:  false,
@@ -38,10 +38,9 @@ func RegexValidate(c *gin.Context) {
 		return
 	}
 
-	_, err := re.RegexValidate(req.Pattern)
-	if err != nil {
+	if err := re.RegexValidate(req.Pattern); err != nil {
 		metrics.IncOperation("regex", "validate", "failure: invalid regex")
-		logs.Sugar.Errorw("正则表达式验证失败", "detail", "正则表达式格式无效")
+		logs.Sugar.Warnw("正则表达式验证失败", "detail", "正则表达式格式无效")
 		c.JSON(http.StatusBadRequest, dto.RegexValidateResponse{
 			Msg:    "invalid regular expression",
 			Valid:  false,
@@ -70,7 +69,7 @@ func RegexRecognize(c *gin.Context) {
 	// 绑定并验证请求数据
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("regex", "recognize", "failure: parameter parsing error")
-		logs.Sugar.Errorw("正则表达式匹配失败", "detail", "参数解析失败，请检查请求格式是否正确")
+		logs.Sugar.Warnw("正则表达式匹配失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(400, dto.RegexRecognizeResponse{
 			Msg:     "Invalid request format: " + err.Error(),
 			Matched: false,
@@ -79,10 +78,9 @@ func RegexRecognize(c *gin.Context) {
 		return
 	}
 
-	_, err := re.RegexValidate(req.Pattern)
-	if err != nil {
+	if err := re.RegexValidate(req.Pattern); err != nil {
 		metrics.IncOperation("regex", "recognize", "failure: invalid regex")
-		logs.Sugar.Errorw("正则表达式匹配失败", "detail", "正则表达式格式无效")
+		logs.Sugar.Warnw("正则表达式匹配失败", "detail", "正则表达式格式无效")
 		c.JSON(http.StatusBadRequest, dto.RegexRecognizeResponse{
 			Msg:     "invalid regular expression",
 			Matched: false,
@@ -92,10 +90,10 @@ func RegexRecognize(c *gin.Context) {
 		return
 	}
 
-	_, err = re.RegexValidString(req.Str)
+	_, err := re.RegexValidString(req.Str)
 	if err != nil {
 		metrics.IncOperation("regex", "recognize", "failure: invalid string")
-		logs.Sugar.Errorw("正则表达式匹配失败", "detail", "输入字符串无效")
+		logs.Sugar.Warnw("正则表达式匹配失败", "detail", "输入字符串无效")
 		c.JSON(http.StatusBadRequest, dto.RegexRecognizeResponse{
 			Msg:     "invalid input string",
 			Matched: false,
@@ -108,7 +106,7 @@ func RegexRecognize(c *gin.Context) {
 	ok, err := re.RegexRecognize(req.Pattern, req.Str)
 	if !ok {
 		metrics.IncOperation("regex", "recognize", "failure: recognition failed")
-		logs.Sugar.Errorw("正则表达式匹配失败", "detail", "正则表达式无法匹配给定的字符串")
+		logs.Sugar.Warnw("正则表达式匹配失败", "detail", "正则表达式无法匹配给定的字符串")
 		c.JSON(http.StatusOK, dto.RegexRecognizeResponse{
 			Msg:     "recognition failed: " + err.Error(),
 			Matched: false,

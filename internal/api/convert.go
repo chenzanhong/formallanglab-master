@@ -58,8 +58,7 @@ func RegexToNFA(c *gin.Context) {
 	}
 
 	// 先检验是否为有效的正则表达式
-	_, err := re.RegexValidate(req.Pattern)
-	if err != nil {
+	if err := re.RegexValidate(req.Pattern); err != nil {
 		c.JSON(http.StatusBadRequest, dto.RegexToNFAResponse{
 			Msg:    "invalid regular expression",
 			Result: false,

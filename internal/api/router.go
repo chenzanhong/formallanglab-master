@@ -17,7 +17,7 @@ func SetupRouter(userService userSvc.UserService, emailService emailSvc.EmailSer
 
 	router := gin.New()
 	// 1. 恢复中间件 - 最先使用，捕获所有panic
-	router.Use(gin.Recovery()) 
+	router.Use(gin.Recovery())
 	// 2. 请求ID中间件 - 尽早设置，让后续中间件都能使用
 	router.Use(middleware.RequestID())
 	// 3. 全局速率限制 - 在处理请求初期进行限制，避免资源浪费，
@@ -70,12 +70,12 @@ func setupPprof(router *gin.Engine) {
 }
 
 func setupPublicRoutes(router *gin.Engine, userHandler *UserHandler, emailHandler *EmailHandler) {
-	router.GET("/gdesign/metrics", mtr.MetricsHandler()) // 不需要限速                                                                        // prometheus.yml中加上 metrics_path: /gdesign/metrics
-	router.POST("/gdesign/register", middleware.GlobalRateLimitMiddleware(), userHandler.Register)                                    // 注册
-	router.POST("/gdesign/login", middleware.GlobalRateLimitMiddleware(), userHandler.Login)                                          // 登录
-	router.POST("/gdesign/send_verification_code", middleware.GlobalRateLimitMiddleware(), emailHandler.SendRegisterVerificationCode) // 发送验证码（注册用）
-	router.POST("/gdesign/req_resetpassword", middleware.GlobalRateLimitMiddleware(), emailHandler.SendResetPwdVerificationCode)      // 请求重置密码
-	router.POST("/gdesign/resetpassword", middleware.GlobalRateLimitMiddleware(), userHandler.ResetPassword)                          // 重置密码
+	router.GET("/gdesign/metrics", mtr.MetricsHandler())                                                                      // 不需要限速                                                                        // prometheus.yml中加上 metrics_path: /gdesign/metrics
+	router.POST("/gdesign/register", middleware.GlobalRateLimitMiddleware(), userHandler.Register)                            // 注册
+	router.POST("/gdesign/login", middleware.GlobalRateLimitMiddleware(), userHandler.Login)                                  // 登录
+	router.POST("/gdesign/register/code", middleware.GlobalRateLimitMiddleware(), emailHandler.SendRegisterVerificationCode)  // 发送验证码（注册用）
+	router.POST("/gdesign/reset-pwd/code", middleware.GlobalRateLimitMiddleware(), emailHandler.SendResetPwdVerificationCode) // 请求重置密码
+	router.POST("/gdesign/reset-pwd", middleware.GlobalRateLimitMiddleware(), userHandler.ResetPassword)                      // 重置密码
 }
 
 func setupAuthRoutes(router *gin.Engine, userHandler *UserHandler, aiHandler *AIhandler) {
@@ -92,6 +92,8 @@ func setupAuthRoutes(router *gin.Engine, userHandler *UserHandler, aiHandler *AI
 		grammar.POST("/ambiguity", GrammarAmbiguityCheck)     // 正则文法的二义性判断
 		grammar.POST("/equivalence", GrammarEquivalenceCheck) // 判断所给的两个正则文法是否等价
 		grammar.POST("/recognize", GrammarStringRecognize)    // 字符串识别——是否被指定文法所接受；（可选）扩展：返回递归下降分析、LL(1)分析、LR(0)分析或LR(1)分析的过程
+		grammar.POST("/first", GrammarFirstSet)               // 计算文法的First集
+		grammar.POST("/follow", GrammarFollowSet)             // 计算文法的Follow集
 	}
 
 	// 正则表达式相关接口
@@ -126,8 +128,9 @@ func setupAuthRoutes(router *gin.Engine, userHandler *UserHandler, aiHandler *AI
 	}
 
 	// AI 相关接口
-	ai := r.Group("/ai") // 暂时不使用认证中间件
+	ai := r.Group("/ai")
 	{
-		ai.POST("/sse", aiHandler.AIChatSSE) // 流式AI聊天接口
+		ai.POST("/sse", aiHandler.AIChatSSE)             // 流式AI聊天接口，SSE
+		router.GET("/gdesign/ai/ws", aiHandler.AIChatWS) // WebSocket聊天接口，不经过JWT中间件
 	}
 }

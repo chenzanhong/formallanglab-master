@@ -158,13 +158,12 @@ func TestParseStringWithMode(t *testing.T) {
 		},
 	}
 
-	input := []model.Symbol{"a", "c", "b"}
-
 	// 测试不同的分析模式
 	modes := []string{"auto", "ll1", "recursive_descent", "bfs"}
+	inputStr := "acb"
 
 	for _, mode := range modes {
-		result := grammar_s.ParseStringWithMode(grammar, input, mode, false)
+		result := grammar_s.ParseStringWithMode(grammar, inputStr, mode, false)
 		fmt.Printf("模式 %s: %s (方法: %s)\n", mode,
 			map[bool]string{true: "接受", false: "拒绝"}[result.Accepted],
 			result.Method)

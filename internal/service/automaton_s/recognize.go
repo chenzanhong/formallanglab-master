@@ -54,8 +54,7 @@ func recognizeDFA(automaton *model.Automaton, str string) (*model.RecognitionRes
 	currentState := automaton.InitialState
 	steps := []model.RecognitionStep{}
 	for _, sym := range symbols {
-		nextState := automaton.TransMap[currentState][sym][0]
-		if nextState == "" {
+		if automaton.TransMap[currentState][sym] == nil || automaton.TransMap[currentState][sym][0] == "" {
 			if len(steps) > 0 {
 				steps = append(steps, model.RecognitionStep{
 					State:     steps[len(steps)-1].NextState,
@@ -68,6 +67,7 @@ func recognizeDFA(automaton *model.Automaton, str string) (*model.RecognitionRes
 				Steps:      steps,
 			}, fmt.Errorf("当前状态 %s 下输入 %s 没有相关的有效转移", currentState, sym)
 		}
+		nextState := automaton.TransMap[currentState][sym][0]
 		fmt.Printf("currentState: %s, nextState: %s", currentState, nextState)
 		steps = append(steps, model.RecognitionStep{
 			State:     currentState,
@@ -135,10 +135,17 @@ func recognizeNFA(automaton *model.Automaton, str string) (*model.RecognitionRes
 
 		// 如果没有任何状态能处理当前符号
 		if !found {
+			var lastState model.State
+			if len(steps) > 0 {
+				lastState = steps[len(steps)-1].NextState
+			} else {
+				// 没有转移步骤，说明输入为空或一开始就无法转移
+				lastState = automaton.InitialState
+			}
 			return &model.RecognitionResult{
 				IsAccepted: false,
 				Steps: append(steps, model.RecognitionStep{
-					State:     steps[len(steps)-1].NextState,
+					State:     lastState,
 					Input:     sym,
 					NextState: "",
 				}),

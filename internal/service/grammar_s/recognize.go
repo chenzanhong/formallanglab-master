@@ -856,32 +856,17 @@ func LL1ParseWithRecovery(grammar *model.Grammar, input []model.Symbol) *model.P
 	return result
 }
 
-// BFSParseDetailed BFS推导详细分析版本
+// BFSParseDetailed BFS推导详细分析版本 - 支持多符号左部产生式
 func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth int) *model.ParseResult {
 	result := &model.ParseResult{
 		Method: "BFS 推导模拟",
 		Steps:  []model.ParseStep{},
 	}
 
-	if len(input) == 0 {
-		// 处理空串
+	// 处理空串情况
+	if len(input) == 0 || (len(input) == 1 && input[0] == model.Epsilon) {
+		// 检查是否可以推导出空串
 		if canDeriveEpsilon(g) {
-			for _, prod := range g.Productions {
-				if prod.Left[0] == g.StartSymbol && len(prod.Right) == 1 && prod.Right[0] == model.Epsilon {
-					result.Accepted = true
-					result.Steps = append(result.Steps, model.ParseStep{
-						StepType:    "accept",
-						Description: fmt.Sprintf("空串被接受: %s → ε", string(g.StartSymbol)),
-						Stack:       []model.Symbol{g.StartSymbol},
-						Input:       []model.Symbol{model.Epsilon},
-						InputPos:    0,
-						Action:      "接受空串",
-						Production:  &prod,
-					})
-					result.Message = "空串被文法接受"
-					return result
-				}
-			}
 			result.Accepted = true
 			result.Message = "空串被文法接受"
 			return result
@@ -944,37 +929,50 @@ func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth
 		}
 
 		// 剪枝：长度超过输入太多
-		if len(curr.symbols) > len(input)+10 {
+		if len(curr.symbols) > len(input)+15 {
 			continue
 		}
 
-		// 尝试应用每个产生式
+		// 尝试应用每个产生式 - 支持多符号左部
 		for _, prod := range g.Productions {
-			leftSymbol := prod.Left[0]
-			for i := 0; i < len(curr.symbols); i++ {
-				if curr.symbols[i] == leftSymbol {
-					// 替换第 i 个符号
-					newSymbols := append([]model.Symbol{}, curr.symbols[:i]...)
+			leftLen := len(prod.Left)
+			// 尝试在当前符号串的每个可能位置匹配产生式左部
+			for i := 0; i <= len(curr.symbols)-leftLen; i++ {
+				// 检查从位置i开始的符号序列是否与产生式左部匹配
+				match := true
+				for j := 0; j < leftLen; j++ {
+					if curr.symbols[i+j] != prod.Left[j] {
+						match = false
+						break
+					}
+				}
+				
+				if match {
+					// 替换匹配的符号序列为产生式右部
+					newSymbols := make([]model.Symbol, 0, len(curr.symbols)-leftLen+len(prod.Right))
+					newSymbols = append(newSymbols, curr.symbols[:i]...)
 					newSymbols = append(newSymbols, prod.Right...)
-					newSymbols = append(newSymbols, curr.symbols[i+1:]...)
+					newSymbols = append(newSymbols, curr.symbols[i+leftLen:]...)
 
 					if len(newSymbols) > maxWidth {
 						continue
 					}
 
 					// 构建新推导路径
-					step := fmt.Sprintf("%s → %s", string(leftSymbol), symbolsToStringJoinSep(prod.Right))
+					leftStr := symbolsToStringJoinSep(prod.Left)
+					rightStr := symbolsToStringJoinSep(prod.Right)
+					step := fmt.Sprintf("%s → %s", leftStr, rightStr)
 					newPath := append([]string{}, curr.path...)
 					newPath = append(newPath, step)
 
 					// 记录推导步骤
 					result.Steps = append(result.Steps, model.ParseStep{
 						StepType:    "predict",
-						Description: fmt.Sprintf("应用产生式: %s → %s", string(leftSymbol), symbolsToStringJoinSep(prod.Right)),
+						Description: fmt.Sprintf("应用产生式: %s → %s", leftStr, rightStr),
 						Stack:       newSymbols,
 						Input:       input,
 						InputPos:    0,
-						Action:      fmt.Sprintf("替换 %s 为 %s", string(leftSymbol), symbolsToStringJoinSep(prod.Right)),
+						Action:      fmt.Sprintf("替换 %s 为 %s", leftStr, rightStr),
 						Production:  &prod,
 					})
 
@@ -998,45 +996,98 @@ func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth
 // ===================================================================================
 
 // ParseStringWithMode 根据指定模式分析输入串
-func ParseStringWithMode(grammar *model.Grammar, input []model.Symbol, mode string, showSteps bool) *model.ParseResult {
+func ParseStringWithMode(grammar *model.Grammar, input string, mode string, showSteps bool) *model.ParseResult {
+	// 转换输入为符号数组
+	var inputSymbols []model.Symbol
+	if input == "" {
+		inputSymbols = []model.Symbol{model.Epsilon}
+	} else {
+		inputSymbols = grammar.StringToSymbols(input)
+	}
+
 	switch mode {
 	case "ll1":
-		result := LL1ParseDetailed(grammar, input)
+		// 检查文法是否为CFG
+		_, err := grammar.ToCFGView()
+		if err != nil {
+			return &model.ParseResult{
+				Accepted: false,
+				Error:    fmt.Sprintf("LL(1)分析要求文法为上下文无关文法: %s", err.Error()),
+				Method:   "LL(1) 分析",
+			}
+		}
+		result := LL1ParseDetailed(grammar, inputSymbols)
 		if !showSteps {
 			result.Steps = nil
 		}
 		return result
 
 	case "ll1_recovery":
-		result := LL1ParseWithRecovery(grammar, input)
+		// 检查文法是否为CFG
+		_, err := grammar.ToCFGView()
+		if err != nil {
+			return &model.ParseResult{
+				Accepted: false,
+				Error:    fmt.Sprintf("LL(1)分析要求文法为上下文无关文法: %s", err.Error()),
+				Method:   "LL(1) 分析（带错误恢复）",
+			}
+		}
+		result := LL1ParseWithRecovery(grammar, inputSymbols)
 		if !showSteps {
 			result.Steps = nil
 		}
 		return result
 
 	case "recursive_descent":
-		result := RecursiveDescentParse(grammar, input)
+		// 检查文法是否为CFG
+		_, err := grammar.ToCFGView()
+		if err != nil {
+			return &model.ParseResult{
+				Accepted: false,
+				Error:    fmt.Sprintf("递归下降分析要求文法为上下文无关文法: %s", err.Error()),
+				Method:   "递归下降分析",
+			}
+		}
+		result := RecursiveDescentParse(grammar, inputSymbols)
 		if !showSteps {
 			result.Steps = nil
 		}
 		return result
 
 	case "lr0":
-		result := LR0ParseDetailed(grammar, input)
+		// 检查文法是否为CFG
+		_, err := grammar.ToCFGView()
+		if err != nil {
+			return &model.ParseResult{
+				Accepted: false,
+				Error:    fmt.Sprintf("LR(0)分析要求文法为上下文无关文法: %s", err.Error()),
+				Method:   "LR(0) 分析",
+			}
+		}
+		result := LR0ParseDetailed(grammar, inputSymbols)
 		if !showSteps {
 			result.Steps = nil
 		}
 		return result
 
 	case "lr1":
-		result := LR1ParseDetailed(grammar, input)
+		// 检查文法是否为CFG
+		_, err := grammar.ToCFGView()
+		if err != nil {
+			return &model.ParseResult{
+				Accepted: false,
+				Error:    fmt.Sprintf("LR(1)分析要求文法为上下文无关文法: %s", err.Error()),
+				Method:   "LR(1) 分析",
+			}
+		}
+		result := LR1ParseDetailed(grammar, inputSymbols)
 		if !showSteps {
 			result.Steps = nil
 		}
 		return result
 
 	case "bfs":
-		result := BFSParseDetailed(grammar, input, 100, 100)
+		result := BFSParseDetailed(grammar, inputSymbols, 100, 100)
 		if !showSteps {
 			result.Steps = nil
 		}
@@ -1047,35 +1098,30 @@ func ParseStringWithMode(grammar *model.Grammar, input []model.Symbol, mode stri
 	default:
 		// 自动选择最适合的分析方法
 
-		// 先尝试 LL(1)
-		if isLL1, _ := IsLL1(grammar); isLL1 {
-			result := LL1ParseDetailed(grammar, input)
-			if !showSteps {
-				result.Steps = nil
+		// 尝试使用ToCFGView检查文法是否为CFG
+		_, cfgErr := grammar.ToCFGView()
+		if cfgErr == nil {
+			// 是CFG，尝试LL(1)
+			if isLL1, _ := IsLL1(grammar); isLL1 {
+				result := LL1ParseDetailed(grammar, inputSymbols)
+				if !showSteps {
+					result.Steps = nil
+				}
+				return result
 			}
-			return result
-		}
 
-		// 再尝试 LR(1)
-		if isLR1, _ := IsLR1Grammar(grammar); isLR1 {
-			result := LR1ParseDetailed(grammar, input)
-			if !showSteps {
-				result.Steps = nil
+			// 尝试递归下降
+			if canUseRecursiveDescent(grammar) {
+				result := RecursiveDescentParse(grammar, inputSymbols)
+				if !showSteps {
+					result.Steps = nil
+				}
+				return result
 			}
-			return result
-		}
-
-		// 尝试递归下降（适用于特定结构的文法）
-		if canUseRecursiveDescent(grammar) {
-			result := RecursiveDescentParse(grammar, input)
-			if !showSteps {
-				result.Steps = nil
-			}
-			return result
 		}
 
 		// 默认使用 BFS 推导
-		result := BFSParseDetailed(grammar, input, 100, 100)
+		result := BFSParseDetailed(grammar, inputSymbols, 100, 100)
 		if !showSteps {
 			result.Steps = nil
 		}
@@ -1127,6 +1173,12 @@ type LRTable struct {
 
 // IsLR0Grammar 判断文法是否为LR(0)文法
 func IsLR0Grammar(grammar *model.Grammar) (bool, string) {
+	// 使用ToCFGView检查文法是否为上下文无关文法
+	_, err := grammar.ToCFGView()
+	if err != nil {
+		return false, fmt.Sprintf("LR(0)分析要求文法为上下文无关文法: %s", err.Error())
+	}
+
 	// 增广文法
 	augmentedGrammar := augmentGrammar(grammar)
 
@@ -1675,6 +1727,12 @@ type RecursiveDescentParser struct {
 
 // canUseRecursiveDescent 判断文法是否适用于递归下降分析
 func canUseRecursiveDescent(grammar *model.Grammar) bool {
+	// 首先检查文法是否为上下文无关文法
+	_, err := grammar.ToCFGView()
+	if err != nil {
+		return false
+	}
+
 	// 检查是否有左递归
 	if hasLeftRecursion(grammar) {
 		return false

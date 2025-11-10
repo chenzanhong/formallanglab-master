@@ -55,7 +55,7 @@ func NewEmailService(emailRepo repository.EmailRepository, userRepo repository.U
 func (s *EmailServiceImpl) SendRegisterVerificationCode(ctx context.Context, email string) error {
 	// 限制频率，验证码有效期一分钟，不能重复发送
 	if has, _ := s.emailRepo.HasRegisterVerificationToken(ctx, email); has {
-		// logs.Sugar.Errorw("发送注册验证码", "detail", "操作太频繁，请稍后重试")
+		// logs.Sugar.Warnw("发送注册验证码", "detail", "操作太频繁，请稍后重试")
 		return errors.New("操作太频繁，请稍后重试")
 	}
 
@@ -86,7 +86,7 @@ func (s *EmailServiceImpl) SendRegisterVerificationCode(ctx context.Context, ema
 func (s *EmailServiceImpl) SendResetPwdVerificationCode(ctx context.Context, email string) error {
 	// 限制频率，验证码有效期一分钟，不能重复发送
 	if has, _ := s.emailRepo.HasResetPwdToken(ctx, email); has {
-		logs.Sugar.Errorw("发送重置密码验证码", "detail", "操作太频繁，请稍后重试")
+		logs.Sugar.Warnw("发送重置密码验证码", "detail", "操作太频繁，请稍后重试")
 		return errors.New("操作太频繁，请稍后重试")
 	}
 
@@ -94,7 +94,7 @@ func (s *EmailServiceImpl) SendResetPwdVerificationCode(ctx context.Context, ema
 	exists, err := s.userRepo.ExistsByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			logs.Sugar.Errorw("重置密码请求", "detail", "用户未找到。")
+			logs.Sugar.Warnw("重置密码请求", "detail", "用户未找到。")
 			return myErrors.ErrUserNotFound
 		} else {
 			logs.Sugar.Errorw("重置密码请求", "detail", "数据库查询失败。")

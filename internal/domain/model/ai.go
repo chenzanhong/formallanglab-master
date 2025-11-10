@@ -9,6 +9,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// =========== SSE ===============
 const (
 	AISessionTTL = 60 * time.Minute // AI 会话过期时间
 	MaxTurns     = 10               // 最大对话记录数
@@ -24,6 +25,26 @@ type AISession struct {
 type QAPair struct {
 	User string `json:"user"` // 用户输入
 	AI   string `json:"ai"`   // AI 回复
+}
+
+// ========== WebSocket ===========
+type WsMessageType string
+
+const (
+	MsgTypeChat    WsMessageType = "chat"
+	MsgTypeStop    WsMessageType = "stop"
+	MsgTypePing    WsMessageType = "ping"
+	MsgTypePong    WsMessageType = "pong"
+	MsgTypeDone    WsMessageType = "done"
+	MsgTypeChunk   WsMessageType = "chunk"
+	MsgTypeError   WsMessageType = "error"
+	MsgTypeStopped WsMessageType = "stopped"
+)
+
+type WsMessage struct {
+	Type  WsMessageType `json:"type"` //  "chat", "stop", "chunk", "done", "error", "stopped"
+	Data  string        `json:"data,omitempty"`
+	Error string        `json:"error,omitempty"`
 }
 
 func (s *AISession) Trim() {

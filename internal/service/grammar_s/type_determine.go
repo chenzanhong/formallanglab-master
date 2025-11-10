@@ -28,8 +28,8 @@ import (
 //
 // 时间复杂度：O(n*m)，其中n为产生式数量，m为产生式平均长度
 // 空间复杂度：O(1)
-func TypeDetermine(g *model.Grammar) int {
-	if g == nil || !IsValidGrammar(g) {
+func TypeDetermine(g *model.Grammar) model.GrammarType {
+	if g == nil || IsValidGrammar(g) != nil {
 		fmt.Println("无效文法")
 		return model.InvalidGrammar
 	}

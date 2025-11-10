@@ -5,9 +5,9 @@ import (
 	"backend/internal/domain/model"
 	"backend/internal/repository"
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/openai/openai-go/v2"
@@ -62,7 +62,7 @@ func (s *AIServiceImpl) StreamChat(ctx context.Context, username string, req *dt
 
 	// 历史对话：直接交替添加
 	for _, turn := range session.RecentTurns {
-		fmt.Println(turn.AI)
+		// fmt.Println(turn.AI)
 		messages = append(messages, openai.UserMessage(turn.User))
 		messages = append(messages, openai.AssistantMessage(turn.AI))
 	}
@@ -95,13 +95,11 @@ func (s *AIServiceImpl) buildContextualPrompt(req *dto.AIChatRequest) string {
 	switch req.Page {
 	case "automaton":
 		if req.Automaton != nil {
-			data, _ := json.MarshalIndent(req.Automaton, "", "  ")
-			prompt = fmt.Sprintf("当前自动机定义如下：\n```json\n%s\n```", string(data))
+			prompt = s.formatAutomatonForPrompt(req.Automaton)
 		}
 	case "grammar":
 		if req.Grammar != nil {
-			data, _ := json.MarshalIndent(req.Grammar, "", "  ")
-			prompt = fmt.Sprintf("当前上下文无关文法定义如下：\n```json\n%s\n```", string(data))
+			prompt = s.formatGrammarForPrompt(req.Grammar)
 		}
 	case "regex":
 		if req.Regex != nil {
@@ -111,4 +109,116 @@ func (s *AIServiceImpl) buildContextualPrompt(req *dto.AIChatRequest) string {
 	}
 
 	return prompt
+}
+
+func (s *AIServiceImpl) formatAutomatonForPrompt(a *model.Automaton) string {
+	var buf strings.Builder
+	buf.WriteString("当前的有限状态自动机定义如下：\n")
+
+	// 状态集合
+	states := make([]string, len(a.States))
+	for i, st := range a.States {
+		states[i] = string(st)
+	}
+	buf.WriteString("- 状态集合 Q：{" + strings.Join(states, ", ") + "}\n")
+
+	// 字母表排除 ε
+	alphabet := make([]string, 0, len(a.Alphabet))
+	for _, sym := range a.Alphabet {
+		if sym != model.Epsilon {
+			alphabet = append(alphabet, string(sym))
+		}
+	}
+	if len(alphabet) == 0 {
+		buf.WriteString("- 输入字母表 Σ：∅（空集）\n")
+	} else {
+		buf.WriteString("- 输入字母表 Σ：{" + strings.Join(alphabet, ", ") + "}\n")
+	}
+
+	// 初始状态
+	buf.WriteString("- 初始状态 q₀：" + string(a.InitialState) + "\n")
+
+	// 接受状态
+	if len(a.AcceptingStates) == 0 {
+		buf.WriteString("- 接受状态集合 F：∅\n")
+	} else {
+		accepting := make([]string, len(a.AcceptingStates))
+		for i, st := range a.AcceptingStates {
+			accepting[i] = string(st)
+		}
+		buf.WriteString("- 接受状态集合 F：{" + strings.Join(accepting, ", ") + "}\n")
+	}
+
+	// 转移函数 δ
+	buf.WriteString("- 状态转移规则 δ：\n")
+	for _, t := range a.Transitions {
+		input := string(t.Input)
+		var target string
+		if len(t.ToStates) == 1 {
+			target = string(t.ToStates[0]) // 单状态不加花括号更自然
+		} else {
+			toStr := make([]string, len(t.ToStates))
+			for i, to := range t.ToStates {
+				toStr[i] = string(to)
+			}
+			target = "{" + strings.Join(toStr, ", ") + "}"
+		}
+		buf.WriteString(fmt.Sprintf("  δ(%s, %s) → %s\n", t.FromState, input, target))
+	}
+
+	return buf.String()
+}
+
+func (s *AIServiceImpl) formatGrammarForPrompt(g *model.Grammar) string {
+	var buf strings.Builder
+	buf.WriteString("当前上下文无关文法（CFG）定义如下：\n")
+
+	// 起始符号
+	buf.WriteString("- 起始符号 S：" + string(g.StartSymbol) + "\n")
+
+	// 终结符
+	terminals := make([]string, 0, len(g.Terminals))
+	for _, t := range g.Terminals {
+		if t == model.Epsilon {
+			terminals = append(terminals, "ε")
+		} else {
+			terminals = append(terminals, string(t))
+		}
+	}
+	if len(terminals) == 0 {
+		buf.WriteString("- 终结符集合 T：∅\n")
+	} else {
+		buf.WriteString("- 终结符集合 T：{" + strings.Join(terminals, ", ") + "}\n")
+	}
+
+	// 非终结符
+	nonTerminals := make([]string, len(g.NonTerminals))
+	for i, nt := range g.NonTerminals {
+		nonTerminals[i] = string(nt)
+	}
+	buf.WriteString("- 非终结符集合 N：{" + strings.Join(nonTerminals, ", ") + "}\n")
+
+	// 产生式
+	buf.WriteString("- 产生式规则 P：\n")
+	for _, p := range g.Productions {
+		left := make([]string, len(p.Left))
+		for i, sym := range p.Left {
+			left[i] = string(sym)
+		}
+		right := make([]string, len(p.Right))
+		if len(p.Right) == 0 {
+			right = []string{"ε"}
+		} else {
+			for i, sym := range p.Right {
+				if sym == model.Epsilon {
+					right[i] = "ε"
+				} else {
+					right[i] = string(sym)
+				}
+			}
+		}
+		buf.WriteString(fmt.Sprintf("  %s → %s\n", strings.Join(left, " "), strings.Join(right, " ")))
+	}
+
+	return buf.String()
 }
