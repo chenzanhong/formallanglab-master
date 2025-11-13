@@ -38,7 +38,7 @@
   ],
   "initialState": "q0",
   "acceptingStates": ["q2"],
-  "isDFA": true
+  "type": 0
 }
 ```
 

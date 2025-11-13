@@ -40,7 +40,7 @@ func minimizeByTableFilling(automaton *model.Automaton) *model.Automaton {
 			Transitions:     filterTransitions(automaton.Transitions, reachable),
 			InitialState:    automaton.InitialState,
 			AcceptingStates: newAccepting,
-			IsDFA:           true,
+			Type:            model.DFA,
 		}
 	}
 
@@ -51,7 +51,7 @@ func minimizeByTableFilling(automaton *model.Automaton) *model.Automaton {
 		Transitions:     filterTransitions(automaton.Transitions, reachable),
 		InitialState:    automaton.InitialState,
 		AcceptingStates: newAccepting,
-		IsDFA:           true,
+		Type:            model.DFA,
 	}
 
 	// 步骤 2 & 3: 表格填充法标记可区分状态对
@@ -74,7 +74,7 @@ func minimizeByHopcroft(automaton *model.Automaton) *model.Automaton {
 		Transitions:     filterTransitions(automaton.Transitions, reachable),
 		InitialState:    automaton.InitialState,
 		AcceptingStates: filterStates(automaton.AcceptingStates, reachable),
-		IsDFA:           true,
+		Type:            model.DFA,
 	}
 
 	if len(reduced.States) <= 1 {
@@ -361,7 +361,7 @@ func buildMinimizedDFAFromClasses(
 		Transitions:     newTransitions,
 		InitialState:    initialName,
 		AcceptingStates: newAccepting,
-		IsDFA:           true,
+		Type:            model.DFA,
 	}
 }
 
@@ -511,6 +511,6 @@ func buildMinimizedDFA(
 		Transitions:     newTransitions,
 		InitialState:    model.State(initialName),
 		AcceptingStates: newAccepting,
-		IsDFA:           true,
+		Type:            model.DFA,
 	}
 }

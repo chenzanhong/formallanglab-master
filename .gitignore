@@ -4,3 +4,4 @@ backend\configs\config.yaml
 *.log
 logs/*.log
 /test/ai
+qa/

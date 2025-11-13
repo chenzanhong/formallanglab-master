@@ -29,7 +29,7 @@ func NFAToDFA(nfa *model.Automaton) *model.Automaton {
 	var dfaAccepting []model.State
 
 	// 1. 初始状态：NFA 初始状态的 ε-闭包
-	initialSet := epsilonClosure(nfa, []model.State{nfa.InitialState})
+	initialSet := computeEpsilonClosure(nfa, []model.State{nfa.InitialState})
 	initialName := stateName(initialSet)
 	seen[string(initialName)] = true
 	dfaStates = append(dfaStates, initialName)
@@ -53,7 +53,7 @@ func NFAToDFA(nfa *model.Automaton) *model.Automaton {
 					if t.FromState == state && t.Input == sym {
 						// 添加所有目标状态（去重）
 						for _, target := range t.ToStates {
-							if !containsState(nextSet, target) {
+							if !ContainsState(nextSet, target) {
 								nextSet = append(nextSet, target)
 							}
 						}
@@ -62,7 +62,7 @@ func NFAToDFA(nfa *model.Automaton) *model.Automaton {
 			}
 
 			// 4. 对 nextSet 取 ε-闭包
-			closure := epsilonClosure(nfa, nextSet)
+			closure := computeEpsilonClosure(nfa, nextSet)
 			if len(closure) == 0 {
 				continue // 无有效状态，跳过
 			}
@@ -86,7 +86,7 @@ func NFAToDFA(nfa *model.Automaton) *model.Automaton {
 
 		// 7. 判断当前状态是否为接受状态
 		for _, s := range currentSet {
-			if containsState(nfa.AcceptingStates, s) {
+			if ContainsState(nfa.AcceptingStates, s) {
 				dfaAccepting = append(dfaAccepting, currentName)
 				break
 			}
@@ -99,8 +99,6 @@ func NFAToDFA(nfa *model.Automaton) *model.Automaton {
 		Transitions:     dfaTransitions,
 		InitialState:    initialName,
 		AcceptingStates: dfaAccepting,
-		IsDFA:           true,
+		Type:            model.DFA,
 	}
 }
-
-

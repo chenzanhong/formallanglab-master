@@ -12,6 +12,7 @@ func getDFANextStateFromMap(automaton *model.Automaton, from model.State, input 
 	return ""
 }
 
+// 获取NFA的下一个状态，不含空字符的NFA状态转移，非 ε-闭包
 func getNFANextStatesFromMap(automaton *model.Automaton, from model.State, input model.Symbol) []model.State {
 	// 使用 TransMap 提高查找效率
 	if stateMap, exists := automaton.TransMap[from]; exists {
@@ -22,8 +23,27 @@ func getNFANextStatesFromMap(automaton *model.Automaton, from model.State, input
 	return nil
 }
 
+// getEpsilonNFANextStatesFromMap 从一组状态出发，对给定输入符号 sym，返回所有可达的下一状态（不含 ε-闭包）
+func getEpsilonNFANextStatesFromMap(automaton *model.Automaton, fromStates []model.State, sym model.Symbol) []model.State {
+	var nextStates []model.State
+	seen := make(map[model.State]bool)
+
+	for _, s := range fromStates {
+		if targets, exists := automaton.TransMap[s][sym]; exists {
+			for _, t := range targets {
+				if !seen[t] {
+					seen[t] = true
+					nextStates = append(nextStates, t)
+				}
+			}
+		}
+	}
+
+	return nextStates
+}
+
 // containsState 检查状态是否在状态列表中
-func containsState(states []model.State, s model.State) bool {
+func ContainsState(states []model.State, s model.State) bool {
 	for _, st := range states {
 		if st == s {
 			return true
@@ -32,8 +52,8 @@ func containsState(states []model.State, s model.State) bool {
 	return false
 }
 
-// epsilonClosure 计算状态集合的 ε-闭包
-func epsilonClosure(nfa *model.Automaton, states []model.State) []model.State {
+// computeEpsilonClosure 计算状态集合的 ε-闭包
+func computeEpsilonClosure(nfa *model.Automaton, states []model.State) []model.State {
 	closure := make([]model.State, 0, len(states))
 	visited := make(map[model.State]bool)
 
@@ -45,12 +65,12 @@ func epsilonClosure(nfa *model.Automaton, states []model.State) []model.State {
 		}
 	}
 
-	// 使用栈进行 DFS 遍历 ε 转移
-	stack := append([]model.State(nil), states...)
+	// 使用队列进行 DFS 遍历 ε 转移
+	queue := append([]model.State(nil), states...)
 
-	for len(stack) > 0 {
-		current := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
+	for len(queue) > 0 {
+		current := queue[len(queue)-1]
+		queue = queue[:len(queue)-1]
 
 		// 查找所有 ε 转移
 		for _, t := range nfa.Transitions {
@@ -59,9 +79,42 @@ func epsilonClosure(nfa *model.Automaton, states []model.State) []model.State {
 					if !visited[target] {
 						visited[target] = true
 						closure = append(closure, target)
-						stack = append(stack, target)
+						queue = append(queue, target)
 					}
 				}
+			}
+		}
+	}
+
+	return closure
+}
+
+// computeEpsilonClosureWithMap 使用 automaton.TransMap 加速计算状态集合的 ε-闭包
+func computeEpsilonClosureWithMap(nfa *model.Automaton, states []model.State) []model.State {
+	closure := make([]model.State, 0, len(states))
+	visited := make(map[model.State]bool)
+
+	// 初始化：加入输入状态
+	for _, s := range states {
+		if !visited[s] {
+			closure = append(closure, s)
+			visited[s] = true
+		}
+	}
+
+	// 使用队列进行 DFS 遍历 ε 转移
+	queue := append([]model.State(nil), states...)
+
+	for len(queue) > 0 {
+		current := queue[len(queue)-1]
+		queue = queue[:len(queue)-1]
+
+		// 查找所有 ε 转移
+		for _, target := range nfa.TransMap[current][model.Epsilon] {
+			if !visited[target] {
+				visited[target] = true
+				closure = append(closure, target)
+				queue = append(queue, target)
 			}
 		}
 	}

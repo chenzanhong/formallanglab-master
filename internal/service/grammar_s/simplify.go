@@ -13,22 +13,22 @@ func Simplify(grammar *model.Grammar) *model.Grammar{
 	}
 
 	// 步骤1: 去除不可派生的变量（Non-generating variables）
-	removeNonGenerating(grammar)
+	RemoveNonGenerating(grammar)
 
 	// 步骤2: 去除不可达符号（Unreachable terminals/nonterminals）
-	removeUnreachable(grammar)
+	RemoveUnreachable(grammar)
 
 	// 步骤3: 去除空产生式（ε-productions）
-	removeEpsilonProductions(grammar)
+	RemoveEpsilonProductions(grammar)
 
 	// 步骤4: 去除单一产生式（Unit productions）
-	removeUnitProductions(grammar)
+	RemoveUnitProductions(grammar)
 	
 	return grammar
 }
 
 // removeNonGenerating 删除不可派生的变量（即不能推导出终结符串的变量）
-func removeNonGenerating(g *model.Grammar) {
+func RemoveNonGenerating(g *model.Grammar) {
 	var oldV, newV []model.Symbol
 
 	// NEWV = { A | A → w ∈ P, w ∈ T* }
@@ -69,7 +69,7 @@ func removeNonGenerating(g *model.Grammar) {
 }
 
 // removeUnreachable 删除不可达的符号（从起始符号无法到达的变量和终结符）
-func removeUnreachable(g *model.Grammar) {
+func RemoveUnreachable(g *model.Grammar) {
 	if len(g.Productions) == 0 {
 		return
 	}
@@ -126,8 +126,8 @@ func removeUnreachable(g *model.Grammar) {
 	g.Productions = filtered
 }
 
-// removeEpsilonProductions 去除空产生式（但若S可空，则保留S→ε）
-func removeEpsilonProductions(g *model.Grammar) {
+// RemoveEpsilonProductions 去除空产生式（但若S可空，则保留S→ε）
+func RemoveEpsilonProductions(g *model.Grammar) {
 	U := getNullableVariables(g) // 可空变量集
 
 	var newProductions []model.Production
@@ -219,7 +219,7 @@ func getNullableVariables(g *model.Grammar) []model.Symbol {
 }
 
 // removeUnitProductions 去除单一产生式 A → B
-func removeUnitProductions(g *model.Grammar) {
+func RemoveUnitProductions(g *model.Grammar) {
 	unitClosure := make(map[model.Symbol][]model.Symbol)
 	nonTerminals := g.NonTerminals
 

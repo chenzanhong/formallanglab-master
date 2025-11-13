@@ -4,6 +4,7 @@ import (
 	"backend/internal/domain/dto"
 	"backend/internal/domain/model"
 	"backend/internal/repository"
+	"backend/pkg/binding"
 	"context"
 	"fmt"
 	"os"
@@ -33,6 +34,7 @@ const (
 type AIService interface {
 	StreamChat(ctx context.Context, username string, req *dto.AIChatRequest) (*ssestream.Stream[openai.ChatCompletionChunk], *model.AISession, error)
 	SaveSession(ctx context.Context, username string, session *model.AISession) error
+	MockStreamChat(ctx context.Context, username string, page binding.PageType, cacheAnswer string) (*MockStream, *model.AISession, error)
 }
 
 type AIServiceImpl struct {
@@ -44,6 +46,7 @@ func NewAIService(client *openai.Client, repo repository.AIRepository) AIService
 	return &AIServiceImpl{client: client, repo: repo}
 }
 
+// StreamChat 处理流式对话请求
 func (s *AIServiceImpl) StreamChat(ctx context.Context, username string, req *dto.AIChatRequest) (*ssestream.Stream[openai.ChatCompletionChunk], *model.AISession, error) {
 	// 1. 加载会话（不变）
 	session, err := s.repo.GetSession(ctx, username, string(req.Page))
@@ -84,6 +87,20 @@ func (s *AIServiceImpl) StreamChat(ctx context.Context, username string, req *dt
 	)
 
 	return stream, session, nil
+}
+
+func (s *AIServiceImpl) MockStreamChat(ctx context.Context, username string, page binding.PageType, cacheAnswer string) (*MockStream, *model.AISession, error) {
+	// 1. 加载会话（不变）
+	session, err := s.repo.GetSession(ctx, username, string(page))
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to load session: %w", err)
+	}
+	if session == nil {
+		session = &model.AISession{Page: page}
+	}
+	session.LastActive = time.Now().Unix()
+
+	return NewMockStream(cacheAnswer), session, nil
 }
 
 func (s *AIServiceImpl) SaveSession(ctx context.Context, username string, session *model.AISession) error {

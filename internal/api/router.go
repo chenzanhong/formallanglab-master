@@ -5,6 +5,7 @@ import (
 	aiSvc "backend/internal/service/ai_s"
 	emailSvc "backend/internal/service/email_s"
 	userSvc "backend/internal/service/user_s"
+	"backend/logs"
 	"net/http"
 	"net/http/pprof"
 
@@ -13,13 +14,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(userService userSvc.UserService, emailService emailSvc.EmailService, aiService aiSvc.AIService, enable_pprof string) *gin.Engine {
+func SetupRouter(userService userSvc.UserService, emailService emailSvc.EmailService, aiService aiSvc.AIService, learnHandler *LearnHandler, enable_pprof string) *gin.Engine {
 
 	userHandler := NewUserHandler(userService)
 	emailHandler := NewEmailHandler(emailService)
-	aiHandler := NewAIHandler(aiService)
+	qaCache := aiSvc.NewQACache()
+	// 异步加载预置高频问题缓存，加速主程序启动
+	go func() {
+		if err := qaCache.LoadCache("./knowledge/qa"); err != nil {
+			logs.Sugar.Panic("Failed to load QACache", "detail", err.Error())
+		}
+	}()
+	aiHandler := NewAIHandler(aiService, qaCache)
 
-	router := gin.New()
+	router := gin.Default()
 	// 1. 恢复中间件 - 最先使用，捕获所有panic
 	router.Use(gin.Recovery())
 	router.GET("/gdesign/ai/ws", aiHandler.AIChatWS) // WebSocket聊天接口，不经过JWT中间件
@@ -41,7 +49,7 @@ func SetupRouter(userService userSvc.UserService, emailService emailSvc.EmailSer
 
 	setupPublicRoutes(router, userHandler, emailHandler) // 注册公开路由
 
-	setupAuthRoutes(router, userHandler, aiHandler) // 注册需要认证的路由
+	setupAuthRoutes(router, userHandler, aiHandler, learnHandler) // 注册需要认证的路由
 
 	return router
 }
@@ -80,7 +88,7 @@ func setupPublicRoutes(router *gin.Engine, userHandler *UserHandler, emailHandle
 	router.POST("/gdesign/reset-pwd", middleware.GlobalRateLimitMiddleware(), userHandler.ResetPassword)                      // 重置密码
 }
 
-func setupAuthRoutes(router *gin.Engine, userHandler *UserHandler, aiHandler *AIhandler) {
+func setupAuthRoutes(router *gin.Engine, userHandler *UserHandler, aiHandler *AIHandler, learnHandler *LearnHandler) {
 	// 使用 JWT、Rate 中间件保护这些路由
 	router.GET("/gdesign/user/me", middleware.JWTAuthMiddleware(), userHandler.CheckMe)
 	r := router.Group("/gdesign", middleware.JWTAuthMiddleware(), middleware.UserRateLimitMiddleware())
@@ -117,16 +125,20 @@ func setupAuthRoutes(router *gin.Engine, userHandler *UserHandler, aiHandler *AI
 	// 文法、自动机间的转换
 	convert := r.Group("/convert")
 	{
-		convert.POST("/grammar-to-nfa", GrammarToNFA) // 右线性文法转成 NFA
+		convert.POST("/grammar-to-nfa", GrammarToFA) // 右线性文法转成 NFA
 		convert.POST("/fa-to-grammar", FAToGrammar)   // FA 转成文法
-		convert.POST("/regex-to-nfa", RegexToNFA)     // 正则表达式转为NFA
+		convert.POST("/regex-to-nfa", RegexToFA)     // 正则表达式转为NFA
 		convert.POST("/fa-to-regex", FAToRegex)       // FA转为正则表达式
 	}
 
 	// 知识学习
 	learn := r.Group("/learn")
 	{
-		learn.GET("/", LearnGet) // 获取学习资料或信息
+		learn.GET("/", learnHandler.LearnList)                               // 获取学习资料列表
+		learn.GET("/:id", learnHandler.LearnGetByID)                         // 获取单个资源详情
+		learn.POST("/presigned-url", learnHandler.LearnGeneratePresignedURL) // 生成上传预签名URL
+		learn.PUT("/:id", learnHandler.LearnUpdateMaterial)                  // 更新学习资源
+		learn.DELETE("/:id", learnHandler.LearnDeleteMaterial)               // 删除学习资源
 	}
 
 	// AI 相关接口

@@ -32,3 +32,12 @@ log:
     environment: "development"
     version: "1.0.0"
     instance_id: "dev-001"
+
+# 阿里云OSS配置
+oss:
+  endpoint: "oss-cn-hangzhou.aliyuncs.com"
+  access_key_id: "your-access-key-id"
+  access_key_secret: "your-access-key-secret"
+  bucket_name: "your-bucket-name"
+  region: "oss-cn-hangzhou"
+  base_url: "https://your-bucket-name.oss-cn-hangzhou.aliyuncs.com"

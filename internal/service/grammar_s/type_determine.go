@@ -29,7 +29,7 @@ import (
 // 时间复杂度：O(n*m)，其中n为产生式数量，m为产生式平均长度
 // 空间复杂度：O(1)
 func TypeDetermine(g *model.Grammar) model.GrammarType {
-	if g == nil || IsValidGrammar(g) != nil {
+	if g == nil || GrammarCheckValidity(g) != nil {
 		fmt.Println("无效文法")
 		return model.InvalidGrammar
 	}
@@ -65,7 +65,7 @@ func isContextFreeForm(g *model.Grammar) bool {
 }
 
 // isRegular 检查是否为正则文法（右线性或左线性）,前提是文法是上下文无关文法
-func IsRegular(g *model.Grammar) (IsRegular, isRight bool) {
+func IsRegular(g *model.Grammar) (IsRegular, isRightLinear bool) {
 	hasRightLinear := false
 	hasLeftLinear := false
 

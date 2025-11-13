@@ -18,6 +18,7 @@ FormalLangLab 是一个基于 Web 的交互式形式语言与自动机学习系�
 
 - **框架**: Golang (Gin)
 - **数据库**: PostgreSQL
+- **缓存**： Redis
 - **认证**: JWT
 - **消息队列**: Kafka（用于邮件异步处理）
 - **AI集成**: 支持本地 Ollama + Llama3 或远程 API（通义千问等）

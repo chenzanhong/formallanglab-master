@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-// IsValidGrammar 判断一个 Grammar 是否为有效文法
+// GrammarCheckValidity 判断一个 Grammar 是否为有效文法
 // 验证规则：
 // 1. 文法对象不能为空
 // 2. 非终结符集和终结符集都不能为空
@@ -17,7 +17,7 @@ import (
 //
 // 时间复杂度：O(n*m + k)，其中n为产生式数量，m为产生式平均长度，k为符号集合大小
 // 空间复杂度：O(1)
-func IsValidGrammar(g *model.Grammar) error {
+func GrammarCheckValidity(g *model.Grammar) error {
 	if g == nil {
 		return errors.New("文法对象为nil")
 	}

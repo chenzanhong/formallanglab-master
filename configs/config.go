@@ -54,6 +54,16 @@ type AIConfig struct {
 	ChromaCollection string `yaml:"chroma_collection"`
 }
 
+// OSSConfig 阿里云OSS配置
+type OSSConfig struct {
+	Endpoint        string `yaml:"endpoint"`
+	AccessKeyID     string `yaml:"access_key_id"`
+	AccessKeySecret string `yaml:"access_key_secret"`
+	BucketName      string `yaml:"bucket_name"`
+	Region          string `yaml:"region"`
+	BaseURL         string `yaml:"base_url"` // 用于生成可访问的URL
+}
+
 type LogConfig struct {
 	Level        string `yaml:"level"`
 	Output       string `yaml:"output"`  // "console", "file", "both"
@@ -75,6 +85,7 @@ type Config struct {
 	Kafka      KafkaConfig      `yaml:"kafka"`
 	AI         AIConfig         `yaml:"ai"`
 	Log        LogConfig        `yaml:"log"`
+	OSS        OSSConfig        `yaml:"oss"`
 }
 
 // getConfigPath 获取数据库配置文件的路径
@@ -183,4 +194,12 @@ func SetEnvVariables() {
 	setEnvIfNotSet("LOG_MAX_AGE", strconv.Itoa(config.Log.MaxAge))
 	setEnvIfNotSet("LOG_COMPRESS", strconv.FormatBool(config.Log.Compress))
 	setEnvIfNotSet("LOG_SAMPLING", strconv.FormatBool(config.Log.Sampling))
+
+	// OSS
+	setEnvIfNotSet("OSS_ENDPOINT", config.OSS.Endpoint)
+	setEnvIfNotSet("OSS_ACCESS_KEY_ID", config.OSS.AccessKeyID)
+	setEnvIfNotSet("OSS_ACCESS_KEY_SECRET", config.OSS.AccessKeySecret)
+	setEnvIfNotSet("OSS_BUCKET_NAME", config.OSS.BucketName)
+	setEnvIfNotSet("OSS_REGION", config.OSS.Region)
+	setEnvIfNotSet("OSS_BASE_URL", config.OSS.BaseURL)
 }

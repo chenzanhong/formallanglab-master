@@ -5,13 +5,6 @@ import (
 	"fmt"
 )
 
-type AutomatonType bool
-
-const (
-	DFA AutomatonType = true  // 确定有限自动机
-	NFA AutomatonType = false // 非确定有限自动机
-)
-
 /* 自动机 */
 // Symbol 表示自动机中的输入符号
 // type Symbol string
@@ -25,8 +18,16 @@ type State string
 type Transition struct {
 	FromState State   `json:"fromState"` // 起始状态
 	Input     Symbol  `json:"input"`     // 输入符号
-	ToStates  []State `json:"toStates"`  // 目标状态（对于NFA可以有多个）
+	ToStates  []State `json:"toStates"`  // 目标状态（对于NFA可以有多个，但是目前大部分还是分开来的，不合并相同FromState+Input的产生式）
 }
+
+type AutomatonType int
+
+const (
+	DFA        AutomatonType = 0 // 确定有限自动机
+	NFA        AutomatonType = 1 // 非确定有限自动机
+	EpsilonNFA AutomatonType = 2 // 非确定有限自动机（允许 ε-转移）
+)
 
 // Automaton 基础自动机结构
 type Automaton struct {
@@ -35,13 +36,13 @@ type Automaton struct {
 	Transitions     []Transition                 `json:"transitions"`     // 状态转移规则集合
 	InitialState    State                        `json:"initialState"`    // 初始状态
 	AcceptingStates []State                      `json:"acceptingStates"` // 接受状态集合
-	IsDFA           AutomatonType                `json:"isDFA"`           // 是否为DFA，否则为NFA
+	Type            AutomatonType                `json:"type"`           // 是否为DFA，否则为NFA
 	TransMap        map[State]map[Symbol][]State // Map存储状态转移规则，识别字符串时效率高
 }
 
-// 按字符集以及最长匹配原则切分字符串
+// 按字符集以及最长匹配原则切分字符串，返回可被正确切分的符号序列
 func (a *Automaton) SplitString(s string) ([]Symbol, error) {
-	if len(s) == 0 {
+	if len(s) == 0 || s == "" {
 		return nil, errors.New("输入字符串为空")
 	}
 
@@ -81,7 +82,7 @@ func (a *Automaton) SplitString(s string) ([]Symbol, error) {
 
 		if !matched {
 			// 找不到任何以 s[i] 开头的合法符号
-			return nil, fmt.Errorf("在位置 %d 无法匹配任何符号，剩余字符串: '%s'", i, s[i:])
+			return res, fmt.Errorf("在位置 %d 无法匹配任何符号，剩余字符串: '%s'", i, s[i:])
 		}
 	}
 
@@ -136,8 +137,8 @@ func (a *Automaton) ISValidate() error {
 	}
 	alphabetSet[Epsilon] = true // 允许空转移
 
-	// 5. 验证所有转移规则，检查所有转移符合和状态是否有定义，顺带确定isDFA
-	a.IsDFA = true
+	// 5. 验证所有转移规则，检查所有转移符合和状态是否有定义，顺带确定type
+	a.Type = DFA
 	transitionMap := make(map[string]State) // key: state|symbol
 	for _, t := range a.Transitions {
 		// 5.1 检查起始状态是否已定义
@@ -154,17 +155,18 @@ func (a *Automaton) ISValidate() error {
 				return fmt.Errorf("转移规则'%v'中目标状态 '%s' 未定义", t, to)
 			}
 		}
+		// 5.4 判断类型
 		if t.Input == Epsilon {
-			a.IsDFA = false
-		} else if a.IsDFA {
+			a.Type = EpsilonNFA
+		} else if a.Type == DFA {
 			// 检查是否重复定义了同一 (fromState, input)
 			if len(t.ToStates) > 1 {
-				a.IsDFA = false
+				a.Type = NFA
 				continue
 			}
 			key := string(t.FromState) + "|" + string(t.Input)
 			if to, exists := transitionMap[key]; exists && to != t.ToStates[0] {
-				a.IsDFA = false
+				a.Type = NFA
 				continue
 			}
 			transitionMap[key] = t.ToStates[0]
@@ -174,18 +176,18 @@ func (a *Automaton) ISValidate() error {
 }
 
 // CompleteDFA 将自动机转换为等价的完备 DFA
-// 前提：调用者应确保 a 是一个有效的 DFA（可通过 a.CheckIsDFA() 验证）
+// 前提：调用者应确保 a 是一个有效的 DFA（可通过 a.ISValidate() 验证）
 // 步骤：
 //  1. 移除不可达状态
 //  2. 添加陷阱状态（若需要）
 //  3. 补全所有缺失的转移
 func (a *Automaton) CompleteDFA() error {
 	// Step 0: 确保是 DFA
-	if !a.IsDFA {
+	if a.Type != DFA {
 		if err := a.ISValidate(); err != nil {
 			return fmt.Errorf("failed to determine the validity of the Automaton: %w", err)
 		}
-		if !a.IsDFA {
+		if a.Type != DFA {
 			return fmt.Errorf("cannot complete non-DFA")
 		}
 	}
@@ -225,6 +227,7 @@ func (a *Automaton) CompleteDFA() error {
 	transMap := make(map[State]map[Symbol]State)
 	for _, t := range a.Transitions {
 		if t.Input == Epsilon {
+			
 			return fmt.Errorf("unexpected epsilon in DFA")
 		}
 		if _, ok := transMap[t.FromState]; !ok {
@@ -279,7 +282,7 @@ func (a *Automaton) CompleteDFA() error {
 
 	// 重新构建 TransMap（供后续识别使用）
 	a.InitTransMap()
-	a.IsDFA = true // 仍为 DFA
+	a.Type = DFA // 仍为 DFA
 	return nil
 }
 
@@ -480,7 +483,7 @@ type RecognitionResult struct {
   ],
   "initialState": "q0",
   "acceptingStates": ["q2"],
-  "isDFA": false
+  "type": 1
 }
 
 

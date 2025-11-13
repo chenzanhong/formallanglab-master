@@ -262,7 +262,7 @@ func (tb *thompsonBuilder) build(node *astNode) (model.State, model.State) {
 	}
 }
 
-func RegexToNFA(pattern string) (*model.Automaton, error) {
+func RegexToFA(pattern string) (*model.Automaton, error) {
 	ast := parseRegex(pattern)
 	if ast == nil {
 		return nil, fmt.Errorf("empty or invalid pattern")
@@ -287,6 +287,6 @@ func RegexToNFA(pattern string) (*model.Automaton, error) {
 		Transitions:     builder.trans,
 		InitialState:    start,
 		AcceptingStates: []model.State{accept},
-		IsDFA:           false,
+		Type:            model.EpsilonNFA,
 	}, nil
 }

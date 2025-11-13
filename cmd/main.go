@@ -7,9 +7,11 @@ import (
 	aiSvc "backend/internal/service/ai_s"
 	emailSvc "backend/internal/service/email_s"
 	kafka_s "backend/internal/service/kafka_s"
+	learnSvc "backend/internal/service/learn_s"
 	userSvc "backend/internal/service/user_s"
 	"backend/logs"
 	"backend/pkg/binding"
+	"backend/pkg/oss"
 	"context"
 	"net/http"
 	"os"
@@ -54,19 +56,30 @@ func main() {
 		option.WithBaseURL(baseURL),
 	)
 
-	// 2. 组装服务
+	// 2. 初始化OSS客户端
+	ossClient, err := oss.NewAliyunOSSClient()
+	if err != nil {
+		logs.Sugar.Errorf("初始化阿里云OSS客户端失败: %v", err)
+	}
+
+	// 3. 组装服务
 	userRepo := rep.NewUserRepository(repo.DB, repo.Redis)
 	emailRepo := rep.NewEmailRepository(repo.DB, repo.Redis)
 	aiRepo := rep.NewAIRepository(repo.Redis)
+	learnRepo := rep.NewLearnRepository(repo.DB)
 	kafkaProducer := kafka_s.NewDefaultKafkaProducerService()
 	userService := userSvc.NewUserService(userRepo, emailRepo)
 	emailService := emailSvc.NewEmailService(emailRepo, userRepo, kafkaProducer)
 	aiService := aiSvc.NewAIService(&aiClient, aiRepo)
+	learnService := learnSvc.NewLearnService(learnRepo, ossClient)
+
+	// 4. 初始化处理器
+	learnHandler := api.NewLearnHandler(learnService)
 
 	enable_pprof := os.Getenv("ENABLE_PPROF")
 
-	// 4. 注册路由
-	r := api.SetupRouter(userService, emailService, aiService, enable_pprof)
+	// 5. 注册路由
+	r := api.SetupRouter(userService, emailService, aiService, learnHandler, enable_pprof)
 
 	// 5. 创建 HTTP 服务实例
 	srv := &http.Server{

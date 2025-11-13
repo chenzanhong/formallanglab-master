@@ -27,7 +27,7 @@ import (
 */
 func IsEquivalent(g1, g2 *model.Grammar) bool {
 	// // 先验证两个文法都是有效的正则文法
-	// if !IsValidGrammar(g1) || !IsValidGrammar(g2) {
+	// if !GrammarCheckValidity(g1) || !GrammarCheckValidity(g2) {
 	// 	return false
 	// }
 

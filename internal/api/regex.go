@@ -44,7 +44,6 @@ func RegexValidate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.RegexValidateResponse{
 			Msg:    "invalid regular expression",
 			Valid:  false,
-			Error:  err.Error(),
 			Result: false,
 		})
 		return
@@ -84,7 +83,6 @@ func RegexRecognize(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.RegexRecognizeResponse{
 			Msg:     "invalid regular expression",
 			Matched: false,
-			Error:   err.Error(),
 			Result:  false,
 		})
 		return
@@ -97,7 +95,6 @@ func RegexRecognize(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.RegexRecognizeResponse{
 			Msg:     "invalid input string",
 			Matched: false,
-			Error:   err.Error(),
 			Result:  false,
 		})
 		return

@@ -6,7 +6,8 @@ import (
 )
 
 // Recognize 判断自动机是否接受输入字符串 str
-// 根据自动机类型（DFA或NFA）选择相应的识别算法
+// 根据自动机类型（DFA或NFA或EPSILON-NFA）选择相应的识别算法
+// 默认已经对自动机有效性和类型进行了判断
 //
 // 算法说明：
 // 对于DFA（确定性有限自动机）：
@@ -33,23 +34,35 @@ func Recognize(automaton *model.Automaton, str string) (*model.RecognitionResult
 	// 初始化 TransMap 以提高识别效率
 	automaton.InitTransMap()
 
-	if automaton.IsDFA {
+	switch automaton.Type {
+	case model.DFA:
 		return recognizeDFA(automaton, str)
-	} else {
+	case model.NFA:
 		return recognizeNFA(automaton, str)
+	case model.EpsilonNFA:
+		return recognizeEpsilonNFA(automaton, str)
+	default:
+		return &model.RecognitionResult{
+			IsAccepted: false,
+			Steps:      []model.RecognitionStep{},
+		}, fmt.Errorf("未知的自动机类型")
 	}
 }
 
 // recognizeDFA 识别DFA是否接受输入字符串 str
 func recognizeDFA(automaton *model.Automaton, str string) (*model.RecognitionResult, error) {
+	var mustFailed bool
 	symbols, err := automaton.SplitString(str)
 	if err != nil {
-		return &model.RecognitionResult{
-			IsAccepted: false,
-			Steps:      []model.RecognitionStep{},
-		}, fmt.Errorf("DFA 识别失败：无法将输入字符串分词 -> %w", err)
+		if len(symbols) == 0 { // 第一个字符就非法了
+			return &model.RecognitionResult{
+				IsAccepted: false,
+				Steps:      []model.RecognitionStep{},
+			}, fmt.Errorf("无法识别该字符串，第一个字符就非法了")
+		}
+		// 不直接返回，而是记录结果，继续处理已分词部分
+		mustFailed = true
 	}
-	fmt.Printf("symbols: %+v", symbols)
 
 	currentState := automaton.InitialState
 	steps := []model.RecognitionStep{}
@@ -68,7 +81,7 @@ func recognizeDFA(automaton *model.Automaton, str string) (*model.RecognitionRes
 			}, fmt.Errorf("当前状态 %s 下输入 %s 没有相关的有效转移", currentState, sym)
 		}
 		nextState := automaton.TransMap[currentState][sym][0]
-		fmt.Printf("currentState: %s, nextState: %s", currentState, nextState)
+		// fmt.Printf("currentState: %s, nextState: %s", currentState, nextState)
 		steps = append(steps, model.RecognitionStep{
 			State:     currentState,
 			Input:     sym,
@@ -79,10 +92,10 @@ func recognizeDFA(automaton *model.Automaton, str string) (*model.RecognitionRes
 
 	// 检查最终状态是否为接收状态
 	for _, st := range automaton.AcceptingStates {
-		fmt.Printf("DFA: %+v		%s\n", automaton.AcceptingStates, currentState)
+		// fmt.Printf("DFA: %+v		%s\n", automaton.AcceptingStates, currentState)
 		if st == currentState {
 			return &model.RecognitionResult{
-				IsAccepted: true,
+				IsAccepted: !mustFailed,
 				Steps:      steps,
 			}, nil
 		}
@@ -91,159 +104,209 @@ func recognizeDFA(automaton *model.Automaton, str string) (*model.RecognitionRes
 	return &model.RecognitionResult{
 		IsAccepted: false,
 		Steps:      steps,
-	}, fmt.Errorf("输入字符串 %s 被完整识别，但是未到达接收状态", str)
+	}, fmt.Errorf("该自动机不接受输入字符串 %s", str)
 }
+
+// ===================== NFA =====================
 
 // recognizeNFA 识别NFA是否接受输入字符串 str，DFS
 func recognizeNFA(automaton *model.Automaton, str string) (*model.RecognitionResult, error) {
+	// 处理空串
+	if str == "" {
+		if ContainsState(automaton.AcceptingStates, automaton.InitialState) {
+			return &model.RecognitionResult{IsAccepted: true}, nil
+		}
+		return &model.RecognitionResult{IsAccepted: false}, fmt.Errorf("该自动机无法识别空串")
+	}
+
+	var mustFailed bool
 	// 第一步：将字符串分词为符号序列
 	symbols, err := automaton.SplitString(str)
 	if err != nil {
-		return &model.RecognitionResult{
-			IsAccepted: false,
-			Steps:      []model.RecognitionStep{},
-		}, fmt.Errorf("NFA 识别失败：无法将输入字符串分词 -> %w", err)
-	}
-
-	// 当前可能处于的状态集合（NFA 的核心：状态集合）
-	currentStates := []model.State{automaton.InitialState}
-	steps := []model.RecognitionStep{}
-
-	// 逐个处理每个符号
-	for _, sym := range symbols {
-		var nextStates []model.State
-		found := false
-
-		// 对当前每个可能的状态，查找该符号的转移
-		for _, state := range currentStates {
-			targets := automaton.TransMap[state][sym]
-			if len(targets) > 0 {
-				found = true
-				// 将目标状态加入 nextStates（去重）
-				for _, t := range targets {
-					if !containsState(nextStates, t) {
-						nextStates = append(nextStates, t)
-					}
-					steps = append(steps, model.RecognitionStep{
-						State:     state,
-						Input:     sym,
-						NextState: t,
-					})
-				}
-			}
-		}
-
-		// 如果没有任何状态能处理当前符号
-		if !found {
-			var lastState model.State
-			if len(steps) > 0 {
-				lastState = steps[len(steps)-1].NextState
-			} else {
-				// 没有转移步骤，说明输入为空或一开始就无法转移
-				lastState = automaton.InitialState
-			}
+		if len(symbols) == 0 { // 第一个字符就非法了
 			return &model.RecognitionResult{
 				IsAccepted: false,
-				Steps: append(steps, model.RecognitionStep{
-					State:     lastState,
-					Input:     sym,
-					NextState: "",
-				}),
-			}, fmt.Errorf("NFA 识别失败：在输入符号 '%s' 时，当前状态集合中没有状态可以转移", sym)
+				Steps:      []model.RecognitionStep{},
+			}, fmt.Errorf("无法识别该字符串，第一个字符就非法了")
 		}
-
-		// 更新当前状态集合
-		currentStates = nextStates
+		// 不直接返回，而是记录结果，继续处理已分词部分
+		mustFailed = true
 	}
 
-	// 最终：检查当前状态集合中是否有任意一个接受状态
-	for _, s := range currentStates {
-		fmt.Printf("NFA: %+v		%+v\n", automaton.AcceptingStates, currentStates)
-		if containsState(automaton.AcceptingStates, s) {
-			return &model.RecognitionResult{
-				IsAccepted: true,
-				Steps:      steps,
-			}, nil
-		}
+	var deepest []model.RecognitionStep
+	pathFound, finalSteps := dfsForNFA(
+		automaton,
+		automaton.InitialState,
+		symbols,
+		0,
+		[]model.RecognitionStep{},
+		make(map[string]bool),
+		&deepest,
+	)
+
+	if pathFound {
+		return &model.RecognitionResult{
+			IsAccepted: !mustFailed,
+			Steps:      finalSteps,
+		}, nil
 	}
 
 	return &model.RecognitionResult{
 		IsAccepted: false,
-		Steps:      steps,
-	}, fmt.Errorf("输入字符串 %s 被完整识别，但未到达任何接受状态", str)
+		Steps:      deepest,
+	}, fmt.Errorf("该自动机不接受输入字符串 %s", str)
 }
 
-// // recognizeNFA_e 识别带ε的NFA是否接受输入字符串 str，DFS
-func recognizeNFA_e(automaton model.Automaton, str string) (model.RecognitionResult, error) {
-	symbols, err := automaton.SplitString(str)
-	if err != nil {
-		return model.RecognitionResult{
-			IsAccepted: false,
-			Steps:      []model.RecognitionStep{},
-		}, fmt.Errorf("ε-NFA 识别失败：无法将输入字符串分词 -> %w", err)
-	}
-
-	// 先计算初始 ε-闭包，并记录初始 ε 路径
-	initialClosure, initialSteps := computeEpsilonClosureWithPath([]model.State{automaton.InitialState}, automaton)
-
-	// 尝试从每个初始闭包中的状态开始 DFS（因为 NFA 可以“同时”处于多个状态，但我们找一条路径）
-	for _, startState := range initialClosure {
-		var currentSteps []model.RecognitionStep
-		currentSteps = append(currentSteps, initialSteps...) // 包含初始 ε 转移
-
-		pathFound, finalSteps := dfsWithEpsilon(
-			automaton,
-			startState,
-			symbols,
-			0,
-			currentSteps,
-			make(map[string]bool), // 防止无限循环（状态+输入位置作为 key）
-		)
-		if pathFound {
-			return model.RecognitionResult{
-				IsAccepted: true,
-				Steps:      finalSteps,
-			}, nil
-		}
-	}
-
-	// 如果所有路径都失败，尝试构造一条失败路径（可选）
-	// 这里简化：返回初始闭包 + 第一个无法转移的步骤
-	lastState := automaton.InitialState
-	if len(initialClosure) > 0 {
-		lastState = initialClosure[0]
-	}
-	if len(symbols) == 0 {
-		// 空串情况
-		for _, s := range initialClosure {
-			if containsState(automaton.AcceptingStates, s) {
-				return model.RecognitionResult{IsAccepted: true, Steps: initialSteps}, nil
-			}
-		}
-		return model.RecognitionResult{IsAccepted: false, Steps: initialSteps}, nil
-	}
-
-	steps := initialSteps
-	steps = append(steps, model.RecognitionStep{
-		State:     lastState,
-		Input:     symbols[0],
-		NextState: "",
-	})
-	return model.RecognitionResult{
-		IsAccepted: false,
-		Steps:      steps,
-	}, fmt.Errorf("ε-NFA 无法接受输入字符串 %s", str)
-}
-
-// dfsWithEpsilon 执行带路径记录的 DFS
-func dfsWithEpsilon(
-	automaton model.Automaton,
+func dfsForNFA(
+	automaton *model.Automaton,
 	currentState model.State,
 	symbols []model.Symbol,
 	pos int,
 	steps []model.RecognitionStep,
 	visited map[string]bool,
+	deepest *[]model.RecognitionStep,
 ) (bool, []model.RecognitionStep) {
+
+	// 更新最深路径
+	if len(steps) > len(*deepest) {
+		*deepest = append([]model.RecognitionStep(nil), steps...)
+	}
+
+	key := fmt.Sprintf("%s@%d", currentState, pos)
+	if visited[key] {
+		return false, steps
+	}
+	visited[key] = true
+	defer delete(visited, key)
+
+	// 输入处理完毕：检查是否为接受状态
+	if pos == len(symbols) {
+		if ContainsState(automaton.AcceptingStates, currentState) {
+			return true, steps
+		}
+		return false, steps
+	}
+
+	input := symbols[pos]
+
+	// 尝试所有可能的转移（NFA 允许多个）
+	for _, next := range automaton.TransMap[currentState][input] {
+		newSteps := append(append([]model.RecognitionStep(nil), steps...), model.RecognitionStep{
+			State:     currentState,
+			Input:     input,
+			NextState: next,
+		})
+		if found, finalSteps := dfsForNFA(automaton, next, symbols, pos+1, newSteps, visited, deepest); found {
+			return true, finalSteps
+		}
+	}
+
+	return false, steps
+}
+
+// ========================== EpsilonNFA ============================
+
+// recognizeEpsilonNFA 识别带ε的NFA是否接受输入字符串 str，DFS
+func recognizeEpsilonNFA(automaton *model.Automaton, str string) (*model.RecognitionResult, error) {
+	// 处理空串
+	if str == "" {
+		// 如果初始状态本身就是接受状态？
+		if ContainsState(automaton.AcceptingStates, automaton.InitialState) {
+			return &model.RecognitionResult{IsAccepted: true, Steps: []model.RecognitionStep{}}, nil
+		}
+		// 否则，查找是否存在 ε-路径到达接受状态
+		visited := make(map[model.State]bool)
+		if steps, found := findEpsilonPathToAccept(automaton, automaton.InitialState, []model.RecognitionStep{}, visited); found {
+			return &model.RecognitionResult{IsAccepted: true, Steps: steps}, nil // 此时的 steps 包含了 ε-转移
+		}
+		return &model.RecognitionResult{IsAccepted: false, Steps: []model.RecognitionStep{}}, fmt.Errorf("该自动机无法识别空串")
+	}
+
+	// 记录是否确定一定会识别失败
+	var mustFailed bool = false
+
+	// 分词（可能部分成功，即部分识别）
+	symbols, err := automaton.SplitString(str)
+	if err != nil { // 不可完全分词
+		if len(symbols) == 0 { // 第一个字符就非法了
+			// 直接返回
+			return &model.RecognitionResult{IsAccepted: false, Steps: []model.RecognitionStep{}}, fmt.Errorf("无法识别该字符串，第一个字符就非法了")
+		}
+		// 部分可分词，记录结果，继续处理已分词部分
+		mustFailed = true
+	}
+
+	// 第一阶段：快速判断是否接受
+	if !isAcceptedForEpsilonNFA(automaton, symbols) {
+		// 不直接返回，而是设置结果，确保即时识别失败也有识别路径返回
+		mustFailed = true
+	}
+
+	var deepest []model.RecognitionStep
+	pathFound, finalSteps := dfsWithEpsilon(
+		automaton,
+		automaton.InitialState,
+		symbols,
+		0,
+		[]model.RecognitionStep{},
+		make(map[string]bool), // 防止无限循环（状态+输入位置作为 key）
+		&deepest,
+	)
+	if pathFound {
+		return &model.RecognitionResult{
+			IsAccepted: !mustFailed, // 分词部分识别成功，且分词部分为完整的输入字符串
+			Steps:      finalSteps,
+		}, nil
+	}
+	// 失败也返回已识别的路径
+	return &model.RecognitionResult{
+		IsAccepted: false,
+		Steps:      deepest,
+	}, fmt.Errorf("ε-NFA 无法接受输入字符串 %s", str)
+}
+
+// findEpsilonPathToAccept 从currentState出发，通过 ε 转移找到一条到接受状态的路径
+// 但对于一开始currentState就是接受态的情况，不会记录自身的转移，返回的[]model.RecognitionStep为currentSteps
+func findEpsilonPathToAccept(automaton *model.Automaton, currentState model.State, currentSteps []model.RecognitionStep, visited map[model.State]bool) ([]model.RecognitionStep, bool) {
+	if ContainsState(automaton.AcceptingStates, currentState) {
+		return currentSteps, true
+	}
+
+	if visited[currentState] {
+		return currentSteps, false // 避免循环
+	}
+	visited[currentState] = true
+	defer delete(visited, currentState) // 回溯
+
+	// 递归查找 ε 转移到的状态
+	for _, next := range automaton.TransMap[currentState][model.Epsilon] {
+		if finalSteps, found := findEpsilonPathToAccept(automaton, next, append(append([]model.RecognitionStep(nil), currentSteps...), model.RecognitionStep{
+			State:     currentState,
+			Input:     model.Epsilon,
+			NextState: next,
+		}), visited); found {
+			return finalSteps, true
+		}
+	}
+
+	return currentSteps, false // 未找到接受路径
+}
+
+// dfsWithEpsilon 执行带路径记录的 DFS
+func dfsWithEpsilon(
+	automaton *model.Automaton,
+	currentState model.State,
+	symbols []model.Symbol,
+	pos int, // 当前输入符号位置
+	steps []model.RecognitionStep,
+	visited map[string]bool,
+	deepest *[]model.RecognitionStep, // 记录最深路径，用于返回识别失败时的识别路径
+) (bool, []model.RecognitionStep) {
+
+	// 更新最新路径
+	if len(steps) > len(*deepest) {
+		*deepest = append([]model.RecognitionStep(nil), steps...)
+	}
 
 	key := fmt.Sprintf("%s@%d", currentState, pos)
 	if visited[key] {
@@ -252,52 +315,39 @@ func dfsWithEpsilon(
 	visited[key] = true
 	defer delete(visited, key) // 回溯
 
-	// 如果已处理完所有输入
+	// 输入已处理完输入串：检查是否能通过 ε 转移到达接受状态，并记录路径
 	if pos == len(symbols) {
-		// 检查当前状态是否为接受状态（或其 ε-闭包中包含接受状态）
-		closure, _ := computeEpsilonClosureWithPath([]model.State{currentState}, automaton)
-		for _, s := range closure {
-			if containsState(automaton.AcceptingStates, s) {
-				// 把 closure 中的 ε 转移也加进来（如果有的话）
-				_, epsSteps := computeEpsilonClosureWithPath([]model.State{currentState}, automaton)
-				finalSteps := append(steps, epsSteps...)
-				return true, finalSteps
-			}
+		visitedEps := make(map[model.State]bool)
+		if acceptSteps, found := findEpsilonPathToAccept(automaton, currentState, steps, visitedEps); found {
+			return true, acceptSteps
 		}
 		return false, steps
 	}
 
 	input := symbols[pos]
 
-	// Option 1: 先尝试 ε 转移（不消耗输入）
-	for _, t := range automaton.Transitions {
-		if t.FromState == currentState && t.Input == model.Epsilon {
-			for _, next := range t.ToStates {
-				newSteps := append(steps, model.RecognitionStep{
-					State:     currentState,
-					Input:     model.Epsilon,
-					NextState: next,
-				})
-				if found, finalSteps := dfsWithEpsilon(automaton, next, symbols, pos, newSteps, visited); found {
-					return true, finalSteps
-				}
-			}
+	// 先尝试 ε 转移
+	for _, next := range automaton.TransMap[currentState][model.Epsilon] {
+		// 使用 append 复制 steps，避免 slices 共享底层数组导致的路径污染
+		newSteps := append(append([]model.RecognitionStep(nil), steps...), model.RecognitionStep{
+			State:     currentState,
+			Input:     model.Epsilon,
+			NextState: next,
+		})
+		if found, finalSteps := dfsWithEpsilon(automaton, next, symbols, pos, newSteps, visited, deepest); found {
+			return true, finalSteps
 		}
 	}
 
-	// Option 2: 尝试消耗当前输入符号
-	for _, t := range automaton.Transitions {
-		if t.FromState == currentState && t.Input == input {
-			for _, next := range t.ToStates {
-				newSteps := append(steps, model.RecognitionStep{
-					State:     currentState,
-					Input:     input,
-					NextState: next,
-				})
-				if found, finalSteps := dfsWithEpsilon(automaton, next, symbols, pos+1, newSteps, visited); found {
-					return true, finalSteps
-				}
-			}
+	// 尝试消耗当前输入符号
+	for _, next := range automaton.TransMap[currentState][input] {
+		newSteps := append(append([]model.RecognitionStep(nil), steps...), model.RecognitionStep{
+			State:     currentState,
+			Input:     input,
+			NextState: next,
+		})
+		if found, finalSteps := dfsWithEpsilon(automaton, next, symbols, pos+1, newSteps, visited, deepest); found {
+			return true, finalSteps
 		}
 	}
 
@@ -322,23 +372,62 @@ func computeEpsilonClosureWithPath(states []model.State, automaton model.Automat
 		current := queue[0]
 		queue = queue[1:]
 
-		for _, t := range automaton.Transitions {
-			if t.FromState == current && t.Input == model.Epsilon {
-				for _, target := range t.ToStates {
-					if !visited[target] {
-						visited[target] = true
-						closure = append(closure, target)
-						queue = append(queue, target)
-						steps = append(steps, model.RecognitionStep{
-							State:     current,
-							Input:     model.Epsilon,
-							NextState: target,
-						})
-					}
-				}
+		for _, target := range automaton.TransMap[current][model.Epsilon] {
+			if !visited[target] {
+				visited[target] = true
+				closure = append(closure, target)
+				queue = append(queue, target)
+				steps = append(steps, model.RecognitionStep{
+					State:     current,
+					Input:     model.Epsilon,
+					NextState: target,
+				})
 			}
 		}
 	}
 
 	return closure, steps
 }
+
+// isAccepted 先判断是否接受
+func isAcceptedForEpsilonNFA(automaton *model.Automaton, symbols []model.Symbol) bool {
+	// 先计算初始状态的 ε-闭包
+	current := computeEpsilonClosureWithMap(automaton, []model.State{automaton.InitialState})
+
+	for _, sym := range symbols {
+		next := getEpsilonNFANextStatesFromMap(automaton, current, sym)
+		if len(next) == 0 {
+			return false
+		}
+		current = computeEpsilonClosureWithMap(automaton, next)
+	}
+
+	for _, s := range current {
+		if ContainsState(automaton.AcceptingStates, s) {
+			return true
+		}
+	}
+	return false
+}
+
+// func findAcceptPathForEpsilonNFA(automaton *model.Automaton, symbols []model.Symbol) ([]model.RecognitionStep, bool) {
+// 	initialClosure, initialSteps := computeEpsilonClosureWithPath([]model.State{automaton.InitialState}, *automaton)
+
+// 	// 空串情况
+// 	if len(symbols) == 0 {
+// 		for _, s := range initialClosure {
+// 			if ContainsState(automaton.AcceptingStates, s) {
+// 				return initialSteps, true
+// 			}
+// 		}
+// 		return initialSteps, false
+// 	}
+
+// 	// 从初始闭包的每个状态出发尝试
+// 	for _, s := range initialClosure {
+// 		if found, steps := dfsWithEpsilon(automaton, s, symbols, 0, initialSteps, make(map[string]bool), ); found {
+// 			return steps, true
+// 		}
+// 	}
+// 	return initialSteps, false
+// }

@@ -10,6 +10,7 @@ package api
 
 import (
 	"backend/internal/domain/dto"
+	"backend/internal/domain/model"
 	"backend/internal/metrics"
 	"backend/logs"
 	"time"
@@ -37,9 +38,8 @@ func AutomatonValidate(c *gin.Context) { // 是否有效
 
 	if err := automaton_s.AutomatonValidate(&req.Automaton); err != nil {
 		c.JSON(http.StatusBadRequest, dto.AutomatonValidateResponse{
-			Msg:    "无效的自动机",
+			Msg:    "无效的自动机" + err.Error(),
 			Result: false,
-			Error:  err.Error(),
 		})
 		metrics.IncOperation("automaton", "validate", "failure: invalid Automaton")
 		return
@@ -72,9 +72,8 @@ func AutomatonCleanup(c *gin.Context) { // 去无效符号、无效状态以及�
 	err := automaton_s.AutomatonValidate(&req.Automaton) // 包含了DFA还是NFA的判断
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.AutomatonCleanupResponse{
-			Msg:    "无效的自动机",
+			Msg:    "无效的自动机" + err.Error(),
 			Result: false,
-			Error:  err.Error(),
 		})
 		metrics.IncOperation("automaton", "minimize", "failure: invalid Automaton")
 		return
@@ -108,14 +107,13 @@ func DFAMinimize(c *gin.Context) { // DFA 最小化
 	err := automaton_s.AutomatonValidate(&req.Automaton) // 包含了DFA还是NFA的判断
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.DFAMinimizeResponse{
-			Msg:    "无效的自动机",
+			Msg:    "无效的自动机" + err.Error(),
 			Result: false,
-			Error:  err.Error(),
 		})
 		metrics.IncOperation("automaton", "minimize", "failure: invalid Automaton")
 		return
 	}
-	if !req.Automaton.IsDFA {
+	if req.Automaton.Type != model.DFA {
 		c.JSON(http.StatusBadRequest, dto.DFAMinimizeResponse{
 			Msg:    "不是DFA",
 			Result: false,
@@ -143,8 +141,7 @@ func AutomatonStringRecognize(c *gin.Context) { // 字符串识别，
 		logs.Sugar.Warnf("自动机字符串识别失败", "detail", "参数解析错误")
 		metrics.IncOperation("automaton", "string_recognize", "failure: parameter parsing error")
 		c.JSON(http.StatusBadRequest, dto.AutomatonStringRecognizeResponse{
-			Msg:    "参数解析错误",
-			Error:  err.Error(),
+			Msg:    "参数解析错误" + err.Error(),
 			Result: false,
 		})
 		return
@@ -152,8 +149,7 @@ func AutomatonStringRecognize(c *gin.Context) { // 字符串识别，
 	err := automaton_s.AutomatonValidate(&req.Automaton) // 包含了DFA还是NFA的判断
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.AutomatonStringRecognizeResponse{
-			Msg:    "自动机验证失败",
-			Error:  err.Error(),
+			Msg:    "自动机验证失败" + err.Error(),
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "minimize", "failure: invalid Automaton")
@@ -162,9 +158,8 @@ func AutomatonStringRecognize(c *gin.Context) { // 字符串识别，
 	result, err := automaton_s.Recognize(&req.Automaton, req.Str) // 先对Str分词，再模拟状态转移
 	if err != nil || !result.IsAccepted {
 		c.JSON(http.StatusOK, dto.AutomatonStringRecognizeResponse{
-			Msg:               "识别成功，该字符串未被自动机接收",
+			Msg:               "识别成功，该字符串未被自动机接收：" + err.Error(),
 			RecognitionResult: result, // 通过result.IsAccepted判断是否接收
-			Error:             err.Error(),
 			Result:            true,
 		})
 		metrics.IncOperation("automaton", "string_recognize", "failure: recognition failed")
@@ -195,14 +190,13 @@ func NFADeterminization(c *gin.Context) { // NFA 转 DFA，子集构造法
 	err := automaton_s.AutomatonValidate(&req.Automaton) // 包含了DFA还是NFA的判断
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.NFADeterminizationResponse{
-			Msg:    "无效的自动机",
+			Msg:    "无效的自动机" + err.Error(),
 			Result: false,
-			Error:  err.Error(),
 		})
 		metrics.IncOperation("automaton", "nfa_to_dfa", "failure: invalid Automaton")
 		return
 	}
-	if req.Automaton.IsDFA {
+	if req.Automaton.Type == model.DFA {
 		c.JSON(http.StatusOK, dto.NFADeterminizationResponse{
 			Msg:           "该自动机已经是DFA",
 			Result:        true,

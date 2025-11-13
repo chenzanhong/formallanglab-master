@@ -12,7 +12,7 @@ type RegexValidateResponse struct {
 	Valid   bool        `json:"valid"`
 	Msg     string      `json:"msg"`
 	Pattern model.Regex `json:"pattern,omitempty"`
-	Error   interface{} `json:"error,omitempty"`
+	// Error   interface{} `json:"error,omitempty"`
 	Result  bool        `json:"result"`
 }
 
@@ -26,6 +26,6 @@ type RegexRecognizeRequest struct {
 type RegexRecognizeResponse struct {
 	Matched bool        `json:"matched"`
 	Msg     string      `json:"msg"`
-	Error   interface{} `json:"error,omitempty"`
+	// Error   interface{} `json:"error,omitempty"`
 	Result  bool        `json:"result"`
 }

@@ -197,4 +197,5 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 
 func (h *UserHandler) CheckMe(c *gin.Context) {
 	// 不做任何处理，只是借助JWT判断token是否还有效
+	c.JSON(http.StatusOK, gin.H{})
 }

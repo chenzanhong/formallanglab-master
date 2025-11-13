@@ -22,8 +22,8 @@ import (
 )
 
 func init() {
-	mtr.PrometheusRegister()     // 初始化Prometheus
-	cf.SetEnvVariables()         // 初始化配置以及环境变量设置
+	mtr.PrometheusRegister() // 初始化Prometheus
+	cf.SetEnvVariables()     // 初始化配置以及环境变量设置
 	logs.InitLoggerFromEnv()
 }
 
@@ -34,7 +34,7 @@ func main() {
 	if err != nil {
 		logs.Sugar.Fatalf("Failed to initialize database: %v", err)
 	}
-	
+
 	// 2. 初始化OpenAI客户端
 	apiKey := os.Getenv("DASHSCOPE_API_KEY")
 	if apiKey == "" {
@@ -54,7 +54,12 @@ func main() {
 	aiService := aiSvc.NewAIService(&aiClient, aiRepo)
 
 	// 4. 创建AI处理器
-	aiHandler := api.NewAIHandler(aiService)
+	qaCache := aiSvc.NewQACache()
+	// 加载预置高频问题缓存
+	if err := qaCache.LoadCache("./knowledge/qa/qa.json"); err != nil {
+		logs.Sugar.Fatalf("Failed to load QACache", "detail", err.Error())
+	}
+	aiHandler := api.NewAIHandler(aiService, qaCache)
 
 	// 5. 创建Gin引擎
 	router := gin.New()
