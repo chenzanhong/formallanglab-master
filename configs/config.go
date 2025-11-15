@@ -10,6 +10,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type ServerConfig struct {
+	Port int `yaml:"port"`
+}
+
+type JWTConfig struct {
+	Key string `yaml:"key"`
+}
+
 type PGConfig struct {
 	Host     string `yaml:"host"`
 	Port     string `yaml:"port"`
@@ -27,14 +35,14 @@ type RedisConfig struct {
 	MaxIdleConn int    `yaml:"max_idle_conn"`
 }
 
-type EMAILConfig struct {
-	Name     string `yaml:"email_name"`
-	Password string `yaml:"email_password"`
-}
-type SMTPServerConfig struct {
-	Host string `yaml:"SMTPServer_host"`
-	Port string `yaml:"SMTPServer_port"`
-}
+// type EMAILConfig struct {
+// 	Name     string `yaml:"email_name"`
+// 	Password string `yaml:"email_password"`
+// }
+// type SMTPServerConfig struct {
+// 	Host string `yaml:"SMTPServer_host"`
+// 	Port string `yaml:"SMTPServer_port"`
+// }
 
 type RateConfig struct {
 	UserRate  int `yaml:"user_rate"`
@@ -65,27 +73,29 @@ type OSSConfig struct {
 }
 
 type LogConfig struct {
-	Level        string `yaml:"level"`
-	Output       string `yaml:"output"`  // "console", "file", "both"
-	Format       string `yaml:"format"`  // "json", "console" (只对终端输出生效)
-	FilePath     string `yaml:"file_path"`
-	MaxSize      int    `yaml:"max_size"`
-	MaxBackups   int    `yaml:"max_backups"`
-	MaxAge       int    `yaml:"max_age"`
-	Compress     bool   `yaml:"compress"`
-	Sampling     bool   `yaml:"sampling"`
+	Level      string `yaml:"level"`
+	Output     string `yaml:"output"` // "console", "file", "both"
+	Format     string `yaml:"format"` // "json", "console" (只对终端输出生效)
+	FilePath   string `yaml:"file_path"`
+	MaxSize    int    `yaml:"max_size"`
+	MaxBackups int    `yaml:"max_backups"`
+	MaxAge     int    `yaml:"max_age"`
+	Compress   bool   `yaml:"compress"`
+	Sampling   bool   `yaml:"sampling"`
 }
 
 type Config struct {
-	PG         PGConfig         `yaml:"pg"`
-	Redis      RedisConfig      `yaml:"redis"`
-	Email      EMAILConfig      `yaml:"email"`
-	SMTPServer SMTPServerConfig `yaml:"smtp_server"`
-	Rate       RateConfig       `yaml:"rate"`
-	Kafka      KafkaConfig      `yaml:"kafka"`
-	AI         AIConfig         `yaml:"ai"`
-	Log        LogConfig        `yaml:"log"`
-	OSS        OSSConfig        `yaml:"oss"`
+	Server ServerConfig `yaml:"server"`
+	JWT    JWTConfig    `yaml:"jwt"`
+	PG     PGConfig     `yaml:"pg"`
+	Redis  RedisConfig  `yaml:"redis"`
+	// Email      EMAILConfig      `yaml:"email"`
+	// SMTPServer SMTPServerConfig `yaml:"smtp_server"`
+	Rate  RateConfig  `yaml:"rate"`
+	Kafka KafkaConfig `yaml:"kafka"`
+	AI    AIConfig    `yaml:"ai"`
+	Log   LogConfig   `yaml:"log"`
+	OSS   OSSConfig   `yaml:"oss"`
 }
 
 // getConfigPath 获取数据库配置文件的路径
@@ -145,6 +155,11 @@ func SetEnvVariables() {
 			os.Setenv(envVar, fallback)
 		}
 	}
+	// Server
+	setEnvIfNotSet("SERVER_PORT", strconv.Itoa(config.Server.Port))
+
+	// jwt
+	setEnvIfNotSet("JWT_KEY", config.JWT.Key)
 
 	// PostgreSQL
 	setEnvIfNotSet("DB_USER", config.PG.User)
@@ -160,15 +175,15 @@ func SetEnvVariables() {
 	setEnvIfNotSet("REDIS_DB", strconv.Itoa(config.Redis.DB))
 	setEnvIfNotSet("REDIS_MAX_CONN", strconv.Itoa(config.Redis.MaxConn))
 	setEnvIfNotSet("REDIS_MAX_IDLE_CONN", strconv.Itoa(config.Redis.MaxIdleConn))
+	/*
+		// Email
+		setEnvIfNotSet("EMAIL_NAME", config.Email.Name)
+		setEnvIfNotSet("EMAIL_PASSWORD", config.Email.Password)
 
-	// Email
-	setEnvIfNotSet("EMAIL_NAME", config.Email.Name)
-	setEnvIfNotSet("EMAIL_PASSWORD", config.Email.Password)
-
-	// SMTP Server
-	setEnvIfNotSet("SMTP_SERVER_HOST", config.SMTPServer.Host)
-	setEnvIfNotSet("SMTP_SERVER_PORT", config.SMTPServer.Port)
-
+		// SMTP Server
+		setEnvIfNotSet("SMTP_SERVER_HOST", config.SMTPServer.Host)
+		setEnvIfNotSet("SMTP_SERVER_PORT", config.SMTPServer.Port)
+	*/
 	// Rate Limiting
 	setEnvIfNotSet("RATE_USER_RATE", strconv.Itoa(config.Rate.UserRate))
 	setEnvIfNotSet("RATE_USER_BURST", strconv.Itoa(config.Rate.UserBurst))

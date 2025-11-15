@@ -291,7 +291,7 @@ func (h *AIHandler) AIChatWS(c *gin.Context) {
 							safeWrite(model.WsMessage{Type: model.MsgTypeDone})
 						}
 						// fmt.Println("AI对话（MockStreamChat）请求成功")
-						fmt.Println(aiResp.String())
+						fmt.Println("AI 回答：", aiResp.String())
 						// 异步保存会话
 						go func() {
 							session.RecentTurns = append(session.RecentTurns, model.QAPair{
@@ -353,7 +353,7 @@ func (h *AIHandler) AIChatWS(c *gin.Context) {
 					safeWrite(model.WsMessage{Type: model.MsgTypeDone})
 				}
 				// fmt.Println("AI对话（StreamChat）请求成功")
-				fmt.Println(aiResp.String())
+				fmt.Println("AI 回答：", aiResp.String())
 				// 异步保存会话
 				go func() {
 					session.RecentTurns = append(session.RecentTurns, model.QAPair{

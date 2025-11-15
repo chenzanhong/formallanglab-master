@@ -1,7 +1,6 @@
 package email
 
 import (
-	"backend/configs"
 	"log"
 	"os"
 	"path/filepath"
@@ -10,10 +9,25 @@ import (
 	"go.yaml.in/yaml/v2"
 )
 
+type EMAILConfig struct {
+	Name     string `yaml:"email_name"`
+	Password string `yaml:"email_password"`
+}
+
+type SMTPServerConfig struct {
+	Host string `yaml:"SMTPServer_host"`
+	Port string `yaml:"SMTPServer_port"`
+}
+
+type KafkaConfig struct {
+	Brokers string `yaml:"brokers"`
+	Topic   string `yaml:"topic"`
+}
+
 type EmailWorkerConfig struct {
-	Email      configs.EMAILConfig      `yaml:"email"`
-	SMTPServer configs.SMTPServerConfig `yaml:"smtp_server"`
-	Kafka      configs.KafkaConfig      `yaml:"kafka"`
+	Email      EMAILConfig      `yaml:"email"`
+	SMTPServer SMTPServerConfig `yaml:"smtp_server"`
+	Kafka      KafkaConfig      `yaml:"kafka"`
 }
 
 // LoadEmailWorkerConfig 加载配置文件并返回 EmailWorkerConfig

@@ -9,7 +9,7 @@ import (
 )
 
 // ============ 统一的业务操作指标 ============
-// module: grammar、Automaton、regex、email、ai、learn、user
+// module: grammar、automaton、regex、email、learn、user
 var (
 	// operation_result_total 记录业务操作的总次数，按模块、操作类型和结果分类
 	// 例如: operation_result_total{module="grammar", operation="validate", result="success"}
@@ -18,7 +18,7 @@ var (
 			Name: "operation_result_total",
 			Help: "Total number of business operations by module, operation type and result.",
 		},
-		[]string{"module", "operation", "result"},
+		[]string{"module", "operation", "result"}, // 按模块、操作类型和结果（success/failure）
 	)
 
 	// operation_duration_seconds 记录业务操作的执行时间分布，按模块和操作类型分类

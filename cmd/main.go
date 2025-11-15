@@ -3,8 +3,8 @@ package main
 import (
 	cf "backend/configs"
 	"backend/internal/api"
+	"backend/internal/middleware"
 	rep "backend/internal/repository"
-	aiSvc "backend/internal/service/ai_s"
 	emailSvc "backend/internal/service/email_s"
 	kafka_s "backend/internal/service/kafka_s"
 	learnSvc "backend/internal/service/learn_s"
@@ -21,15 +21,13 @@ import (
 	"time"
 
 	mtr "backend/internal/metrics"
-
-	"github.com/openai/openai-go/v2"
-	"github.com/openai/openai-go/v2/option"
 )
 
 func init() {
 	mtr.PrometheusRegister()     // 初始化Prometheus
 	binding.RegisterValidation() // 注册自定义验证器
 	cf.SetEnvVariables()         // 初始化配置以及环境变量设置
+	middleware.SetJWTKey(os.Getenv("JWT_KEY"))
 	logs.InitLoggerFromEnv()
 }
 
@@ -42,19 +40,19 @@ func main() {
 	if err != nil {
 		logs.Sugar.Fatalf("Failed to initialize database: %v", err)
 	}
-	apiKey := os.Getenv("DASHSCOPE_API_KEY")
-	if apiKey == "" {
-		logs.Sugar.Fatal("DASHSCOPE_API_KEY is required")
-	}
-	baseURL := os.Getenv("DASHSCOPE_BASE_URL")
-	if baseURL == "" {
-		logs.Sugar.Fatal("DASHSCOPE_BASE_URL is required")
-	}
-	aiClient := openai.NewClient(
-		option.WithAPIKey(apiKey),
-		// 以下是北京地域base_url，如果使用新加坡地域的模型，需要将base_url替换为：https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-		option.WithBaseURL(baseURL),
-	)
+	// apiKey := os.Getenv("DASHSCOPE_API_KEY")
+	// if apiKey == "" {
+	// 	logs.Sugar.Fatal("DASHSCOPE_API_KEY is required")
+	// }
+	// baseURL := os.Getenv("DASHSCOPE_BASE_URL")
+	// if baseURL == "" {
+	// 	logs.Sugar.Fatal("DASHSCOPE_BASE_URL is required")
+	// }
+	// aiClient := openai.NewClient(
+	// 	option.WithAPIKey(apiKey),
+	// 	// 以下是北京地域base_url，如果使用新加坡地域的模型，需要将base_url替换为：https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+	// 	option.WithBaseURL(baseURL),
+	// )
 
 	// 2. 初始化OSS客户端
 	ossClient, err := oss.NewAliyunOSSClient()
@@ -65,12 +63,12 @@ func main() {
 	// 3. 组装服务
 	userRepo := rep.NewUserRepository(repo.DB, repo.Redis)
 	emailRepo := rep.NewEmailRepository(repo.DB, repo.Redis)
-	aiRepo := rep.NewAIRepository(repo.Redis)
+	// aiRepo := rep.NewAIRepository(repo.Redis)
 	learnRepo := rep.NewLearnRepository(repo.DB)
 	kafkaProducer := kafka_s.NewDefaultKafkaProducerService()
 	userService := userSvc.NewUserService(userRepo, emailRepo)
 	emailService := emailSvc.NewEmailService(emailRepo, userRepo, kafkaProducer)
-	aiService := aiSvc.NewAIService(&aiClient, aiRepo)
+	// aiService := aiSvc.NewAIService(&aiClient, aiRepo)
 	learnService := learnSvc.NewLearnService(learnRepo, ossClient)
 
 	// 4. 初始化处理器
@@ -79,8 +77,8 @@ func main() {
 	enable_pprof := os.Getenv("ENABLE_PPROF")
 
 	// 5. 注册路由
-	r := api.SetupRouter(userService, emailService, aiService, learnHandler, enable_pprof)
-
+	// r := api.SetupRouter(userService, emailService, aiService, learnHandler, enable_pprof)
+	r := api.SetupRouter(userService, emailService, learnHandler, enable_pprof)
 	// 5. 创建 HTTP 服务实例
 	srv := &http.Server{
 		Addr:    ":8080",
