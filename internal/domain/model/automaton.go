@@ -105,7 +105,6 @@ func (a *Automaton) ISValidate() error {
 	// 使用 map 提高查找效率
 	stateSet := make(map[State]bool)
 	alphabetSet := make(map[Symbol]bool)
-	fmt.Printf("%+v", a.States)
 	// 1. 检查状态集合不能为空
 	if len(a.States) == 0 {
 		return errors.New("状态集合不能为空")

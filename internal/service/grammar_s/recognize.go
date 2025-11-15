@@ -946,7 +946,7 @@ func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth
 						break
 					}
 				}
-				
+
 				if match {
 					// 替换匹配的符号序列为产生式右部
 					newSymbols := make([]model.Symbol, 0, len(curr.symbols)-leftLen+len(prod.Right))
@@ -999,10 +999,18 @@ func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth
 func ParseStringWithMode(grammar *model.Grammar, input string, mode string, showSteps bool) *model.ParseResult {
 	// 转换输入为符号数组
 	var inputSymbols []model.Symbol
+	var err error
 	if input == "" {
 		inputSymbols = []model.Symbol{model.Epsilon}
 	} else {
-		inputSymbols = grammar.StringToSymbols(input)
+		inputSymbols, err = grammar.StringToSymbols(input)
+		if err != nil {
+			// 充分利用StringToSymbols返回的详细错误信息
+			return &model.ParseResult{
+				Accepted: false,
+				Message:  err.Error(),
+			}
+		}
 	}
 
 	switch mode {

@@ -2,6 +2,7 @@ package convert_s
 
 import (
 	"backend/internal/domain/model"
+	"fmt"
 	"strconv"
 )
 
@@ -52,18 +53,24 @@ func RightLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 	// 状态转移
 	automaton.Transitions = make([]model.Transition, 0)
 	for _, production := range g.Productions {
+		fmt.Printf("产生式：%v", production)
 		var transition model.Transition
 		// 左部
 		transition.FromState = model.State(production.Left[0])
 		// 右部
 		if len(production.Right) == 1 { // 单一符号产生式右部
+			fmt.Println("单一",production.Right[0])
 			// 如果是终结符，直接转移到接受状态
 			if g.CheckIsTerminal(production.Right[0]) {
 				transition.Input = production.Right[0] // 终结符
 				transition.ToStates = append(transition.ToStates, automaton.AcceptingStates[0])
 				automaton.Transitions = append(automaton.Transitions, transition)
-			} else {
-				// 如果是非终结符，空转移，转移到下一个状态
+			} else if production.Right[0] == model.Epsilon { 
+				// 空转移，加入接受态
+				fmt.Println("===============空转移")
+				automaton.AcceptingStates = append(automaton.AcceptingStates, model.State(production.Left[0]))
+			}else {
+				// 如果是非终结符，转移到下一个状态
 				transition.Input = model.Epsilon // 空转移
 				transition.ToStates = append(transition.ToStates, model.State(production.Right[0]))
 				automaton.Transitions = append(automaton.Transitions, transition)

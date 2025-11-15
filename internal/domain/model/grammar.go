@@ -1,6 +1,10 @@
 package model
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"sort"
+)
 
 // Symbol 表示一个符号，可以是终结符、非终结符或者自动机所识别的一个符号
 type Symbol string
@@ -85,53 +89,49 @@ func (g *Grammar) ToCFGView() (*CFGView, error) {
 // 辅助函数：根据文法中定义的符号来分割字符串
 // 使用最长匹配原则，优先匹配较长的终结符
 // 例如：如果文法中有 "if" 和 "i" 两个终结符，则 "if" 会被优先匹配为一个符号，而不是 "i" + "f"
-func (g *Grammar) StringToSymbols(s string) []Symbol {
+func (g *Grammar) StringToSymbols(s string) ([]Symbol, error) {
 	if s == "" || s == "ε" {
-		return []Symbol{Epsilon}
+		return []Symbol{Epsilon}, nil
 	}
 
-	// 收集文法中所有的终结符，并按长度排序（最长先匹配）
+	// 构建终结符列表和集合
 	var terminals []string
-
-	// 从 g.Terminals 获取定义的终结符
-	for _, terminal := range g.Terminals {
-		termStr := string(terminal)
-		if termStr != "" && termStr != "ε" { // 排除空符号
-			terminals = append(terminals, termStr)
+	terminalSet := make(map[string]bool) // 可选：用于后续验证
+	for _, t := range g.Terminals {
+		ts := string(t)
+		if ts != "" && ts != "ε" {
+			terminals = append(terminals, ts)
+			terminalSet[ts] = true
 		}
 	}
 
-	// 按长度降序排序，确保最长匹配
-	for i := 0; i < len(terminals)-1; i++ {
-		for j := i + 1; j < len(terminals); j++ {
-			if len(terminals[i]) < len(terminals[j]) {
-				terminals[i], terminals[j] = terminals[j], terminals[i]
-			}
-		}
+	if len(terminals) == 0 {
+		return nil, fmt.Errorf("grammar has no defined terminals")
 	}
 
-	// 按最长匹配原则分割字符串
+	// 按长度降序排序（最长优先）
+	sort.Slice(terminals, func(i, j int) bool {
+		return len(terminals[i]) > len(terminals[j])
+	})
+
 	var symbols []Symbol
 	i := 0
 	for i < len(s) {
 		matched := false
-		// 从最长的符号开始尝试匹配
-		for _, terminal := range terminals {
-			if i+len(terminal) <= len(s) && s[i:i+len(terminal)] == terminal {
-				symbols = append(symbols, Symbol(terminal))
-				i += len(terminal)
+		for _, term := range terminals {
+			if i+len(term) <= len(s) && s[i:i+len(term)] == term {
+				symbols = append(symbols, Symbol(term))
+				i += len(term)
 				matched = true
 				break
 			}
 		}
-		// 如果没有匹配到任何已定义的终结符，按单字符处理
 		if !matched {
-			symbols = append(symbols, Symbol(string(s[i])))
-			i++
+			// 返回已切分部分
+			return symbols, fmt.Errorf("no terminal matches substring starting at position %d in input %q", i, s)
 		}
 	}
-
-	return symbols
+	return symbols, nil
 }
 
 func (g *Grammar) CheckIsTerminal(s Symbol) bool {

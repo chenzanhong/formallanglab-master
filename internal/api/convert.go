@@ -13,6 +13,7 @@ import (
 	"backend/internal/service/convert_s"
 	"backend/internal/service/grammar_s"
 	re "backend/internal/service/regex_s"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -36,9 +37,9 @@ func GrammarToFA(c *gin.Context) {
 	}
 
 	// 检查是否为有效文法
-	if grammar_s.GrammarCheckValidity(&req.Grammar) == nil {
+	if err:=grammar_s.GrammarCheckValidity(&req.Grammar); err!= nil {
 		c.JSON(http.StatusBadRequest, dto.GrammarToFAResponse{
-			Msg:    "无效的文法，请检查文法规则",
+			Msg:    "无效的文法，请检查文法规则"+err.Error(),
 			Result: false,
 		})
 		metrics.IncOperation("convert", "grammar_to_nfa", "failure: invalid grammar")
@@ -55,7 +56,7 @@ func GrammarToFA(c *gin.Context) {
 		metrics.IncOperation("convert", "grammar_to_nfa", "failure: not regular grammar")
 		return
 	}
-
+	fmt.Printf("文法转自动机，文法：%v", req.Grammar)
 	automaton := convert_s.RegularGrammarToFA(&req.Grammar, isRightLinear)
 
 	metrics.IncOperation("convert", "grammar_to_nfa", "success")
@@ -92,6 +93,7 @@ func FAToGrammar(c *gin.Context) {
 		metrics.IncOperation("convert", "fa_to_grammar", "failure: invalid automaton")
 		return
 	}
+	fmt.Println("自动机转文法：%v", req.Automaton)
 
 	// 3.调用convert_s提供的方法进行转换
 	grammar := convert_s.FAToGrammar(&req.Automaton)
