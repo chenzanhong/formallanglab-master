@@ -2,7 +2,7 @@ package main
 
 import (
 	"backend/internal/domain/model"
-	"backend/internal/service/convert_s"
+	"backend/internal/service/convert"
 	"fmt"
 )
 

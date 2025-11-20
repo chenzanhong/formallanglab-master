@@ -2,26 +2,21 @@ package api
 
 import (
 	"backend/internal/middleware"
-	// aiSvc "backend/internal/service/ai_s"
-	emailSvc "backend/internal/service/email_s"
-	userSvc "backend/internal/service/user_s"
-	"net/http"
-	"net/http/pprof"
+
+	// aiSvc "backend/internal/service/ai"
 
 	mtr "backend/internal/metrics"
 
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(userService userSvc.UserService, emailService emailSvc.EmailService, learnHandler *LearnHandler, enable_pprof string) *gin.Engine {
+func SetupRouter(userHandler *UserHandler, emailHandler *EmailHandler, storeHandler *StoreHandler, learnHandler *LearnHandler) *gin.Engine {
 
-	userHandler := NewUserHandler(userService)
-	emailHandler := NewEmailHandler(emailService)
 	// qaCache := aiSvc.NewQACache()
 	// // 异步加载预置高频问题缓存，加速主程序启动
 	// go func() {
 	// 	if err := qaCache.LoadCache("./knowledge/qa"); err != nil {
-	// 		logs.Sugar.Panic("Failed to load QACache", "detail", err.Error())
+	// 		zlog.Panic("Failed to load QACache", "detail", err.Error())
 	// 	}
 	// }()
 	// aiHandler := NewAIHandler(aiService, qaCache)
@@ -42,40 +37,12 @@ func SetupRouter(userService userSvc.UserService, emailService emailSvc.EmailSer
 	// router.Use(middleware.Logging(middleware.DefaultLoggingConfig))
 	// 6. 指标收集 - 收集所有处理过程的指标
 	router.Use(mtr.HTTPMiddleware())
-	if enable_pprof == "true" {
-		setupPprof(router)
-	}
 
 	setupPublicRoutes(router, userHandler, emailHandler) // 注册公开路由
 
 	// setupAuthRoutes(router, userHandler, aiHandler, learnHandler) // 注册需要认证的路由
-	setupAuthRoutes(router, userHandler, learnHandler) // 注册需要认证的路由
+	setupAuthRoutes(router, userHandler, learnHandler, storeHandler) // 注册需要认证的路由
 	return router
-}
-
-func setupPprof(router *gin.Engine) {
-	pprofGroup := router.Group("/debug/pprof")
-	pprofGroup.Use(func(c *gin.Context) {
-		if c.ClientIP() != "127.0.0.1" && c.ClientIP() != "::1" {
-			c.AbortWithStatus(http.StatusForbidden)
-			return
-		}
-		c.Next()
-	})
-	{
-		pprofGroup.GET("/", gin.WrapF(pprof.Index))
-		pprofGroup.GET("/cmdline", gin.WrapF(pprof.Cmdline))
-		pprofGroup.GET("/profile", gin.WrapF(pprof.Profile))
-		pprofGroup.POST("/symbol", gin.WrapF(pprof.Symbol))
-		pprofGroup.GET("/symbol", gin.WrapF(pprof.Symbol))
-		pprofGroup.GET("/trace", gin.WrapF(pprof.Trace))
-		pprofGroup.GET("/allocs", gin.WrapF(pprof.Handler("allocs").ServeHTTP))
-		pprofGroup.GET("/block", gin.WrapF(pprof.Handler("block").ServeHTTP))
-		pprofGroup.GET("/goroutine", gin.WrapF(pprof.Handler("goroutine").ServeHTTP))
-		pprofGroup.GET("/heap", gin.WrapF(pprof.Handler("heap").ServeHTTP))
-		pprofGroup.GET("/mutex", gin.WrapF(pprof.Handler("mutex").ServeHTTP))
-		pprofGroup.GET("/threadcreate", gin.WrapF(pprof.Handler("threadcreate").ServeHTTP))
-	}
 }
 
 func setupPublicRoutes(router *gin.Engine, userHandler *UserHandler, emailHandler *EmailHandler) {
@@ -87,7 +54,7 @@ func setupPublicRoutes(router *gin.Engine, userHandler *UserHandler, emailHandle
 	router.POST("/gdesign/reset-pwd", middleware.GlobalRateLimitMiddleware(), userHandler.ResetPassword)                      // 重置密码
 }
 
-func setupAuthRoutes(router *gin.Engine, userHandler *UserHandler, learnHandler *LearnHandler) {
+func setupAuthRoutes(router *gin.Engine, userHandler *UserHandler, learnHandler *LearnHandler, storeHandler *StoreHandler) {
 	// 使用 JWT、Rate 中间件保护这些路由
 	router.GET("/gdesign/user/me", middleware.JWTAuthMiddleware(), userHandler.CheckMe)
 	r := router.Group("/gdesign", middleware.JWTAuthMiddleware(), middleware.UserRateLimitMiddleware())
@@ -138,6 +105,23 @@ func setupAuthRoutes(router *gin.Engine, userHandler *UserHandler, learnHandler 
 		learn.POST("/presigned-url", learnHandler.LearnGeneratePresignedURL) // 生成上传预签名URL
 		learn.PUT("/:id", learnHandler.LearnUpdateMaterial)                  // 更新学习资源
 		learn.DELETE("/:id", learnHandler.LearnDeleteMaterial)               // 删除学习资源
+	}
+
+	// 存储模块接口
+	store := r.Group("/store")
+	{
+		// 自动机存储
+		store.POST("/automaton", storeHandler.CreateAutomaton)
+		store.GET("/automatons", storeHandler.FindAutomata)
+		store.DELETE("/automaton/:id", storeHandler.DeleteAutomaton)
+		// 文法存储
+		store.POST("/grammar", storeHandler.CreateGrammar)
+		store.GET("/grammars", storeHandler.FindGrammars)
+		store.DELETE("/grammars/:id", storeHandler.DeleteGrammar)
+		// 正则表达式存储
+		store.POST("/regex", storeHandler.CreateRegex)
+		store.GET("/regexes", storeHandler.FindRegexes)
+		store.DELETE("/regexes/:id", storeHandler.DeleteRegex)
 	}
 
 	// // AI 相关接口

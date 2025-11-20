@@ -5,10 +5,10 @@ import (
 	"backend/internal/domain/dto"
 	"backend/internal/metrics"
 	email "backend/internal/service/email_s"
-	"backend/logs"
 	"net/http"
 	"time"
 
+	"github.com/chenzanhong/zlog"
 	"github.com/gin-gonic/gin"
 )
 
@@ -32,7 +32,7 @@ func (h *EmailHandler) SendRegisterVerificationCode(c *gin.Context) {
 
 	if err := c.BindJSON(&request); err != nil {
 		metrics.IncOperation("email", "send_register_code", "failure: parameter parsing error")
-		logs.Sugar.Warnw("发送注册验证码失败", "detail", "解析请求失败，请检查请求格式是否正确", "username", usernameStr.(string))
+		zlog.Warnw("发送注册验证码失败", "detail", "解析请求失败，请检查请求格式是否正确", "username", usernameStr.(string))
 		c.JSON(http.StatusBadRequest, dto.VerificationCodeResponse{Msg: "请求数据格式错误", Result: false})
 		return
 	}
@@ -40,7 +40,7 @@ func (h *EmailHandler) SendRegisterVerificationCode(c *gin.Context) {
 	// 检查邮箱格式
 	if request.Email == "" {
 		metrics.IncOperation("email", "send_register_code", "failure: empty email")
-		logs.Sugar.Warnw("发送注册验证码失败", "detail", "邮箱为空", "username", usernameStr.(string))
+		zlog.Warnw("发送注册验证码失败", "detail", "邮箱为空", "username", usernameStr.(string))
 		c.JSON(http.StatusBadRequest, dto.VerificationCodeResponse{Msg: "请输入邮箱地址", Result: false})
 		return
 	}
@@ -48,14 +48,14 @@ func (h *EmailHandler) SendRegisterVerificationCode(c *gin.Context) {
 	err := h.emailService.SendRegisterVerificationCode(c.Request.Context(), request.Email)
 	if err != nil {
 		metrics.IncOperation("email", "send_register_code", "failure: send code error")
-		logs.Sugar.Errorw("发送注册验证码失败", "detail", err.Error(), "username", usernameStr.(string), "email", request.Email)
+		zlog.Errorw("发送注册验证码失败", "detail", err.Error(), "username", usernameStr.(string), "email", request.Email)
 		c.JSON(http.StatusInternalServerError, dto.VerificationCodeResponse{Msg: "验证码发送失败", Result: false})
 		return
 	}
 
 	// 这里暂时返回成功消息
 	metrics.IncOperation("email", "send_register_code", "success")
-	logs.Sugar.Infow("发送注册验证码成功", "username", usernameStr.(string), "email", request.Email)
+	zlog.Infow("发送注册验证码成功", "username", usernameStr.(string), "email", request.Email)
 	c.JSON(http.StatusOK, dto.VerificationCodeResponse{
 		Msg:    "验证码已发送，请检查邮箱",
 		Result: true,
@@ -74,7 +74,7 @@ func (h *EmailHandler) SendResetPwdVerificationCode(c *gin.Context) {
 
 	if err := c.BindJSON(&request); err != nil {
 		metrics.IncOperation("email", "send_reset_password_code", "failure: parameter parsing error")
-		logs.Sugar.Warnw("发送重置密码的验证码失败", "detail", "解析请求失败，请检查请求格式是否正确", "username")
+		zlog.Warnw("发送重置密码的验证码失败", "detail", "解析请求失败，请检查请求格式是否正确", "username")
 		c.JSON(http.StatusBadRequest, dto.VerificationCodeResponse{Msg: "解析请求失败，请检查请求格式是否正确", Result: false})
 		return
 	}
@@ -82,13 +82,13 @@ func (h *EmailHandler) SendResetPwdVerificationCode(c *gin.Context) {
 	err := h.emailService.SendResetPwdVerificationCode(c.Request.Context(), request.Email)
 	if err != nil {
 		metrics.IncOperation("email", "send_reset_password_code", "failure: send code error")
-		logs.Sugar.Errorw("发送重置密码的验证码失败", "detail", err.Error(), "email", request.Email)
+		zlog.Errorw("发送重置密码的验证码失败", "detail", err.Error(), "email", request.Email)
 		c.JSON(http.StatusInternalServerError, dto.VerificationCodeResponse{Msg: "发送重置密码的验证码失败", Result: false})
 		return
 	}
 
 	metrics.IncOperation("email", "send_reset_password_code", "success")
-	logs.Sugar.Infow("发送重置密码的验证码成功", "email", request.Email)
+	zlog.Infow("发送重置密码的验证码成功", "email", request.Email)
 	c.JSON(http.StatusOK, dto.VerificationCodeResponse{
 		Msg:    "重置密码请求已发送，请检查邮箱",
 		Result: true,

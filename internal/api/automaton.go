@@ -12,12 +12,12 @@ import (
 	"backend/internal/domain/dto"
 	"backend/internal/domain/model"
 	"backend/internal/metrics"
-	"backend/logs"
 	"time"
 
 	"backend/internal/service/automaton_s"
 	"net/http"
 
+	"github.com/chenzanhong/zlog"
 	"github.com/gin-gonic/gin"
 )
 
@@ -138,7 +138,7 @@ func AutomatonStringRecognize(c *gin.Context) { // 字符串识别，
 	}()
 	var req dto.AutomatonStringRecognizeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		logs.Sugar.Warnf("自动机字符串识别失败", "detail", "参数解析错误")
+		zlog.Warnf("自动机字符串识别失败", "detail", "参数解析错误")
 		metrics.IncOperation("automaton", "string_recognize", "failure: parameter parsing error")
 		c.JSON(http.StatusBadRequest, dto.AutomatonStringRecognizeResponse{
 			Msg:    "参数解析错误" + err.Error(),

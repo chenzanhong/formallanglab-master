@@ -1,5 +1,0 @@
--- migrations/01_users.init.sql
--- INSERT INTO users (name, password, email, updated_at) VALUES
--- ('admin', '$2a$10$DLtSiEaZJ1k3Y853qZ6S.eVt3V7X9Y0Z1X2Y3Z4A5B6C7D8E9F0G', '1@qq.com', '2025-01-01 00:00:00'),
--- ('testuser', '$2a$10$K5sSiEaZJ1k3Y853qZ6S.eVt3V7X9Y0Z1X2Y3Z4A5B6C7D8E9F0H', '2@qq.com','2025-01-01 00:00:00')
--- ON CONFLICT (name) DO NOTHING;

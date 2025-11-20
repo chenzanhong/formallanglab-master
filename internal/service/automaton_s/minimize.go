@@ -11,8 +11,8 @@ import (
 // 可根据需要切换为 Hopcroft 算法（如通过配置 flag）
 func DFAMinimize(automaton *model.Automaton) *model.Automaton {
 	// 可选：未来可加 algo := config.GetMinimizationAlgo()
-	// return minimizeByHopcroft(Automaton)
-	return minimizeByTableFilling(automaton)
+	return minimizeByHopcroft(automaton)
+	// return minimizeByTableFilling(automaton)
 }
 
 // minimizeByTableFilling 使用表格填充法（Table-Filling Method）对 DFA 进行最小化
@@ -214,21 +214,19 @@ func getDFANextState(automaton *model.Automaton, from model.State, input model.S
 	return "" // No transition (should not happen in complete DFA)
 }
 
-func markDistinguishablePairs(automaton *model.Automaton, acceptingSet map[model.State]bool) map[[2]model.State]bool {
+func markDistinguishablePairs(automaton *model.Automaton, acceptingSet map[model.State]bool) map[model.State]map[model.State]bool {
 	states := automaton.States
-	distinguishable := make(map[[2]model.State]bool)
+	distinguishable := make(map[model.State]map[model.State]bool)
+	for _, s := range states {
+		distinguishable[s] = make(map[model.State]bool)
+	}
 
 	// 初始化：接受 vs 非接受
 	for i, p := range states {
 		for _, q := range states[i+1:] {
-			pAcc := acceptingSet[p]
-			qAcc := acceptingSet[q]
-			if pAcc != qAcc {
-				if p <= q {
-					distinguishable[[2]model.State{p, q}] = true
-				} else {
-					distinguishable[[2]model.State{q, p}] = true
-				}
+			if acceptingSet[p] != acceptingSet[q] {
+				distinguishable[p][q] = true
+				distinguishable[q][p] = true
 			}
 		}
 	}
@@ -239,30 +237,26 @@ func markDistinguishablePairs(automaton *model.Automaton, acceptingSet map[model
 		changed = false
 		for i, p := range states {
 			for _, q := range states[i+1:] {
-				pair := [2]model.State{p, q}
-				if distinguishable[pair] {
+				if distinguishable[p][q] {
 					continue
 				}
 				for _, a := range automaton.Alphabet {
 					nextP := getDFANextState(automaton, p, a)
 					nextQ := getDFANextState(automaton, q, a)
-					if nextP == "" || nextQ == "" {
-						if nextP == "" && nextQ == "" { // 都没有转移，先跳过
-							continue
-						} else { // 有一个没有转移，标记为不同
-							distinguishable[pair] = true
-							changed = true
-							break
-						}
+					// 处理缺失转移：一个有转移、一个没有 → 可区分
+					if (nextP == "") != (nextQ == "") {
+						distinguishable[p][q] = true
+						distinguishable[q][p] = true
+						changed = true
+						break
 					}
-					var nextPair [2]model.State
-					if nextP <= nextQ {
-						nextPair = [2]model.State{nextP, nextQ}
-					} else {
-						nextPair = [2]model.State{nextQ, nextP}
+					if nextP == "" && nextQ == "" {
+						continue // 都无转移，不影响区分
 					}
-					if distinguishable[nextPair] {
-						distinguishable[pair] = true
+					// 若后继状态可区分，则当前也可区分
+					if distinguishable[nextP][nextQ] {
+						distinguishable[p][q] = true
+						distinguishable[q][p] = true
 						changed = true
 						break
 					}
@@ -393,7 +387,7 @@ func getReachableStates(automaton *model.Automaton) map[model.State]bool {
 	return reachable
 }
 
-func findEquivalenceClasses(states []model.State, distinguishable map[[2]model.State]bool) [][]model.State {
+func findEquivalenceClasses(states []model.State, distinguishable map[model.State]map[model.State]bool) [][]model.State {
 	// 初始化：每个状态自成一类
 	parent := make(map[model.State]model.State)
 	for _, s := range states {
@@ -425,22 +419,21 @@ func findEquivalenceClasses(states []model.State, distinguishable map[[2]model.S
 	// 所有“不可区分”的状态对进行 union
 	for i, p := range states {
 		for _, q := range states[i+1:] {
-			pair := [2]model.State{p, q}
-			if !distinguishable[pair] {
+			if !distinguishable[p][q] {
 				union(p, q)
 			}
 		}
 	}
 
 	// 收集等价类
-	classes := make(map[model.State][]model.State)
+	classesMap := make(map[model.State][]model.State)
 	for _, s := range states {
 		root := find(s)
-		classes[root] = append(classes[root], s)
+		classesMap[root] = append(classesMap[root], s)
 	}
 
 	var result [][]model.State
-	for _, cls := range classes {
+	for _, cls := range classesMap {
 		sort.Slice(cls, func(i, j int) bool {
 			return string(cls[i]) < string(cls[j])
 		}) // 排序，确保确定性，但不是必须的

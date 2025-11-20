@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"backend/logs"
 	"context"
 	"fmt"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/chenzanhong/zlog"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -46,7 +46,7 @@ func InitPGData(db *gorm.DB, ctx context.Context) error {
 
 	_, filename, _, ok := runtime.Caller(0) // 获取当前的文件名
 	if !ok {
-		logs.Sugar.Fatal("无法获取运行时调用者信息")
+		zlog.Fatal("无法获取运行时调用者信息")
 	}
 
 	// 获取当前文件所在的目录
@@ -159,6 +159,6 @@ func ConnectRedis() (*redis.Client, error) {
 		return nil, fmt.Errorf("failed to connect to Redis: %v", err)
 	}
 
-	logs.Sugar.Info("Redis connected successfully")
+	zlog.Info("Redis connected successfully")
 	return client, nil
 }

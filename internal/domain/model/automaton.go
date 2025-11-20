@@ -36,8 +36,8 @@ type Automaton struct {
 	Transitions     []Transition                 `json:"transitions"`     // 状态转移规则集合
 	InitialState    State                        `json:"initialState"`    // 初始状态
 	AcceptingStates []State                      `json:"acceptingStates"` // 接受状态集合
-	Type            AutomatonType                `json:"type"`           // 是否为DFA，否则为NFA
-	TransMap        map[State]map[Symbol][]State // Map存储状态转移规则，识别字符串时效率高
+	Type            AutomatonType                `json:"type"`            // 类型
+	TransMap        map[State]map[Symbol][]State `json:"-"`               // Map存储状态转移规则，识别字符串时效率高；不参与 JSON 序列化
 }
 
 // 按字符集以及最长匹配原则切分字符串，返回可被正确切分的符号序列
@@ -226,7 +226,7 @@ func (a *Automaton) CompleteDFA() error {
 	transMap := make(map[State]map[Symbol]State)
 	for _, t := range a.Transitions {
 		if t.Input == Epsilon {
-			
+
 			return fmt.Errorf("unexpected epsilon in DFA")
 		}
 		if _, ok := transMap[t.FromState]; !ok {

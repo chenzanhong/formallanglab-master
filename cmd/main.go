@@ -1,6 +1,7 @@
 package main
 
 import (
+	"backend/configs"
 	cf "backend/configs"
 	"backend/internal/api"
 	"backend/internal/middleware"
@@ -8,12 +9,15 @@ import (
 	emailSvc "backend/internal/service/email_s"
 	kafka_s "backend/internal/service/kafka_s"
 	learnSvc "backend/internal/service/learn_s"
+	storeSvc "backend/internal/service/store_s"
 	userSvc "backend/internal/service/user_s"
-	"backend/logs"
 	"backend/pkg/binding"
 	"backend/pkg/oss"
 	"context"
+	"fmt"
+	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"runtime/trace"
@@ -21,32 +25,39 @@ import (
 	"time"
 
 	mtr "backend/internal/metrics"
+
+	"github.com/chenzanhong/zlog"
 )
 
 func init() {
-	mtr.PrometheusRegister()     // 初始化Prometheus
+	mtr.PrometheusRegister()     // 初始化 Prometheus
 	binding.RegisterValidation() // 注册自定义验证器
-	cf.SetEnvVariables()         // 初始化配置以及环境变量设置
-	middleware.SetJWTKey(os.Getenv("JWT_KEY"))
-	logs.InitLoggerFromEnv()
+	// logs.InitLoggerFromEnv()
 }
 
-/*
-启动该main后需启动 backend\cmd\email-worker\main.go 开启kafka消费者
-*/
 func main() {
+	config, err := configs.LoadConfig()
+	if err != nil {
+		log.Fatalf("加载配置失败：%v", err.Error())
+	}
+	cf.SetEnvVariables(*config) // 环境变量设置
+	middleware.SetJWTKey(config.JWT.Key)
+
+	// 日志
+	zlog.InitLogger(config.Log)
+
 	// 1. 初始化数据库
 	repo, err := rep.Init()
 	if err != nil {
-		logs.Sugar.Fatalf("Failed to initialize database: %v", err)
+		zlog.Fatalf("Failed to initialize database: %v", err)
 	}
 	// apiKey := os.Getenv("DASHSCOPE_API_KEY")
 	// if apiKey == "" {
-	// 	logs.Sugar.Fatal("DASHSCOPE_API_KEY is required")
+	// 	zlog.Fatal("DASHSCOPE_API_KEY is required")
 	// }
 	// baseURL := os.Getenv("DASHSCOPE_BASE_URL")
 	// if baseURL == "" {
-	// 	logs.Sugar.Fatal("DASHSCOPE_BASE_URL is required")
+	// 	zlog.Fatal("DASHSCOPE_BASE_URL is required")
 	// }
 	// aiClient := openai.NewClient(
 	// 	option.WithAPIKey(apiKey),
@@ -57,28 +68,32 @@ func main() {
 	// 2. 初始化OSS客户端
 	ossClient, err := oss.NewAliyunOSSClient()
 	if err != nil {
-		logs.Sugar.Errorf("初始化阿里云OSS客户端失败: %v", err)
+		zlog.Errorf("初始化阿里云OSS客户端失败: %v", err)
 	}
 
 	// 3. 组装服务
 	userRepo := rep.NewUserRepository(repo.DB, repo.Redis)
 	emailRepo := rep.NewEmailRepository(repo.DB, repo.Redis)
+	storeRepo := rep.NewStoreRepository(repo.DB)
 	// aiRepo := rep.NewAIRepository(repo.Redis)
 	learnRepo := rep.NewLearnRepository(repo.DB)
 	kafkaProducer := kafka_s.NewDefaultKafkaProducerService()
 	userService := userSvc.NewUserService(userRepo, emailRepo)
 	emailService := emailSvc.NewEmailService(emailRepo, userRepo, kafkaProducer)
 	// aiService := aiSvc.NewAIService(&aiClient, aiRepo)
+	storeService := storeSvc.NewStoreService(storeRepo)
 	learnService := learnSvc.NewLearnService(learnRepo, ossClient)
 
 	// 4. 初始化处理器
+	userHandler := api.NewUserHandler(userService)
+	emailHandler := api.NewEmailHandler(emailService)
+	storeHandler := api.NewStoreHandler(storeService)
 	learnHandler := api.NewLearnHandler(learnService)
-
-	enable_pprof := os.Getenv("ENABLE_PPROF")
 
 	// 5. 注册路由
 	// r := api.SetupRouter(userService, emailService, aiService, learnHandler, enable_pprof)
-	r := api.SetupRouter(userService, emailService, learnHandler, enable_pprof)
+	r := api.SetupRouter(userHandler, emailHandler, storeHandler, learnHandler)
+	
 	// 5. 创建 HTTP 服务实例
 	srv := &http.Server{
 		Addr:    ":8080",
@@ -90,27 +105,37 @@ func main() {
 	defer stop()
 
 	// 应用 trace
-	if os.Getenv("ENABLE_TRACE") == "true" {
-		f, _ := os.Create("server.trace")
-		defer f.Close()
-		trace.Start(f)
-		// go tool trace server.trace
-		defer trace.Stop()
-	}
+	go func() {
+		if v, ok := os.LookupEnv("ENABLE_TRACE"); ok && v == "true" {
+			f, _ := os.Create("server.trace")
+			defer f.Close()
+			trace.Start(f)
+			// go tool trace server.trace
+			defer trace.Stop()
+		}
+	}()
+
+	// 启动pprof http服务
+	go func() {
+		if os.Getenv("PPROF_PORT") != "0" {
+			zlog.Infow("Starting pprof on localhost:", config.Server.PprofPort)
+			http.ListenAndServe(fmt.Sprintf("localhost:%d", config.Server.PprofPort), nil)
+		}
+	}()
 
 	// 7. 启动 HTTP 服务
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logs.Sugar.Fatalf("HTTP server ListenAndServe error: %v", err)
+			zlog.Fatalf("HTTP server ListenAndServe error: %v", err)
 		}
 	}()
 
-	logs.Sugar.Info("Server started on :8080")
+	zlog.Info("Server started on :8080")
 
 	// 8. 等待中断信号
 	<-ctx.Done()
 
-	logs.Sugar.Info("Shutting down server...")
+	zlog.Info("Shutting down server...")
 
 	// 9. 创建一个超时 context 控制优雅关闭时间
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -118,32 +143,32 @@ func main() {
 
 	// 10. 停止 HTTP 服务
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		logs.Sugar.Errorf("HTTP server Shutdown error: %v", err)
+		zlog.Errorf("HTTP server Shutdown error: %v", err)
 	} else {
-		logs.Sugar.Info("HTTP server gracefully stopped")
+		zlog.Info("HTTP server gracefully stopped")
 	}
 
 	// 11. 关闭 pg 数据库连接 *gorm.DB
 	sqlDB, gormErr := repo.DB.DB()
 	if gormErr == nil {
 		if err := sqlDB.Close(); err != nil {
-			logs.Sugar.Errorf("PostgreSQL GORM DB Close error: %v", err)
+			zlog.Errorf("PostgreSQL GORM DB Close error: %v", err)
 		} else {
-			logs.Sugar.Info("PostgreSQL GORM DB closed")
+			zlog.Info("PostgreSQL GORM DB closed")
 		}
 	} else {
-		logs.Sugar.Error("Failed to get underlying SQL DB from GORM")
+		zlog.Error("Failed to get underlying SQL DB from GORM")
 	}
 
 	// 12. 关闭 Redis 连接
 	if err := repo.Redis.Close(); err != nil {
-		logs.Sugar.Errorf("Redis Close error: %v", err)
+		zlog.Errorf("Redis Close error: %v", err)
 	} else {
-		logs.Sugar.Info("Redis connection closed")
+		zlog.Info("Redis connection closed")
 	}
 
 	// 13. 关闭Kafka生产者
 	kafkaProducer.Close()
 
-	logs.Sugar.Info("Server exited")
+	zlog.Info("Server exited")
 }

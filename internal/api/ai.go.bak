@@ -8,7 +8,7 @@ import (
 	"backend/internal/domain/model"
 	"backend/internal/metrics"
 	"backend/internal/middleware"
-	aiSvc "backend/internal/service/ai_s"
+	aiSvc "backend/internal/service/ai"
 	"backend/logs"
 	"context"
 	"encoding/json"
@@ -51,7 +51,7 @@ func (h *AIHandler) AIChatSSE(c *gin.Context) {
 	var req dto.AIChatRequest
 	if err := c.BindJSON(&req); err != nil {
 		metrics.IncOperation("ai", "chat_sse", "failure: request body required")
-		logs.Sugar.Warnw("AI对话请求失败", "detail", "请求体不能为空")
+		zlog.Warnw("AI对话请求失败", "detail", "请求体不能为空")
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "request body is required", "result": false})
 		return
 	}
@@ -62,7 +62,7 @@ func (h *AIHandler) AIChatSSE(c *gin.Context) {
 	stream, session, err := h.aiService.StreamChat(c.Request.Context(), username, &req)
 	if err != nil {
 		metrics.IncOperation("ai", "chat_sse", "failure: service error")
-		logs.Sugar.Warnw("AI对话请求失败", "detail", "AI服务调用失败")
+		zlog.Warnw("AI对话请求失败", "detail", "AI服务调用失败")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "result": false})
 		return
 	}
@@ -119,7 +119,7 @@ func (h *AIHandler) AIChatSSE(c *gin.Context) {
 
 	if err := stream.Err(); err != nil {
 		metrics.IncOperation("ai", "chat_sse", "failure: stream error")
-		logs.Sugar.Warnw("AI流式传输失败", "detail", "流式传输过程中发生错误")
+		zlog.Warnw("AI流式传输失败", "detail", "流式传输过程中发生错误")
 	}
 	// fmt.Println(aiResp)
 
@@ -132,12 +132,12 @@ func (h *AIHandler) AIChatSSE(c *gin.Context) {
 		session.Trim()
 		if err := h.aiService.SaveSession(ctx, username, session); err != nil {
 			metrics.IncOperation("ai", "chat_sse", "failure: save session error")
-			logs.Sugar.Warnw("AI会话保存失败", "detail", "无法保存用户会话信息")
+			zlog.Warnw("AI会话保存失败", "detail", "无法保存用户会话信息")
 		}
 	}()
 
 	metrics.IncOperation("ai", "chat_sse", "success")
-	logs.Sugar.Infow("AI对话(SSE)请求成功")
+	zlog.Infow("AI对话(SSE)请求成功")
 }
 
 // ================ WebSocket ================
@@ -151,7 +151,7 @@ func (h *AIHandler) AIChatWS(c *gin.Context) {
 
 	if c.Request.Header.Get("Upgrade") != "websocket" {
 		metrics.IncOperation("ai", "chat_ws", "failure: upgrade required")
-		logs.Sugar.Warnw("AI对话请求失败", "detail", "升级为WebSocket协议失败")
+		zlog.Warnw("AI对话请求失败", "detail", "升级为WebSocket协议失败")
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "upgrade required", "result": false})
 		return
 	}
@@ -159,7 +159,7 @@ func (h *AIHandler) AIChatWS(c *gin.Context) {
 	username, err := h.extractUsername(c) // 从JWT中提取用户名
 	if err != nil {
 		metrics.IncOperation("ai", "chat_ws", "failure: extract username error")
-		logs.Sugar.Warnw("AI对话请求失败", "detail", "无法从JWT中提取用户名"+err.Error())
+		zlog.Warnw("AI对话请求失败", "detail", "无法从JWT中提取用户名"+err.Error())
 		c.JSON(http.StatusUnauthorized, gin.H{"msg": "invalid token", "result": false})
 		return
 	}
@@ -167,7 +167,7 @@ func (h *AIHandler) AIChatWS(c *gin.Context) {
 	// 升级HTTP连接为WebSocket
 	conn, err := h.upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		logs.Sugar.Errorw("WebSocket upgrade failed", "error", err)
+		zlog.Errorw("WebSocket upgrade failed", "error", err)
 		return
 	}
 	defer conn.Close()
@@ -211,7 +211,7 @@ func (h *AIHandler) AIChatWS(c *gin.Context) {
 		_, msgBytes, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				logs.Sugar.Warnw("WebSocket read message failed", "error", err)
+				zlog.Warnw("WebSocket read message failed", "error", err)
 			}
 			return // 客户端断开，退出循环
 		}
@@ -277,7 +277,7 @@ func (h *AIHandler) AIChatWS(c *gin.Context) {
 							// fmt.Println(5)
 							time.Sleep(100 * time.Millisecond) // 模拟ai延迟
 							if err := safeWrite(model.WsMessage{Type: model.MsgTypeChunk, Data: content}); err != nil {
-								logs.Sugar.Warnw("WebSocket write message failed", "error", err)
+								zlog.Warnw("WebSocket write message failed", "error", err)
 								return
 							}
 						}
@@ -301,7 +301,7 @@ func (h *AIHandler) AIChatWS(c *gin.Context) {
 							session.Trim()
 							if saveErr := h.aiService.SaveSession(context.Background(), username, session); saveErr != nil {
 								metrics.IncOperation("ai", "chat_ws", "failure: save session error")
-								logs.Sugar.Errorw("Save session failed", "error", saveErr)
+								zlog.Errorw("Save session failed", "error", saveErr)
 							}
 						}()
 					}()
@@ -339,7 +339,7 @@ func (h *AIHandler) AIChatWS(c *gin.Context) {
 					conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 					// fmt.Println(5)
 					if err := safeWrite(model.WsMessage{Type: model.MsgTypeChunk, Data: content}); err != nil {
-						logs.Sugar.Warnw("WebSocket write message failed", "error", err)
+						zlog.Warnw("WebSocket write message failed", "error", err)
 						return
 					}
 				}
@@ -363,7 +363,7 @@ func (h *AIHandler) AIChatWS(c *gin.Context) {
 					session.Trim()
 					if saveErr := h.aiService.SaveSession(context.Background(), username, session); saveErr != nil {
 						metrics.IncOperation("ai", "chat_ws", "failure: save session error")
-						logs.Sugar.Warnw("AI会话保存失败", "detail", "无法保存用户会话信息")
+						zlog.Warnw("AI会话保存失败", "detail", "无法保存用户会话信息")
 					}
 				}()
 			}()

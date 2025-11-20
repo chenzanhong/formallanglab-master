@@ -5,14 +5,14 @@ import (
 	"backend/internal/domain/model"
 	myErrors "backend/internal/errors"
 	"backend/internal/repository"
-	kafka_s "backend/internal/service/kafka_s"
-	"backend/logs"
+	kafka_s "backend/internal/service/kafka"
 	"backend/pkg/token"
 	"context"
 	"errors"
 	"fmt"
 	"time"
 
+	"github.com/chenzanhong/zlog"
 	"gorm.io/gorm"
 )
 
@@ -55,14 +55,14 @@ func NewEmailService(emailRepo repository.EmailRepository, userRepo repository.U
 func (s *EmailServiceImpl) SendRegisterVerificationCode(ctx context.Context, email string) error {
 	// 限制频率，验证码有效期一分钟，不能重复发送
 	if has, _ := s.emailRepo.HasRegisterVerificationToken(ctx, email); has {
-		// logs.Sugar.Warnw("发送注册验证码", "detail", "操作太频繁，请稍后重试")
+		// zlog.Warnw("发送注册验证码", "detail", "操作太频繁，请稍后重试")
 		return errors.New("操作太频繁，请稍后重试")
 	}
 
 	// 检查邮箱是否存在
 	exists, err := s.userRepo.ExistsByEmail(ctx, email)
 	if err != nil {
-		logs.Sugar.Errorw("数据库查询失败", "error", err)
+		zlog.Errorw("数据库查询失败", "error", err)
 		return errors.New("系统异常")
 	}
 	if exists {
@@ -71,7 +71,7 @@ func (s *EmailServiceImpl) SendRegisterVerificationCode(ctx context.Context, ema
 
 	// 生成验证码
 	verificationCode := token.GenerateRandomToken(6)
-	logs.Sugar.Infow("发送注册验证码", "email", email, "code", verificationCode)
+	zlog.Infow("发送注册验证码", "email", email, "code", verificationCode)
 
 	// 保存token到Redis，过期时间1分钟
 	if err := s.emailRepo.SaveRegisterVerificationToken(ctx, email, verificationCode); err != nil {
@@ -86,7 +86,7 @@ func (s *EmailServiceImpl) SendRegisterVerificationCode(ctx context.Context, ema
 func (s *EmailServiceImpl) SendResetPwdVerificationCode(ctx context.Context, email string) error {
 	// 限制频率，验证码有效期一分钟，不能重复发送
 	if has, _ := s.emailRepo.HasResetPwdToken(ctx, email); has {
-		logs.Sugar.Warnw("发送重置密码验证码", "detail", "操作太频繁，请稍后重试")
+		zlog.Warnw("发送重置密码验证码", "detail", "操作太频繁，请稍后重试")
 		return errors.New("操作太频繁，请稍后重试")
 	}
 
@@ -94,10 +94,10 @@ func (s *EmailServiceImpl) SendResetPwdVerificationCode(ctx context.Context, ema
 	exists, err := s.userRepo.ExistsByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			logs.Sugar.Warnw("重置密码请求", "detail", "用户未找到。")
+			zlog.Warnw("重置密码请求", "detail", "用户未找到。")
 			return myErrors.ErrUserNotFound
 		} else {
-			logs.Sugar.Errorw("重置密码请求", "detail", "数据库查询失败。")
+			zlog.Errorw("重置密码请求", "detail", "数据库查询失败。")
 			return myErrors.ErrInternal
 		}
 	}
@@ -107,18 +107,18 @@ func (s *EmailServiceImpl) SendResetPwdVerificationCode(ctx context.Context, ema
 
 	// 生成 6 位数字 token
 	token := token.GenerateRandomToken(6)
-	logs.Sugar.Infow("生成找回密码 token", "email", email, "token", token)
+	zlog.Infow("生成找回密码 token", "email", email, "token", token)
 
 	// 保存到 Redis，1 分钟过期
 	if err := s.emailRepo.SaveResetPwdToken(ctx, token, email); err != nil {
-		logs.Sugar.Errorw("保存找回密码 token 失败", "error", err)
+		zlog.Errorw("保存找回密码 token 失败", "error", err)
 		return myErrors.ErrInternal
 	}
 
 	// 发送重置密码邮件（异步），不处理错误，发送失败用户一分钟后重试
 	s.sendResetPwdEmail(email, token)
 
-	logs.Sugar.Infow("重置密码请求", "detail", "重置密码请求成功。")
+	zlog.Infow("重置密码请求", "detail", "重置密码请求成功。")
 	return nil
 }
 

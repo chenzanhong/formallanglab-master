@@ -7,11 +7,15 @@ import (
 	"runtime"
 	"strconv"
 
+	"github.com/chenzanhong/zlog"
 	"gopkg.in/yaml.v3"
 )
 
 type ServerConfig struct {
-	Port int `yaml:"port"`
+	Port        int  `yaml:"port"`
+	MetricsPort int  `yaml:"metrics_port"`
+	PprofPort   int  `yaml:"pprof_port"`
+	EnableTrace bool `yaml:"enable_trace"`
 }
 
 type JWTConfig struct {
@@ -91,11 +95,11 @@ type Config struct {
 	Redis  RedisConfig  `yaml:"redis"`
 	// Email      EMAILConfig      `yaml:"email"`
 	// SMTPServer SMTPServerConfig `yaml:"smtp_server"`
-	Rate  RateConfig  `yaml:"rate"`
-	Kafka KafkaConfig `yaml:"kafka"`
-	AI    AIConfig    `yaml:"ai"`
-	Log   LogConfig   `yaml:"log"`
-	OSS   OSSConfig   `yaml:"oss"`
+	Rate  RateConfig        `yaml:"rate"`
+	Kafka KafkaConfig       `yaml:"kafka"`
+	AI    AIConfig          `yaml:"ai"`
+	Log   zlog.LoggerConfig `yaml:"log"`
+	OSS   OSSConfig         `yaml:"oss"`
 }
 
 // getConfigPath 获取数据库配置文件的路径
@@ -143,11 +147,11 @@ func LoadConfig() (*Config, error) {
 	return &config, nil
 }
 
-func SetEnvVariables() {
-	config, err := LoadConfig()
-	if err != nil {
-		log.Fatalf("加载配置失败：%v", err.Error())
-	}
+func SetEnvVariables(config Config) {
+	// config, err := LoadConfig()
+	// if err != nil {
+	// 	log.Fatalf("加载配置失败：%v", err.Error())
+	// }
 
 	// 辅助函数：如果 envVar 未设置，则用 fallback 值设置它
 	setEnvIfNotSet := func(envVar, fallback string) {
@@ -157,6 +161,9 @@ func SetEnvVariables() {
 	}
 	// Server
 	setEnvIfNotSet("SERVER_PORT", strconv.Itoa(config.Server.Port))
+	setEnvIfNotSet("METRICS_PORT", strconv.Itoa(config.Server.MetricsPort))
+	setEnvIfNotSet("PPROF_PORT", strconv.Itoa(config.Server.PprofPort))
+	setEnvIfNotSet("ENABLE_TRACE", strconv.FormatBool(config.Server.EnableTrace))
 
 	// jwt
 	setEnvIfNotSet("JWT_KEY", config.JWT.Key)
@@ -200,7 +207,7 @@ func SetEnvVariables() {
 	setEnvIfNotSet("CHROMA_COLLECTION", config.AI.ChromaCollection)
 
 	// Log
-	setEnvIfNotSet("LOG_LEVEL", config.Log.Level)
+	setEnvIfNotSet("LOG_LEVEL", config.Log.Level.String())
 	setEnvIfNotSet("LOG_OUTPUT", config.Log.Output)
 	setEnvIfNotSet("LOG_FORMAT", config.Log.Format)
 	setEnvIfNotSet("LOG_FILE_PATH", config.Log.FilePath)

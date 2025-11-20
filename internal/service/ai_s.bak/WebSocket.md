@@ -32,7 +32,7 @@ package api
 import (
 	"backend/internal/domain/dto"
 	"backend/internal/metrics"
-	aiSvc "backend/internal/service/ai_s"
+	aiSvc "backend/internal/service/ai"
 	"backend/logs"
 	"context"
 	"encoding/json"
@@ -78,7 +78,7 @@ func (h *AIhandler) AIChatWS(c *gin.Context) {
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		logs.Sugar.Errorw("WebSocket upgrade failed", "error", err)
+		zlog.Errorw("WebSocket upgrade failed", "error", err)
 		return
 	}
 	defer conn.Close()
@@ -99,7 +99,7 @@ func (h *AIhandler) AIChatWS(c *gin.Context) {
 		content := stream.Current().Choices[0].Delta.Content
 		aiResp.WriteString(content)
 		if err := conn.WriteJSON(wsMessage{Type: "chunk", Data: content}); err != nil {
-			logs.Sugar.Warnw("WebSocket write error", "error", err)
+			zlog.Warnw("WebSocket write error", "error", err)
 			break
 		}
 	}
@@ -118,7 +118,7 @@ func (h *AIhandler) AIChatWS(c *gin.Context) {
 		})
 		session.Trim()
 		if err := h.aiService.SaveSession(context.Background(), username, session); err != nil {
-			logs.Sugar.Warnw("AI会话保存失败", "detail", "无法保存用户会话信息")
+			zlog.Warnw("AI会话保存失败", "detail", "无法保存用户会话信息")
 		}
 	}()
 }

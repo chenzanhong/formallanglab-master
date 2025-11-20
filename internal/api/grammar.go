@@ -16,11 +16,11 @@ import (
 	"backend/internal/domain/model"
 	"backend/internal/metrics"
 	"backend/internal/service/grammar_s"
-	"backend/logs"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/chenzanhong/zlog"
 	"github.com/gin-gonic/gin"
 )
 
@@ -34,7 +34,7 @@ func GrammarValidate(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("grammar", "validate", "failure: parameter parsing error")
-		logs.Sugar.Warnw("文法校验失败", "detail", "参数解析失败，请检查请求格式是否正确")
+		zlog.Warnw("文法校验失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(http.StatusBadRequest, dto.GrammarValidateResponse{
 			Valid: false,
 			Msg:   "参数解析失败",
@@ -53,7 +53,7 @@ func GrammarValidate(c *gin.Context) {
 
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "validate", "failure: invalid grammar")
-		logs.Sugar.Warnw("文法校验失败", "detail", "文法格式无效")
+		zlog.Warnw("文法校验失败", "detail", "文法格式无效")
 		c.JSON(http.StatusBadRequest, dto.GrammarValidateResponse{
 			Valid:  false,
 			Msg:    "invalid grammar：" + err.Error(),
@@ -63,7 +63,7 @@ func GrammarValidate(c *gin.Context) {
 	}
 
 	metrics.IncOperation("grammar", "validate", "success")
-	logs.Sugar.Infow("文法校验成功")
+	zlog.Infow("文法校验成功")
 	c.JSON(http.StatusOK, dto.GrammarValidateResponse{
 		Valid:  true,
 		Msg:    "grammar is valid",
@@ -82,7 +82,7 @@ func GrammarAmbiguityCheck(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("grammar", "ambiguity_check", "failure: parameter parsing error")
-		logs.Sugar.Warnw("文法二义性检查失败", "detail", "参数解析失败，请检查请求格式是否正确")
+		zlog.Warnw("文法二义性检查失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(http.StatusBadRequest, dto.GrammarAmbiguityCheckResponse{
 			Msg: "参数解析失败",
 			// Error:  err.Error(),
@@ -99,7 +99,7 @@ func GrammarAmbiguityCheck(c *gin.Context) {
 	// 可选：先校验文法有效性
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "ambiguity_check", "failure: invalid grammar")
-		logs.Sugar.Warnw("文法二义性检查失败", "detail", "文法格式无效")
+		zlog.Warnw("文法二义性检查失败", "detail", "文法格式无效")
 		c.JSON(http.StatusOK, dto.GrammarAmbiguityCheckResponse{
 			Msg:  "无效文法：" + err.Error(),
 			Type: model.InvalidGrammar,
@@ -112,7 +112,7 @@ func GrammarAmbiguityCheck(c *gin.Context) {
 
 	if grammarType != model.RegularGrammar {
 		metrics.IncOperation("grammar", "ambiguity_check", "failure: not regular grammar")
-		logs.Sugar.Warnw("文法二义性检查失败", "detail", "文法类型不是正则文法，二义性不可判定")
+		zlog.Warnw("文法二义性检查失败", "detail", "文法类型不是正则文法，二义性不可判定")
 		c.JSON(http.StatusOK, dto.GrammarAmbiguityCheckResponse{
 			Msg:         "文法类型不是正则文法（3型），其二义性为不可判定问题",
 			Type:        grammarType,
@@ -125,7 +125,7 @@ func GrammarAmbiguityCheck(c *gin.Context) {
 	isAmbiguous, err := grammar_s.IsAmbiguousRegular(&req.Grammar)
 	if err != nil {
 		metrics.IncOperation("grammar", "ambiguity_check", "failure: ambiguity check error")
-		logs.Sugar.Warnw("文法二义性检查失败", "detail", "二义性判断过程中发生错误")
+		zlog.Warnw("文法二义性检查失败", "detail", "二义性判断过程中发生错误")
 		c.JSON(http.StatusInternalServerError, dto.GrammarAmbiguityCheckResponse{
 			Msg:  "二义性判断出错：" + err.Error(),
 			Type: model.RegularGrammar,
@@ -144,7 +144,7 @@ func GrammarAmbiguityCheck(c *gin.Context) {
 	}
 
 	metrics.IncOperation("grammar", "ambiguity_check", "success")
-	logs.Sugar.Infow("文法二义性检查成功")
+	zlog.Infow("文法二义性检查成功")
 	c.JSON(http.StatusOK, dto.GrammarAmbiguityCheckResponse{
 		Msg:         resultMsg,
 		IsAmbiguous: &isAmbiguous,
@@ -163,7 +163,7 @@ func GrammarStringRecognize(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("grammar", "string_recognize", "failure: parameter parsing error")
-		logs.Sugar.Warnw("文法字符串识别失败", "detail", "参数解析失败，请检查请求格式是否正确")
+		zlog.Warnw("文法字符串识别失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(http.StatusBadRequest, dto.GrammarStringRecognizeResponse{
 			Msg: "参数解析失败",
 			// Error:  err.Error(),
@@ -180,7 +180,7 @@ func GrammarStringRecognize(c *gin.Context) {
 	// 可选：先校验文法有效性
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "string_recognize", "failure: invalid grammar")
-		logs.Sugar.Warnw("文法字符串识别失败", "detail", "文法格式无效")
+		zlog.Warnw("文法字符串识别失败", "detail", "文法格式无效")
 		c.JSON(http.StatusBadRequest, dto.GrammarStringRecognizeResponse{
 			Accepted: false,
 			Msg:      "无效文法: " + err.Error(),
@@ -198,7 +198,7 @@ func GrammarStringRecognize(c *gin.Context) {
 	result := grammar_s.ParseStringWithMode(&req.Grammar, req.Input, req.Mode, req.ShowSteps)
 
 	metrics.IncOperation("grammar", "string_recognize", "success")
-	logs.Sugar.Infow("文法字符串识别成功")
+	zlog.Infow("文法字符串识别成功")
 
 	// 返回结果
 	response := dto.GrammarStringRecognizeResponse{
@@ -237,7 +237,7 @@ func GrammarTypeDetermine(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("grammar", "type_determine", "failure: parameter parsing error")
-		logs.Sugar.Warnw("文法类型判断失败", "detail", "参数解析失败，请检查请求格式是否正确")
+		zlog.Warnw("文法类型判断失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(http.StatusBadRequest, dto.GrammarTypeDetermineResponse{
 			Type: model.InvalidGrammar,
 			// Error:  err.Error(),
@@ -255,7 +255,7 @@ func GrammarTypeDetermine(c *gin.Context) {
 	// 可选：先校验文法有效性
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "type_determine", "failure: invalid grammar")
-		logs.Sugar.Warnw("文法类型判断失败", "detail", "文法格式无效")
+		zlog.Warnw("文法类型判断失败", "detail", "文法格式无效")
 		c.JSON(http.StatusOK, dto.GrammarTypeDetermineResponse{
 			Type:     -1,
 			TypeName: "无效文法：" + err.Error(),
@@ -269,7 +269,7 @@ func GrammarTypeDetermine(c *gin.Context) {
 	typeName := model.GrammarTypeNameMap[grammarType]
 
 	metrics.IncOperation("grammar", "type_determine", "success")
-	logs.Sugar.Infow("文法类型判断成功")
+	zlog.Infow("文法类型判断成功")
 	c.JSON(http.StatusOK, dto.GrammarTypeDetermineResponse{
 		Type:     grammarType,
 		TypeName: typeName,
@@ -287,7 +287,7 @@ func GrammarSimplify(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("grammar", "simplify", "failure: parameter parsing error")
-		logs.Sugar.Warnw("文法化简失败", "detail", "参数解析失败，请检查请求格式是否正确")
+		zlog.Warnw("文法化简失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(http.StatusBadRequest, dto.GrammarSimplifyResponse{
 			Msg: "参数解析失败",
 			// Error:  err.Error(),
@@ -304,7 +304,7 @@ func GrammarSimplify(c *gin.Context) {
 	// 可选：先校验文法有效性
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "simplify", "failure: invalid grammar")
-		logs.Sugar.Warnw("文法化简失败", "detail", "文法格式无效")
+		zlog.Warnw("文法化简失败", "detail", "文法格式无效")
 		c.JSON(http.StatusOK, dto.GrammarSimplifyResponse{
 			Msg:    "无效文法：" + err.Error(),
 			Result: false,
@@ -314,7 +314,7 @@ func GrammarSimplify(c *gin.Context) {
 
 	new_grammar := grammar_s.Simplify(&req.Grammar)
 	metrics.IncOperation("grammar", "simplify", "success")
-	logs.Sugar.Infow("文法化简成功")
+	zlog.Infow("文法化简成功")
 	c.JSON(http.StatusOK, dto.GrammarSimplifyResponse{
 		Msg:     "简化成功",
 		Grammar: new_grammar,
@@ -333,7 +333,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("grammar", "equivalence_check", "failure: parameter parsing error")
-		logs.Sugar.Warnw("文法等价性检查失败", "detail", "参数解析失败，请检查请求格式是否正确")
+		zlog.Warnw("文法等价性检查失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
 			Msg: "参数解析失败",
 			// Error:        err.Error(),
@@ -356,7 +356,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 	// 先判断两个文法是否有效，且为正则文法
 	if grammar_s.GrammarCheckValidity(&req.Grammar1) != nil {
 		metrics.IncOperation("grammar", "equivalence_check", "failure: invalid grammar1")
-		logs.Sugar.Warnw("文法等价性检查失败", "detail", "第一个文法格式无效")
+		zlog.Warnw("文法等价性检查失败", "detail", "第一个文法格式无效")
 		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
 			Msg:          "invalid grammar1",
 			IsEquivalent: false,
@@ -366,7 +366,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 	}
 	if grammar_s.TypeDetermine(&req.Grammar1) != model.RegularGrammar { // 非正则文法
 		metrics.IncOperation("grammar", "equivalence_check", "failure: grammar1 not regular")
-		logs.Sugar.Warnw("文法等价性检查失败", "detail", "第一个文法不是正则文法")
+		zlog.Warnw("文法等价性检查失败", "detail", "第一个文法不是正则文法")
 		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
 			Msg:          "grammar1 is not regular grammar",
 			IsEquivalent: false,
@@ -376,7 +376,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 	}
 	if grammar_s.GrammarCheckValidity(&req.Grammar2) != nil {
 		metrics.IncOperation("grammar", "equivalence_check", "failure: invalid grammar2")
-		logs.Sugar.Warnw("文法等价性检查失败", "detail", "第二个文法格式无效")
+		zlog.Warnw("文法等价性检查失败", "detail", "第二个文法格式无效")
 		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
 			Msg:          "invalid grammar2",
 			IsEquivalent: false,
@@ -386,7 +386,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 	}
 	if grammar_s.TypeDetermine(&req.Grammar2) != model.RegularGrammar { // 非正则文法
 		metrics.IncOperation("grammar", "equivalence_check", "failure: grammar2 not regular")
-		logs.Sugar.Warnw("文法等价性检查失败", "detail", "第二个文法不是正则文法")
+		zlog.Warnw("文法等价性检查失败", "detail", "第二个文法不是正则文法")
 		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
 			Msg:          "grammar2 is not regular grammar",
 			IsEquivalent: false,
@@ -398,7 +398,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 	// 再判断是否等价
 	if !grammar_s.IsEquivalent(&req.Grammar1, &req.Grammar2) {
 		metrics.IncOperation("grammar", "equivalence_check", "success: not equivalent")
-		logs.Sugar.Infow("文法等价性检查成功", "detail", "两个文法不等价")
+		zlog.Infow("文法等价性检查成功", "detail", "两个文法不等价")
 		c.JSON(http.StatusOK, dto.GrammarEquivalenceCheckResponse{
 			Msg:          "this two grammars are not equivalent",
 			IsEquivalent: false,
@@ -407,7 +407,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 		return
 	}
 	metrics.IncOperation("grammar", "equivalence_check", "success: equivalent")
-	logs.Sugar.Infow("文法等价性检查成功", "detail", "两个文法等价")
+	zlog.Infow("文法等价性检查成功", "detail", "两个文法等价")
 	c.JSON(http.StatusOK, dto.GrammarEquivalenceCheckResponse{
 		Msg:          "this two grammars are equivalent",
 		IsEquivalent: true,
@@ -425,7 +425,7 @@ func GrammarFirstSet(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("grammar", "first_set", "failure: parameter parsing error")
-		logs.Sugar.Warnw("计算First集失败", "detail", "参数解析失败，请检查请求格式是否正确")
+		zlog.Warnw("计算First集失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(http.StatusBadRequest, dto.GrammarFirstSetResponse{
 			Msg:    "参数解析失败",
 			Result: false,
@@ -439,7 +439,7 @@ func GrammarFirstSet(c *gin.Context) {
 	// 校验文法有效性
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "first_set", "failure: invalid grammar")
-		logs.Sugar.Warnw("计算First集失败", "detail", "文法格式无效")
+		zlog.Warnw("计算First集失败", "detail", "文法格式无效")
 		c.JSON(http.StatusBadRequest, dto.GrammarFirstSetResponse{
 			Msg:    "无效文法：" + err.Error(),
 			Result: false,
@@ -454,7 +454,7 @@ func GrammarFirstSet(c *gin.Context) {
 	result := convertMapToStringSlice(firstSet)
 
 	metrics.IncOperation("grammar", "first_set", "success")
-	logs.Sugar.Infow("计算First集成功")
+	zlog.Infow("计算First集成功")
 	c.JSON(http.StatusOK, dto.GrammarFirstSetResponse{
 		FirstSet: result,
 		Msg:      "计算First集成功",
@@ -472,7 +472,7 @@ func GrammarFollowSet(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("grammar", "follow_set", "failure: parameter parsing error")
-		logs.Sugar.Warnw("计算Follow集失败", "detail", "参数解析失败，请检查请求格式是否正确")
+		zlog.Warnw("计算Follow集失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(http.StatusBadRequest, dto.GrammarFollowSetResponse{
 			Msg:    "参数解析失败",
 			Result: false,
@@ -486,7 +486,7 @@ func GrammarFollowSet(c *gin.Context) {
 	// 校验文法有效性
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "follow_set", "failure: invalid grammar")
-		logs.Sugar.Warnw("计算Follow集失败", "detail", "文法格式无效")
+		zlog.Warnw("计算Follow集失败", "detail", "文法格式无效")
 		c.JSON(http.StatusBadRequest, dto.GrammarFollowSetResponse{
 			Msg:    "无效文法：" + err.Error(),
 			Result: false,
@@ -504,7 +504,7 @@ func GrammarFollowSet(c *gin.Context) {
 	result := convertMapToStringSlice(followSet)
 
 	metrics.IncOperation("grammar", "follow_set", "success")
-	logs.Sugar.Infow("计算Follow集成功")
+	zlog.Infow("计算Follow集成功")
 	c.JSON(http.StatusOK, dto.GrammarFollowSetResponse{
 		FollowSet: result,
 		Msg:       "计算Follow集成功",
