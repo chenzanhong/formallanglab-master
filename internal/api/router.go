@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(userHandler *UserHandler, emailHandler *EmailHandler, storeHandler *StoreHandler, learnHandler *LearnHandler) *gin.Engine {
+func SetupRouter(storeHandler *StoreHandler, learnHandler *LearnHandler) *gin.Engine {
 
 	// qaCache := aiSvc.NewQACache()
 	// // 异步加载预置高频问题缓存，加速主程序启动
@@ -24,7 +24,7 @@ func SetupRouter(userHandler *UserHandler, emailHandler *EmailHandler, storeHand
 	router := gin.Default()
 	// 1. 恢复中间件 - 最先使用，捕获所有panic
 	// router.Use(gin.Recovery())
-	// router.GET("/gdesign/ai/ws", aiHandler.AIChatWS) // WebSocket聊天接口，不经过JWT中间件
+	// router.GET("/master/ai/ws", aiHandler.AIChatWS) // WebSocket聊天接口，不经过JWT中间件
 
 	// 2. 请求ID中间件 - 尽早设置，让后续中间件都能使用
 	router.Use(middleware.RequestID())
@@ -38,26 +38,26 @@ func SetupRouter(userHandler *UserHandler, emailHandler *EmailHandler, storeHand
 	// 6. 指标收集 - 收集所有处理过程的指标
 	router.Use(mtr.HTTPMiddleware())
 
-	setupPublicRoutes(router, userHandler, emailHandler) // 注册公开路由
+	router.GET("/gdesign/master/metrics", mtr.MetricsHandler())
 
 	// setupAuthRoutes(router, userHandler, aiHandler, learnHandler) // 注册需要认证的路由
-	setupAuthRoutes(router, userHandler, learnHandler, storeHandler) // 注册需要认证的路由
+	setupAuthRoutes(router, learnHandler, storeHandler) // 注册需要认证的路由
 	return router
 }
 
-func setupPublicRoutes(router *gin.Engine, userHandler *UserHandler, emailHandler *EmailHandler) {
-	router.GET("/gdesign/metrics", mtr.MetricsHandler())                                                                      // 不需要限速                                                                        // prometheus.yml中加上 metrics_path: /gdesign/metrics
-	router.POST("/gdesign/register", middleware.GlobalRateLimitMiddleware(), userHandler.Register)                            // 注册
-	router.POST("/gdesign/login", middleware.GlobalRateLimitMiddleware(), userHandler.Login)                                  // 登录
-	router.POST("/gdesign/register/code", middleware.GlobalRateLimitMiddleware(), emailHandler.SendRegisterVerificationCode)  // 发送验证码（注册用）
-	router.POST("/gdesign/reset-pwd/code", middleware.GlobalRateLimitMiddleware(), emailHandler.SendResetPwdVerificationCode) // 请求重置密码
-	router.POST("/gdesign/reset-pwd", middleware.GlobalRateLimitMiddleware(), userHandler.ResetPassword)                      // 重置密码
-}
+// func setupPublicRoutes(router *gin.Engine) {
 
-func setupAuthRoutes(router *gin.Engine, userHandler *UserHandler, learnHandler *LearnHandler, storeHandler *StoreHandler) {
+// 	r := router.Group("/gdesign/master", middleware.GlobalRateLimitMiddleware()) // 不需要限速                                                                        // prometheus.yml中加上 metrics_path: /master/metrics
+// 	r.POST("/register", userHandler.Register)                                    // 注册
+// 	r.POST("/login", userHandler.Login)                                          // 登录
+// 	r.POST("/register/code", emailHandler.SendRegisterVerificationCode)          // 发送验证码（注册用）
+// 	r.POST("/reset-pwd/code", emailHandler.SendResetPwdVerificationCode)         // 请求重置密码
+// 	r.POST("/reset-pwd", userHandler.ResetPassword)                              // 重置密码
+// }
+
+func setupAuthRoutes(router *gin.Engine, learnHandler *LearnHandler, storeHandler *StoreHandler) {
 	// 使用 JWT、Rate 中间件保护这些路由
-	router.GET("/gdesign/user/me", middleware.JWTAuthMiddleware(), userHandler.CheckMe)
-	r := router.Group("/gdesign", middleware.JWTAuthMiddleware(), middleware.UserRateLimitMiddleware())
+	r := router.Group("/gdesign/master", middleware.JWTAuthMiddleware(), middleware.UserRateLimitMiddleware())
 
 	// 文法相关接口
 	grammar := r.Group("/grammar")

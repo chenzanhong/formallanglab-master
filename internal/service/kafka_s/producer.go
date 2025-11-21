@@ -2,7 +2,6 @@
 package kafka
 
 import (
-	"backend/internal/domain/model"
 	"context"
 	"encoding/json"
 	"os"
@@ -12,7 +11,7 @@ import (
 )
 
 type KafkaProducerService interface {
-	SendEmailEvent(ctx context.Context, event *model.KafkaEmailEvent) error
+	SendEmailEvent(ctx context.Context, event *KafkaEmailEvent) error
 }
 
 type KafkaServiceImpl struct {
@@ -44,7 +43,7 @@ func (k *KafkaServiceImpl) Close() {
 	}
 }
 
-func (k *KafkaServiceImpl) SendEmailEvent(ctx context.Context, event *model.KafkaEmailEvent) error {
+func (k *KafkaServiceImpl) SendEmailEvent(ctx context.Context, event *KafkaEmailEvent) error {
 	data, err := json.Marshal(event)
 	if err != nil {
 		return err

@@ -6,11 +6,9 @@ import (
 	"backend/internal/api"
 	"backend/internal/middleware"
 	rep "backend/internal/repository"
-	emailSvc "backend/internal/service/email_s"
 	kafka_s "backend/internal/service/kafka_s"
 	learnSvc "backend/internal/service/learn_s"
 	storeSvc "backend/internal/service/store_s"
-	userSvc "backend/internal/service/user_s"
 	"backend/pkg/binding"
 	"backend/pkg/oss"
 	"context"
@@ -73,27 +71,27 @@ func main() {
 	}
 
 	// 3. 组装服务
-	userRepo := rep.NewUserRepository(repo.DB, repo.Redis)
-	emailRepo := rep.NewEmailRepository(repo.DB, repo.Redis)
+	// userRepo := rep.NewUserRepository(repo.DB, repo.Redis)
+	// emailRepo := rep.NewEmailRepository(repo.DB, repo.Redis)
 	storeRepo := rep.NewStoreRepository(repo.DB)
 	// aiRepo := rep.NewAIRepository(repo.Redis)
 	learnRepo := rep.NewLearnRepository(repo.DB)
 	kafkaProducer := kafka_s.NewDefaultKafkaProducerService()
-	userService := userSvc.NewUserService(userRepo, emailRepo)
-	emailService := emailSvc.NewEmailService(emailRepo, userRepo, kafkaProducer)
+	// userService := userSvc.NewUserService(userRepo, emailRepo)
+	// emailService := emailSvc.NewEmailService(emailRepo, userRepo, kafkaProducer)
 	// aiService := aiSvc.NewAIService(&aiClient, aiRepo)
 	storeService := storeSvc.NewStoreService(storeRepo)
 	learnService := learnSvc.NewLearnService(learnRepo, ossClient)
 
 	// 4. 初始化处理器
-	userHandler := api.NewUserHandler(userService)
-	emailHandler := api.NewEmailHandler(emailService)
+	// userHandler := api.NewUserHandler(userService)
+	// emailHandler := api.NewEmailHandler(emailService)
 	storeHandler := api.NewStoreHandler(storeService)
 	learnHandler := api.NewLearnHandler(learnService)
 
 	// 5. 注册路由
 	// r := api.SetupRouter(userService, emailService, aiService, learnHandler, enable_pprof)
-	r := api.SetupRouter(userHandler, emailHandler, storeHandler, learnHandler)
+	r := api.SetupRouter(storeHandler, learnHandler)
 
 	// 5. 创建 HTTP 服务实例
 	srv := &http.Server{
