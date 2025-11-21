@@ -185,7 +185,7 @@ export const aiChatWS = (request: AIChatRequest): {
   };
   sendMessage: (msg: any) => void;
 } => {
-  const token = localStorage.getItem('FormalLangLab:token');
+  const token = localStorage.getItem('FormalLangLab:accessToken');
   if (!token) throw new Error('未登录');
 
   // 构建 WebSocket URL

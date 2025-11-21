@@ -5,7 +5,7 @@ import (
 	"backend/internal/domain/model"
 	myErrors "backend/internal/errors"
 	"backend/internal/repository"
-	kafka_s "backend/internal/service/kafka"
+	kafka_s "backend/internal/service/kafka_s"
 	"backend/pkg/token"
 	"context"
 	"errors"

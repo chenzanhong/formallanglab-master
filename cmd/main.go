@@ -40,7 +40,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("加载配置失败：%v", err.Error())
 	}
-	cf.SetEnvVariables(*config) // 环境变量设置
+	cf.ApplyEnvToConfig(config)
+	cf.SyncConfigToEnv(*config) // 环境变量设置
 	middleware.SetJWTKey(config.JWT.Key)
 
 	// 日志
@@ -93,10 +94,10 @@ func main() {
 	// 5. 注册路由
 	// r := api.SetupRouter(userService, emailService, aiService, learnHandler, enable_pprof)
 	r := api.SetupRouter(userHandler, emailHandler, storeHandler, learnHandler)
-	
+
 	// 5. 创建 HTTP 服务实例
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    fmt.Sprintf(":%s", os.Getenv("SERVER_PORT")),
 		Handler: r,
 	}
 

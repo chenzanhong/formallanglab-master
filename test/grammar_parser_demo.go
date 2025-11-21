@@ -3,7 +3,7 @@ package test
 
 import (
 	"backend/internal/domain/model"
-	"backend/internal/service/grammar"
+	"backend/internal/service/grammar_s"
 	"fmt"
 	"strings"
 )
