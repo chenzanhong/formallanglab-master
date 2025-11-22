@@ -24,6 +24,7 @@ import (
 
 	mtr "backend/internal/metrics"
 
+	"github.com/chenzanhong/goutil/jwtx"
 	"github.com/chenzanhong/zlog"
 )
 
@@ -38,9 +39,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("加载配置失败：%v", err.Error())
 	}
-	cf.ApplyEnvToConfig(config)
 	cf.SyncConfigToEnv(*config) // 环境变量设置
-	middleware.SetJWTKey(config.JWT.Key)
+	jwtx.InitWithHS256(config.JWT.Key, &middleware.Claims{}, jwtx.WithAutoInject(true))
 
 	// 日志
 	zlog.InitLogger(config.Log)

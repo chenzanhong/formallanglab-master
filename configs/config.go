@@ -1,6 +1,8 @@
 package configs
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -8,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/chenzanhong/zlog"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
@@ -58,13 +61,13 @@ type KafkaConfig struct {
 	Topic   string `yaml:"topic"`
 }
 
-type AIConfig struct {
-	DashscopeAPIKey  string `yaml:"dashscope_api_key"`
-	DashscopeBaseURL string `yaml:"dashscope_base_url"`
-	DashscopeModel   string `yaml:"dashscope_model"`
-	ChromaURL        string `yaml:"chroma_url"`
-	ChromaCollection string `yaml:"chroma_collection"`
-}
+// type AIConfig struct {
+// 	DashscopeAPIKey  string `yaml:"dashscope_api_key"`
+// 	DashscopeBaseURL string `yaml:"dashscope_base_url"`
+// 	DashscopeModel   string `yaml:"dashscope_model"`
+// 	ChromaURL        string `yaml:"chroma_url"`
+// 	ChromaCollection string `yaml:"chroma_collection"`
+// }
 
 // OSSConfig 阿里云OSS配置
 type OSSConfig struct {
@@ -92,14 +95,14 @@ type Config struct {
 	Server ServerConfig `yaml:"server"`
 	JWT    JWTConfig    `yaml:"jwt"`
 	PG     PGConfig     `yaml:"pg"`
-	Redis  RedisConfig  `yaml:"redis"`
+	// Redis  RedisConfig  `yaml:"redis"`
 	// Email      EMAILConfig      `yaml:"email"`
 	// SMTPServer SMTPServerConfig `yaml:"smtp_server"`
-	Rate  RateConfig        `yaml:"rate"`
-	Kafka KafkaConfig       `yaml:"kafka"`
-	AI    AIConfig          `yaml:"ai"`
-	Log   zlog.LoggerConfig `yaml:"log"`
-	OSS   OSSConfig         `yaml:"oss"`
+	Rate  RateConfig  `yaml:"rate"`
+	Kafka KafkaConfig `yaml:"kafka"`
+	// AI    AIConfig          `yaml:"ai"`
+	Log zlog.LoggerConfig `yaml:"log"`
+	OSS OSSConfig         `yaml:"oss"`
 }
 
 // getConfigPath 获取数据库配置文件的路径
@@ -134,17 +137,24 @@ func GetConfigPath() string {
 // LoadConfig 加载配置文件并返回 DBConfig
 func LoadConfig() (*Config, error) {
 	configPath := GetConfigPath()
-	yamlFile, err := os.ReadFile(configPath)
-	if err != nil {
-		return nil, err
+	var config Config
+	if yamlFile, err := os.ReadFile(configPath); err == nil {
+		if err := yaml.Unmarshal(yamlFile, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse config.yaml: %w", err)
+		}
+	} else {
+		// config.yaml 不存在，使用零值（后续会被环境变量覆盖）
+		zap.L().Info("config.yaml not found, using defaults from environment variables")
 	}
 
-	var config Config
-	err = yaml.Unmarshal(yamlFile, &config)
-	if err != nil {
-		return nil, err
+	// 用环境变量覆盖所有字段（必须）
+	ApplyEnvToConfig(&config)
+
+	// 可选：验证必要字段是否已设置
+	if config.Server.Port == 0 {
+		return nil, fmt.Errorf("required env SERVER_PORT is not set")
 	}
-	
+
 	return &config, nil
 }
 
@@ -189,13 +199,13 @@ func ApplyEnvToConfig(cfg *Config) {
 	cfg.PG.User = getEnv("DB_USER", cfg.PG.User)
 	cfg.PG.Password = getEnv("DB_PASSWORD", cfg.PG.Password)
 
-	// Redis
-	cfg.Redis.Host = getEnv("REDIS_HOST", cfg.Redis.Host)
-	cfg.Redis.Port = getEnv("REDIS_PORT", cfg.Redis.Port)
-	cfg.Redis.Password = getEnv("REDIS_PASSWORD", cfg.Redis.Password)
-	cfg.Redis.DB = getEnvInt("REDIS_DB", cfg.Redis.DB)
-	cfg.Redis.MaxConn = getEnvInt("REDIS_MAX_CONN", cfg.Redis.MaxConn)
-	cfg.Redis.MaxIdleConn = getEnvInt("REDIS_MAX_IDLE_CONN", cfg.Redis.MaxIdleConn)
+	// // Redis
+	// cfg.Redis.Host = getEnv("REDIS_HOST", cfg.Redis.Host)
+	// cfg.Redis.Port = getEnv("REDIS_PORT", cfg.Redis.Port)
+	// cfg.Redis.Password = getEnv("REDIS_PASSWORD", cfg.Redis.Password)
+	// cfg.Redis.DB = getEnvInt("REDIS_DB", cfg.Redis.DB)
+	// cfg.Redis.MaxConn = getEnvInt("REDIS_MAX_CONN", cfg.Redis.MaxConn)
+	// cfg.Redis.MaxIdleConn = getEnvInt("REDIS_MAX_IDLE_CONN", cfg.Redis.MaxIdleConn)
 
 	// Rate
 	cfg.Rate.UserRate = getEnvInt("RATE_USER_RATE", cfg.Rate.UserRate)
@@ -204,13 +214,6 @@ func ApplyEnvToConfig(cfg *Config) {
 	// Kafka
 	cfg.Kafka.Brokers = getEnv("KAFKA_BROKERS", cfg.Kafka.Brokers)
 	cfg.Kafka.Topic = getEnv("KAFKA_TOPIC", cfg.Kafka.Topic)
-
-	// AI Service
-	cfg.AI.DashscopeAPIKey = getEnv("DASHSCOPE_API_KEY", cfg.AI.DashscopeAPIKey)
-	cfg.AI.DashscopeBaseURL = getEnv("DASHSCOPE_BASE_URL", cfg.AI.DashscopeBaseURL)
-	cfg.AI.DashscopeModel = getEnv("DASHSCOPE_MODEL", cfg.AI.DashscopeModel)
-	cfg.AI.ChromaURL = getEnv("CHROMA_URL", cfg.AI.ChromaURL)
-	cfg.AI.ChromaCollection = getEnv("CHROMA_COLLECTION", cfg.AI.ChromaCollection)
 
 	// OSS
 	cfg.OSS.Endpoint = getEnv("OSS_ENDPOINT", cfg.OSS.Endpoint)
@@ -233,6 +236,20 @@ func ApplyEnvToConfig(cfg *Config) {
 	cfg.Log.MaxAge = getEnvInt("LOG_MAX_AGE", cfg.Log.MaxAge)
 	cfg.Log.Compress = getEnvBool("LOG_COMPRESS", cfg.Log.Compress)
 	cfg.Log.Sampling = getEnvBool("LOG_SAMPLING", cfg.Log.Sampling)
+	cfg.Log.Fields = parseLogFields()
+}
+
+func parseLogFields() map[string]string {
+	raw := os.Getenv("LOG_FIELDS")
+	if raw == "" {
+		return map[string]string{"server": "email"} // 默认值
+	}
+	var fields map[string]string
+	if err := json.Unmarshal([]byte(raw), &fields); err != nil {
+		log.Printf("Invalid LOG_FIELDS, using default: %v", err)
+		return map[string]string{"server": "email"}
+	}
+	return fields
 }
 
 func SyncConfigToEnv(config Config) {
@@ -264,12 +281,12 @@ func SyncConfigToEnv(config Config) {
 	setEnvIfNotSet("DB_NAME", config.PG.Name)
 
 	// Redis
-	setEnvIfNotSet("REDIS_HOST", config.Redis.Host)
-	setEnvIfNotSet("REDIS_PORT", config.Redis.Port)
-	setEnvIfNotSet("REDIS_PASSWORD", config.Redis.Password)
-	setEnvIfNotSet("REDIS_DB", strconv.Itoa(config.Redis.DB))
-	setEnvIfNotSet("REDIS_MAX_CONN", strconv.Itoa(config.Redis.MaxConn))
-	setEnvIfNotSet("REDIS_MAX_IDLE_CONN", strconv.Itoa(config.Redis.MaxIdleConn))
+	// setEnvIfNotSet("REDIS_HOST", config.Redis.Host)
+	// setEnvIfNotSet("REDIS_PORT", config.Redis.Port)
+	// setEnvIfNotSet("REDIS_PASSWORD", config.Redis.Password)
+	// setEnvIfNotSet("REDIS_DB", strconv.Itoa(config.Redis.DB))
+	// setEnvIfNotSet("REDIS_MAX_CONN", strconv.Itoa(config.Redis.MaxConn))
+	// setEnvIfNotSet("REDIS_MAX_IDLE_CONN", strconv.Itoa(config.Redis.MaxIdleConn))
 	/*
 		// Email
 		setEnvIfNotSet("EMAIL_NAME", config.Email.Name)
@@ -286,14 +303,6 @@ func SyncConfigToEnv(config Config) {
 	// Kafka
 	setEnvIfNotSet("KAFKA_BROKERS", config.Kafka.Brokers)
 	setEnvIfNotSet("KAFKA_TOPIC", config.Kafka.Topic)
-
-	// AI Service
-	setEnvIfNotSet("DASHSCOPE_API_KEY", config.AI.DashscopeAPIKey)
-	setEnvIfNotSet("DASHSCOPE_BASE_URL", config.AI.DashscopeBaseURL)
-	setEnvIfNotSet("DASHSCOPE_MODEL", config.AI.DashscopeModel)
-	setEnvIfNotSet("CHROMA_URL", config.AI.ChromaURL)
-	setEnvIfNotSet("CHROMA_COLLECTION", config.AI.ChromaCollection)
-
 	// Log
 	setEnvIfNotSet("LOG_LEVEL", config.Log.Level.String())
 	setEnvIfNotSet("LOG_OUTPUT", config.Log.Output)

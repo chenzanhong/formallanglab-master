@@ -7,19 +7,11 @@ import (
 
 	mtr "backend/internal/metrics"
 
+	"github.com/chenzanhong/goutil/jwtx"
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRouter(storeHandler *StoreHandler, learnHandler *LearnHandler) *gin.Engine {
-
-	// qaCache := aiSvc.NewQACache()
-	// // 异步加载预置高频问题缓存，加速主程序启动
-	// go func() {
-	// 	if err := qaCache.LoadCache("./knowledge/qa"); err != nil {
-	// 		zlog.Panic("Failed to load QACache", "detail", err.Error())
-	// 	}
-	// }()
-	// aiHandler := NewAIHandler(aiService, qaCache)
 
 	router := gin.Default()
 	// 1. 恢复中间件 - 最先使用，捕获所有panic
@@ -39,25 +31,20 @@ func SetupRouter(storeHandler *StoreHandler, learnHandler *LearnHandler) *gin.En
 	router.Use(mtr.HTTPMiddleware())
 
 	router.GET("/gdesign/master/metrics", mtr.MetricsHandler())
+	router.GET("/gdesign/master/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status": "ok",
+		})
+	})
 
 	// setupAuthRoutes(router, userHandler, aiHandler, learnHandler) // 注册需要认证的路由
 	setupAuthRoutes(router, learnHandler, storeHandler) // 注册需要认证的路由
 	return router
 }
 
-// func setupPublicRoutes(router *gin.Engine) {
-
-// 	r := router.Group("/gdesign/master", middleware.GlobalRateLimitMiddleware()) // 不需要限速                                                                        // prometheus.yml中加上 metrics_path: /master/metrics
-// 	r.POST("/register", userHandler.Register)                                    // 注册
-// 	r.POST("/login", userHandler.Login)                                          // 登录
-// 	r.POST("/register/code", emailHandler.SendRegisterVerificationCode)          // 发送验证码（注册用）
-// 	r.POST("/reset-pwd/code", emailHandler.SendResetPwdVerificationCode)         // 请求重置密码
-// 	r.POST("/reset-pwd", userHandler.ResetPassword)                              // 重置密码
-// }
-
 func setupAuthRoutes(router *gin.Engine, learnHandler *LearnHandler, storeHandler *StoreHandler) {
 	// 使用 JWT、Rate 中间件保护这些路由
-	r := router.Group("/gdesign/master", middleware.JWTAuthMiddleware(), middleware.UserRateLimitMiddleware())
+	r := router.Group("/gdesign/master", jwtx.GinJWTAuthMiddleware(), middleware.UserRateLimitMiddleware())
 
 	// 文法相关接口
 	grammar := r.Group("/grammar")

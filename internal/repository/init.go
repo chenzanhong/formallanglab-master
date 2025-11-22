@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strconv"
+	// "strconv"
 	"time"
 
 	"github.com/chenzanhong/zlog"
@@ -25,17 +25,17 @@ func Init() (*Repository, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %v", err)
 	}
-	rdb, err := ConnectRedis()
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to redis: %v", err)
-	}
+	// rdb, err := ConnectRedis()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to connect to redis: %v", err)
+	// }
 	err = InitPGData(db, context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to init pg data: %v", err)
 	}
 	return &Repository{
 		DB:    db,
-		Redis: rdb,
+		// Redis: rdb,
 	}, nil
 }
 
@@ -121,44 +121,44 @@ func ConnectDB() (*gorm.DB, error) {
 }
 
 // 连接Redis
-func ConnectRedis() (*redis.Client, error) {
-	host := os.Getenv("REDIS_HOST")
-	port := os.Getenv("REDIS_PORT")
-	password := os.Getenv("REDIS_PASSWORD")
-	dbStr := os.Getenv("REDIS_DB")
+// func ConnectRedis() (*redis.Client, error) {
+// 	host := os.Getenv("REDIS_HOST")
+// 	port := os.Getenv("REDIS_PORT")
+// 	password := os.Getenv("REDIS_PASSWORD")
+// 	dbStr := os.Getenv("REDIS_DB")
 
-	db := 0
-	if dbStr != "" {
-		var err error
-		db, err = strconv.Atoi(dbStr)
-		if err != nil {
-			return nil, fmt.Errorf("invalid REDIS_DB value: %v", err)
-		}
-	}
+// 	db := 0
+// 	if dbStr != "" {
+// 		var err error
+// 		db, err = strconv.Atoi(dbStr)
+// 		if err != nil {
+// 			return nil, fmt.Errorf("invalid REDIS_DB value: %v", err)
+// 		}
+// 	}
 
-	client := redis.NewClient(&redis.Options{
-		Addr:         fmt.Sprintf("%s:%s", host, port),
-		Password:     password,
-		DB:           db,
-		DialTimeout:  5 * time.Second,
-		ReadTimeout:  3 * time.Second,
-		WriteTimeout: 3 * time.Second,
-		MaxRetries:   5, // default 3
+// 	client := redis.NewClient(&redis.Options{
+// 		Addr:         fmt.Sprintf("%s:%s", host, port),
+// 		Password:     password,
+// 		DB:           db,
+// 		DialTimeout:  5 * time.Second,
+// 		ReadTimeout:  3 * time.Second,
+// 		WriteTimeout: 3 * time.Second,
+// 		MaxRetries:   5, // default 3
 
-		// 关键：启用连接池健康检查
-		PoolSize:        20,
-		MinIdleConns:    5,
-		ConnMaxLifetime: 30 * time.Minute,
-		ConnMaxIdleTime: 10 * time.Minute,
-	})
+// 		// 关键：启用连接池健康检查
+// 		PoolSize:        20,
+// 		MinIdleConns:    5,
+// 		ConnMaxLifetime: 30 * time.Minute,
+// 		ConnMaxIdleTime: 10 * time.Minute,
+// 	})
 
-	// 测试连接
-	ctx := context.Background()
-	_, err := client.Ping(ctx).Result()
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to Redis: %v", err)
-	}
+// 	// 测试连接
+// 	ctx := context.Background()
+// 	_, err := client.Ping(ctx).Result()
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to connect to Redis: %v", err)
+// 	}
 
-	zlog.Info("Redis connected successfully")
-	return client, nil
-}
+// 	zlog.Info("Redis connected successfully")
+// 	return client, nil
+// }
