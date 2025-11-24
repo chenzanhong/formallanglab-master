@@ -25,16 +25,8 @@ import (
 	S -> a | a c
 	被判定为不等价
 */
+// 理论上应该是转为最小DFA判断是否同构
 func IsEquivalent(g1, g2 *model.Grammar) bool {
-	// // 先验证两个文法都是有效的正则文法
-	// if !GrammarCheckValidity(g1) || !GrammarCheckValidity(g2) {
-	// 	return false
-	// }
-
-	// if TypeDetermine(g1) != Type3 || TypeDetermine(g2) != Type3 {
-	// 	return false
-	// }
-
 	// 生成两个文法的语言（有限深度）
 	maxDepth := 8 // 限制生成字符串的最大长度
 	lang1 := generateLanguage(g1, maxDepth)

@@ -74,3 +74,29 @@ type NFADeterminizationResponse struct {
 	AutomatonFlow *model.ReactFlowAutomaton `json:"automatonFlow,omitempty"`
 	// Error         string                    `json:"error,omitempty"`
 }
+
+// AutomatonEquivalenceCheckRequest 自动机等价检查请求结构
+type AutomatonEquivalenceCheckRequest struct {
+	Automaton1 model.Automaton `json:"automaton1" binding:"required"`
+	Automaton2 model.Automaton `json:"automaton2" binding:"required"`
+}
+
+type AutomatonEquivalenceCheckResponse struct {
+	Msg    string `json:"msg"`
+	Result bool   `json:"result"`
+	IsEquivalent bool   `json:"isEquivalent"`
+	MinimizedDFA1 *model.Automaton `json:"minimizedDFA1,omitempty"`
+	MinimizedDFA2 *model.Automaton `json:"minimizedDFA2,omitempty"`
+}
+
+// AutomatonGenerateExampleStringRequest 自动机生成示例字符串请求结构
+type AutomatonGenerateExampleStringRequest struct {
+	Automaton model.Automaton `json:"automaton" binding:"required"`
+}
+
+type AutomatonGenerateExampleStringResponse struct {
+	Msg            string   `json:"msg"`
+	Result         bool     `json:"result"`
+	AcceptExamples []string `json:"accept"`
+	RejectExamples []string `json:"reject"`
+}

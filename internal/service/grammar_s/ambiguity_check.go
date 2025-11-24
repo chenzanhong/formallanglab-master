@@ -5,17 +5,6 @@ import (
 	"strings"
 )
 
-// 注意：ε 会被省略，除了单一 ε 的情况
-func symbolsToString(symbols []model.Symbol) string {
-	parts := make([]string, len(symbols))
-	for i, sym := range symbols {
-		if sym != model.Epsilon {
-			parts[i] = string(sym)
-		}
-	}
-	return strings.Join(parts, ",")
-}
-
 // symbolsToStringJoinSep 将符号切片转为字符串，用于 map 的 key
 // 注意：ε
 func symbolsToStringJoinSep(symbols []model.Symbol) string {

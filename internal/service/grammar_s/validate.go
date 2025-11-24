@@ -19,22 +19,27 @@ import (
 // 空间复杂度：O(1)
 func GrammarCheckValidity(g *model.Grammar) error {
 	if g == nil {
+		g.GrammarType = model.InvalidGrammar
 		return errors.New("文法对象为nil")
 	}
 
 	// 1. 非终结符和终结符都不能为空
 	if len(g.NonTerminals) == 0 {
+		g.GrammarType = model.InvalidGrammar
 		return errors.New("非终结符集合不能为空")
 	}
 	if len(g.Terminals) == 0 {
+		g.GrammarType = model.InvalidGrammar
 		return errors.New("终结符集合不能为空")
 	}
 
 	// 2. 起始符号必须是非终结符
 	if g.StartSymbol == "" {
+		g.GrammarType = model.InvalidGrammar
 		return errors.New("起始符号不能为空")
 	}
 	if !g.CheckIsNonTerminal(g.StartSymbol) {
+		g.GrammarType = model.InvalidGrammar
 		return fmt.Errorf("起始符号'%s'必须是非终结符", g.StartSymbol)
 	}
 
@@ -54,6 +59,7 @@ func GrammarCheckValidity(g *model.Grammar) error {
 	// 3. 非终结符和终结符不能有交集
 	for _, sym := range g.NonTerminals {
 		if g.CheckIsTerminal(sym) {
+			g.GrammarType = model.InvalidGrammar
 			return fmt.Errorf("符号'%s'同时存在于非终结符和终结符集合中", sym)
 		}
 	}
@@ -63,12 +69,14 @@ func GrammarCheckValidity(g *model.Grammar) error {
 
 	// 5. 至少有一个产生式
 	if len(g.Productions) == 0 {
+		g.GrammarType = model.InvalidGrammar
 		return errors.New("文法必须至少包含一个产生式")
 	}
 
 	// 5. 每个产生式的左部至少包含一个非终结符，而且所使用的符号都在符号集里面
 	for i, p := range g.Productions {
 		if len(p.Left) == 0 {
+			g.GrammarType = model.InvalidGrammar
 			return fmt.Errorf("产生式%d的左部不能为空", i+1)
 		}
 
@@ -79,14 +87,17 @@ func GrammarCheckValidity(g *model.Grammar) error {
 				break
 			}
 			if !symbolMap[sym] { // 是否是字符集里面的字符
+				g.GrammarType = model.InvalidGrammar
 				return fmt.Errorf("产生式%d左部中的符号'%s'不在符号集合中", i+1, sym)
 			}
 		}
 		if !hasNonTerminal {
+			g.GrammarType = model.InvalidGrammar
 			return fmt.Errorf("产生式%d的左部必须至少包含一个非终结符", i+1)
 		}
 		for _, sym := range p.Right {
 			if !symbolMap[sym] { // 是否是字符集里面的字符
+				g.GrammarType = model.InvalidGrammar
 				return fmt.Errorf("产生式%d右部中的符号'%s'不在符号集合中", i+1, sym)
 			}
 		}

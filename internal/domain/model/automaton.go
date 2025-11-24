@@ -101,6 +101,7 @@ func (a *Automaton) InitTransMap() {
 	}
 }
 
+// 简单判断自动机结构是否正确，并进行不完整的类型判断（未考虑不可达状态）
 func (a *Automaton) ISValidate() error {
 	// 使用 map 提高查找效率
 	stateSet := make(map[State]bool)

@@ -31,6 +31,7 @@ import (
 func TypeDetermine(g *model.Grammar) model.GrammarType {
 	if g == nil || GrammarCheckValidity(g) != nil {
 		fmt.Println("无效文法")
+		g.GrammarType = model.InvalidGrammar
 		return model.InvalidGrammar
 	}
 
@@ -39,18 +40,22 @@ func TypeDetermine(g *model.Grammar) model.GrammarType {
 		// 左部都是单个非终结符 → 可能是 Type2 或 Type3
 		if isRegular, _ := IsRegular(g); isRegular {
 			fmt.Println("三型文法")
+			g.GrammarType = model.RegularGrammar
 			return model.RegularGrammar
 		}
 		fmt.Println("二型文法")
+		g.GrammarType = model.ContextFreeGrammar
 		return model.ContextFreeGrammar
 	}
 
 	// === 第二步：不是 CFG → 判断是 Type1 还是 Type0 ===
 	if isContextSensitive(g) {
 		fmt.Println("一型文法")
+		g.GrammarType = model.ContextSensitiveGrammar
 		return model.ContextSensitiveGrammar
 	}
 	fmt.Println("零型文法")
+	g.GrammarType = model.PhraseStructureGrammar
 	return model.PhraseStructureGrammar
 }
 
@@ -65,42 +70,51 @@ func isContextFreeForm(g *model.Grammar) bool {
 }
 
 // isRegular 检查是否为正则文法（右线性或左线性）,前提是文法是上下文无关文法
-func IsRegular(g *model.Grammar) (IsRegular, isRightLinear bool) {
+func IsRegular(g *model.Grammar) (IsRegular bool, linear model.GrammarLinearity) {
 	hasRightLinear := false
 	hasLeftLinear := false
 
 	for _, p := range g.Productions {
 		// left := p.Left[0]
 		right := p.Right
-		// fmt.Println("right:",right)
+		fmt.Println("right:", right)
 		// 右部单一符号，允许空产生式
 		if len(right) == 1 || right[0] == model.Epsilon {
-			// fmt.Println(1)
+			fmt.Println(1)
 			continue
 		}
 
 		// 检测是否右线性
 		if isRightLinearProduction(right, g) {
 			hasRightLinear = true
-			// fmt.Println(2)
+			fmt.Println(2)
 			continue
 		}
 
 		// 检测是否左线性
 		if isLeftLinearProduction(right, g) {
 			hasLeftLinear = true
-			// fmt.Println(3)
+			fmt.Println(3)
 			continue
 		}
 
-		// fmt.Println(4)
+		fmt.Println(4)
 		// 都不是，非正则
-		return false, false
+		return false, model.InvalidLinearity
 	}
 
-	// fmt.Println(5)
+	fmt.Println(5)
+	fmt.Println(hasLeftLinear, " ", hasRightLinear)
 	// 必须全部右线性或全部左线性
-	return hasRightLinear != hasLeftLinear, hasRightLinear
+	if hasRightLinear && hasLeftLinear {
+		return false, model.InvalidLinearity
+	}
+	if hasLeftLinear {
+		linear = model.LeftLinear
+	} else { // 为右线性，或默认右线性
+		linear = model.RightLinear
+	}
+	return true, linear
 }
 
 func isRightLinearProduction(right []model.Symbol, g *model.Grammar) bool {

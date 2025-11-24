@@ -1,6 +1,8 @@
 package automaton_s
 
-import "backend/internal/domain/model"
+import (
+	"backend/internal/domain/model"
+)
 
 func getDFANextStateFromMap(automaton *model.Automaton, from model.State, input model.Symbol) model.State {
 	// 使用 TransMap 提高查找效率

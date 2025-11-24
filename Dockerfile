@@ -55,12 +55,6 @@ COPY migrations/ /app/migrations/
 # 复制知识文件
 COPY knowledge/ /app/knowledge/
 
-# 创建环境变量示例文件
-COPY --chown=masteruser:masteruser .env.example /app/ 
-
-# 依赖 docker-compose 的 volume 挂载或环境变量传入真实配置。
-# COPY --chown=masteruser:masteruser .env /app/ 
-
 # 暴露服务端口
 EXPOSE 8081 4001 6061
 

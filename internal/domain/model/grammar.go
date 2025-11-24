@@ -21,6 +21,14 @@ const (
 	RegularGrammar                                 // iota=4 → 4-1 = 3
 )
 
+type GrammarLinearity string
+
+const (
+	InvalidLinearity = "invalid_linear"
+	LeftLinear  = "left_linear"
+	RightLinear = "right_linear"
+)
+
 var GrammarTypeNameMap = map[GrammarType]string{
 	RegularGrammar:          "3型文法（正则文法）",
 	ContextFreeGrammar:      "2型文法（上下文无关文法）",

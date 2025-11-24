@@ -995,8 +995,20 @@ func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth
 //                         5. 分析模式统一接口模块
 // ===================================================================================
 
+type Mode string
+
+const (
+	LL1Mode              Mode = "ll1"
+	LL1RecoveryMode      Mode = "ll1_recovery"
+	RecursiveDescentMode Mode = "recursive_descent"
+	LR0Mode              Mode = "lr0"
+	LR1Mode              Mode = "lr1"
+	BFSMode              Mode = "bfs"
+	AutoMode             Mode = "auto"
+)
+
 // ParseStringWithMode 根据指定模式分析输入串
-func ParseStringWithMode(grammar *model.Grammar, input string, mode string, showSteps bool) *model.ParseResult {
+func ParseStringWithMode(grammar *model.Grammar, input string, mode Mode, showSteps bool) *model.ParseResult {
 	// 转换输入为符号数组
 	var inputSymbols []model.Symbol
 	var err error
@@ -1014,7 +1026,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode string, show
 	}
 
 	switch mode {
-	case "ll1":
+	case LL1Mode:
 		// 检查文法是否为CFG
 		_, err := grammar.ToCFGView()
 		if err != nil {
@@ -1030,7 +1042,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode string, show
 		}
 		return result
 
-	case "ll1_recovery":
+	case LL1RecoveryMode:
 		// 检查文法是否为CFG
 		_, err := grammar.ToCFGView()
 		if err != nil {
@@ -1046,7 +1058,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode string, show
 		}
 		return result
 
-	case "recursive_descent":
+	case RecursiveDescentMode:
 		// 检查文法是否为CFG
 		_, err := grammar.ToCFGView()
 		if err != nil {
@@ -1062,7 +1074,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode string, show
 		}
 		return result
 
-	case "lr0":
+	case LR0Mode:
 		// 检查文法是否为CFG
 		_, err := grammar.ToCFGView()
 		if err != nil {
@@ -1078,7 +1090,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode string, show
 		}
 		return result
 
-	case "lr1":
+	case LR1Mode:
 		// 检查文法是否为CFG
 		_, err := grammar.ToCFGView()
 		if err != nil {
@@ -1094,14 +1106,14 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode string, show
 		}
 		return result
 
-	case "bfs":
+	case BFSMode:
 		result := BFSParseDetailed(grammar, inputSymbols, 100, 100)
 		if !showSteps {
 			result.Steps = nil
 		}
 		return result
 
-	case "auto":
+	case AutoMode:
 		fallthrough // 忽略下一个 case 的条件判断，直接执行它的代码块
 	default:
 		// 自动选择最适合的分析方法
@@ -1115,7 +1127,11 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode string, show
 				if !showSteps {
 					result.Steps = nil
 				}
-				return result
+				if result.Accepted {
+					return result
+				}
+				// 未接受
+				fmt.Println("auto, but LL1 recognize failed")
 			}
 
 			// 尝试递归下降
@@ -1124,7 +1140,11 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode string, show
 				if !showSteps {
 					result.Steps = nil
 				}
-				return result
+				if result.Accepted {
+					return result
+				}
+				// 未接受
+				fmt.Println("auto, but recursive descent parse recognize failed")
 			}
 		}
 
@@ -1133,6 +1153,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode string, show
 		if !showSteps {
 			result.Steps = nil
 		}
+		fmt.Println("auto, bfs parse")
 		return result
 	}
 }

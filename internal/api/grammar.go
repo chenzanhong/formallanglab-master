@@ -8,6 +8,7 @@ GrammarSimplify			// 文法的化简——去无用符号（不可派生、不�
 GrammarTree			// 生成树（是否实现待确定）
 GrammarFirstSet			// 计算文法的First集
 GrammarFollowSet		// 计算文法的Follow集
+GrammarGenerateExampleString // 生成文法可推导和不可推导的字符串示例
 */
 package api
 
@@ -195,7 +196,7 @@ func GrammarStringRecognize(c *gin.Context) {
 	}
 
 	// 直接将输入字符串传递给分析函数，不再提前转换为符号
-	result := grammar_s.ParseStringWithMode(&req.Grammar, req.Input, req.Mode, req.ShowSteps)
+	result := grammar_s.ParseStringWithMode(&req.Grammar, req.Str, grammar_s.Mode(req.Mode), req.ShowSteps)
 
 	metrics.IncOperation("grammar", "string_recognize", "success")
 	zlog.Infow("文法字符串识别成功")
@@ -342,13 +343,13 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 		})
 		return
 	}
-	fmt.Printf("%+v\n", req.Grammar1)
-	fmt.Printf("%+v\n", req.Grammar2)
+	// fmt.Printf("%+v\n", req.Grammar1)
+	// fmt.Printf("%+v\n", req.Grammar2)
 	// 先统一 ε 表示
 	normalizeGrammar(&req.Grammar1)
 	normalizeGrammar(&req.Grammar2)
-	fmt.Printf("统一空转移符号后%+v\n", req.Grammar1)
-	fmt.Printf("统一空转移符号后%+v\n", req.Grammar2)
+	// fmt.Printf("统一空转移符号后%+v\n", req.Grammar1)
+	// fmt.Printf("统一空转移符号后%+v\n", req.Grammar2)
 	// 如果文法结构不完整，先完善结构
 	// req.Grammar1 = *grammar_s.CompleteGrammarStructure(&req.Grammar1)
 	// req.Grammar2 = *grammar_s.CompleteGrammarStructure(&req.Grammar2)
@@ -395,21 +396,24 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 		return
 	}
 
-	// 再判断是否等价
-	if !grammar_s.IsEquivalent(&req.Grammar1, &req.Grammar2) {
+	// time1 := time.Now()
+	// 再判断是否等价 GrammarIsEquivalent较IsEquivalent慢一点
+	if !grammar_s.GrammarIsEquivalent(&req.Grammar1, &req.Grammar2) {
 		metrics.IncOperation("grammar", "equivalence_check", "success: not equivalent")
 		zlog.Infow("文法等价性检查成功", "detail", "两个文法不等价")
+		// fmt.Println("耗时：", time.Since(time1))
 		c.JSON(http.StatusOK, dto.GrammarEquivalenceCheckResponse{
-			Msg:          "this two grammars are not equivalent",
+			Msg:          "这两个文法不是等价的",
 			IsEquivalent: false,
 			Result:       true,
 		})
 		return
 	}
+	// fmt.Println("耗时：", time.Since(time1))
 	metrics.IncOperation("grammar", "equivalence_check", "success: equivalent")
 	zlog.Infow("文法等价性检查成功", "detail", "两个文法等价")
 	c.JSON(http.StatusOK, dto.GrammarEquivalenceCheckResponse{
-		Msg:          "this two grammars are equivalent",
+		Msg:          "这两个文法是等价的",
 		IsEquivalent: true,
 		Result:       true,
 	})
@@ -512,23 +516,71 @@ func GrammarFollowSet(c *gin.Context) {
 	})
 }
 
-// normalizeGrammar 将前端传入的文法中的 "ε" 或空字符串统一规范为后端使用的 model.Epsilon("ε") 表示
+func GrammarGenerateExampleString(c *gin.Context) {
+	start := time.Now()
+	defer func() {
+		metrics.ObserveOperationDuration("grammar", "generate_example", time.Since(start).Seconds())
+	}()
+	var req dto.GrammarGenerateExampleStringRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		metrics.IncOperation("grammar", "generate_example", "failure: parameter parsing error")
+		zlog.Warnw("文法生成字符串示例失败", "detail", "参数解析失败，请检查请求格式是否正确")
+		c.JSON(http.StatusBadRequest, dto.GrammarSimplifyResponse{
+			Msg: "参数解析失败",
+			// Error:  err.Error(),
+			Result: false,
+		})
+		return
+	}
+
+	// 先统一 ε 表示
+	normalizeGrammar(&req.Grammar)
+	// 如果文法结构不完整，先完善结构
+	// grammar = *grammar_s.CompleteGrammarStructure(&grammar)
+
+	// 先校验文法有效性
+	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
+		metrics.IncOperation("grammar", "generate_example", "failure: invalid grammar")
+		zlog.Warnw("文法生成字符串示例失败", "detail", "文法格式无效")
+		c.JSON(http.StatusOK, dto.GrammarSimplifyResponse{
+			Msg:    "无效文法：" + err.Error(),
+			Result: false,
+		})
+		return
+	}
+
+	// 判断文法类型（内部也判断了文法是否有效）
+	tp := grammar_s.TypeDetermine(&req.Grammar)
+	if tp != model.ContextFreeGrammar && tp != model.RegularGrammar {
+		metrics.IncOperation("grammar", "generate_example", "failure: grammar not context free or regular")
+		zlog.Warnw("文法生成字符串示例失败", "detail", "不是二型/三型文法，暂不支持")
+		c.JSON(http.StatusOK, dto.GrammarSimplifyResponse{
+			Msg:    "不是二型/三型文法，暂不支持",
+			Result: false,
+		})
+		return
+	}
+	accept, reject := grammar_s.GrammarGenerateExampleString(&req.Grammar)
+	c.JSON(200, dto.GrammarGenerateExampleStringResponse{
+		Msg:            "示例生成成功",
+		Result:         true,
+		AcceptExamples: accept,
+		RejectExamples: reject,
+	})
+}
+
+// normalizeGrammar 将前端传入的文法中的空字符串统一规范为后端使用的 model.Epsilon("ε") 表示
 func normalizeGrammar(g *model.Grammar) {
 	// 终结符集合规范化
 	for i, t := range g.Terminals {
-		if string(t) == "ε" || string(t) == "" {
+		if string(t) == "ε" {
 			g.Terminals[i] = model.Epsilon
 		}
 	}
 	// 产生式左右部规范化
 	for pi := range g.Productions {
-		// 左部兜底
-		for li, ls := range g.Productions[pi].Left {
-			if string(ls) == "ε" {
-				g.Productions[pi].Left[li] = model.Epsilon
-			}
-		}
-		// 右部：将 "ε"/"" 统一为单符号 [Epsilon]
+		// 右部：将 "" 统一为单符号 model.Epsilon
 		right := g.Productions[pi].Right
 		if len(right) == 0 {
 			g.Productions[pi].Right = []model.Symbol{model.Epsilon}
@@ -536,7 +588,7 @@ func normalizeGrammar(g *model.Grammar) {
 		}
 		allEmpty := len(right) > 0
 		for ri, rs := range right {
-			if string(rs) == "ε" || string(rs) == "" {
+			if string(rs) == "" {
 				right[ri] = model.Epsilon
 			} else {
 				allEmpty = false

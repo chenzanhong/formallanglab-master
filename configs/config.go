@@ -134,7 +134,7 @@ func GetConfigPath() string {
 	return getConfigPath()
 }
 
-// LoadConfig 加载配置文件并返回 DBConfig
+// LoadConfig 加载配置文件并返回 Config 结构体指针，使用环境变量覆盖配置
 func LoadConfig() (*Config, error) {
 	configPath := GetConfigPath()
 	var config Config
@@ -236,18 +236,18 @@ func ApplyEnvToConfig(cfg *Config) {
 	cfg.Log.MaxAge = getEnvInt("LOG_MAX_AGE", cfg.Log.MaxAge)
 	cfg.Log.Compress = getEnvBool("LOG_COMPRESS", cfg.Log.Compress)
 	cfg.Log.Sampling = getEnvBool("LOG_SAMPLING", cfg.Log.Sampling)
-	cfg.Log.Fields = parseLogFields()
+
 }
 
-func parseLogFields() map[string]string {
+func parseLogFieldsFromEnv() map[string]string {
 	raw := os.Getenv("LOG_FIELDS")
 	if raw == "" {
-		return map[string]string{"server": "email"} // 默认值
+		return nil // 或空 map
 	}
 	var fields map[string]string
 	if err := json.Unmarshal([]byte(raw), &fields); err != nil {
-		log.Printf("Invalid LOG_FIELDS, using default: %v", err)
-		return map[string]string{"server": "email"}
+		log.Printf("Invalid LOG_FIELDS, ignoring: %v", err)
+		return nil
 	}
 	return fields
 }

@@ -2,7 +2,6 @@ package convert_s
 
 import (
 	"backend/internal/domain/model"
-	"fmt"
 )
 
 // 自动机转正则文法，默认自动机有效，且转为右线性文法
@@ -22,7 +21,6 @@ func FAToGrammar(automaton *model.Automaton) *model.Grammar {
 	var g model.Grammar
 	// 非终结符集合 V = Q（每个状态是一个非终结符）
 	g.NonTerminals = make([]model.Symbol, len(automaton.States))
-	fmt.Println(len(g.NonTerminals), " ", len(automaton.States))
 	for i, s := range automaton.States {
 		g.NonTerminals[i] = model.Symbol(s)
 	}
@@ -46,6 +44,24 @@ func FAToGrammar(automaton *model.Automaton) *model.Grammar {
 			Left:  []model.Symbol{model.Symbol(t.FromState)},
 			Right: right,
 		})
+	}
+
+	// ✅ 2. 为每个接受状态添加 ε 产生式（若尚未存在）
+	for _, state := range automaton.AcceptingStates {
+		hasEpsilon := false
+		symState := model.Symbol(state)
+		for _, p := range g.Productions {
+			if p.Left[0] == symState && p.Right[0] == model.Epsilon {
+				hasEpsilon = true
+				break
+			}
+		}
+		if !hasEpsilon {
+			g.Productions = append(g.Productions, model.Production{
+				Left:  []model.Symbol{symState},
+				Right: []model.Symbol{model.Epsilon},
+			})
+		}
 	}
 
 	return &g

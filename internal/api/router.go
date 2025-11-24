@@ -36,8 +36,12 @@ func SetupRouter(storeHandler *StoreHandler, learnHandler *LearnHandler) *gin.En
 			"status": "ok",
 		})
 	})
+	router.HEAD("/gdesign/master/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status": "ok",
+		})
+	})
 
-	// setupAuthRoutes(router, userHandler, aiHandler, learnHandler) // 注册需要认证的路由
 	setupAuthRoutes(router, learnHandler, storeHandler) // 注册需要认证的路由
 	return router
 }
@@ -49,30 +53,36 @@ func setupAuthRoutes(router *gin.Engine, learnHandler *LearnHandler, storeHandle
 	// 文法相关接口
 	grammar := r.Group("/grammar")
 	{
-		grammar.POST("/validate", GrammarValidate)            // 文法校验——是否有效
-		grammar.POST("/type", GrammarTypeDetermine)           // 判断所给文法的类型
-		grammar.POST("/simplify", GrammarSimplify)            // 文法的化简——去无用符号（不可派生、不可达）、单一产生式、空产生式
-		grammar.POST("/ambiguity", GrammarAmbiguityCheck)     // 正则文法的二义性判断
-		grammar.POST("/equivalence", GrammarEquivalenceCheck) // 判断所给的两个正则文法是否等价
-		grammar.POST("/recognize", GrammarStringRecognize)    // 字符串识别——是否被指定文法所接受；（可选）扩展：返回递归下降分析、LL(1)分析、LR(0)分析或LR(1)分析的过程
-		grammar.POST("/first", GrammarFirstSet)               // 计算文法的First集
-		grammar.POST("/follow", GrammarFollowSet)             // 计算文法的Follow集
+		grammar.POST("/validate", GrammarValidate)              // 文法校验——是否有效
+		grammar.POST("/type", GrammarTypeDetermine)             // 判断所给文法的类型
+		grammar.POST("/simplify", GrammarSimplify)              // 文法的化简——去无用符号（不可派生、不可达）、单一产生式、空产生式
+		grammar.POST("/ambiguity", GrammarAmbiguityCheck)       // 正则文法的二义性判断
+		grammar.POST("/equivalence", GrammarEquivalenceCheck)   // 判断所给的两个正则文法是否等价
+		grammar.POST("/recognize", GrammarStringRecognize)      // 字符串识别——是否被指定文法所接受；（可选）扩展：返回递归下降分析、LL(1)分析、LR(0)分析或LR(1)分析的过程
+		grammar.POST("/generate", GrammarGenerateExampleString) // 生成可推导和不可推导字符串
+		grammar.POST("/first", GrammarFirstSet)                 // 计算文法的First集
+		grammar.POST("/follow", GrammarFollowSet)               // 计算文法的Follow集
+	}
+
+	// 自动机相关接口
+	automaton := r.Group("/automaton")
+	{
+		automaton.POST("/validate", AutomatonValidate)            // 是否有效
+		automaton.POST("/recognize", AutomatonStringRecognize)    // 字符串识别
+		automaton.POST("/cleanup", AutomatonCleanup)              // 去无效符号、不可达符号
+		automaton.POST("/minimize", DFAMinimize)                  // DFA 最小化
+		automaton.POST("/nfatodfa", NFADeterminization)           // NFA 转 DFA，NFA确定化
+		automaton.POST("/equivalence", AutomatonEquivalenceCheck) // 判断所给的两个自动机是否等价
+		automaton.POST("/generate", AutomatonGenerateExampleString) // 生成可接受和不可接受字符串
 	}
 
 	// 正则表达式相关接口
 	regEx := r.Group("/regex")
 	{
 		regEx.POST("/validate", RegexValidate) // 判断是否为有效的正则表达式
-	}
-
-	// 自动机相关接口
-	automaton := r.Group("/automaton")
-	{
-		automaton.POST("/validate", AutomatonValidate)         // 是否有效
-		automaton.POST("/recognize", AutomatonStringRecognize) // 字符串识别
-		automaton.POST("/cleanup", AutomatonCleanup)           // 去无效符号、不可达符号
-		automaton.POST("/minimize", DFAMinimize)               // DFA 最小化
-		automaton.POST("/nfatodfa", NFADeterminization)        // NFA 转 DFA，NFA确定化
+		regEx.POST("/recognize", RegexRecognize)
+		regEx.POST("/equivalence", RegexEquivalenceCheck)   // 判断所给的两个正则表达式是否等价
+		regEx.POST("/generate", RegexGenerateExampleString) // 生成可匹配和不可匹配字符串
 	}
 
 	// 文法、自动机间的转换
@@ -104,16 +114,10 @@ func setupAuthRoutes(router *gin.Engine, learnHandler *LearnHandler, storeHandle
 		// 文法存储
 		store.POST("/grammar", storeHandler.CreateGrammar)
 		store.GET("/grammars", storeHandler.FindGrammars)
-		store.DELETE("/grammars/:id", storeHandler.DeleteGrammar)
+		store.DELETE("/grammar/:id", storeHandler.DeleteGrammar)
 		// 正则表达式存储
 		store.POST("/regex", storeHandler.CreateRegex)
 		store.GET("/regexes", storeHandler.FindRegexes)
-		store.DELETE("/regexes/:id", storeHandler.DeleteRegex)
+		store.DELETE("/regex/:id", storeHandler.DeleteRegex)
 	}
-
-	// // AI 相关接口
-	// ai := r.Group("/ai")
-	// {
-	// 	ai.POST("/sse", aiHandler.AIChatSSE) // 流式AI聊天接口，SSE
-	// }
 }

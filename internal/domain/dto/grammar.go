@@ -33,7 +33,7 @@ type GrammarAmbiguityCheckResponse struct {
 // 字符串识别请求
 type GrammarStringRecognizeRequest struct {
 	Grammar   model.Grammar `json:"grammar" binding:"required"`
-	Input     string        `json:"input" binding:"required"`
+	Str       string        `json:"str" binding:"required"`
 	ShowSteps bool          `json:"showSteps"` // 是否返回分析步骤
 	Mode      string        `json:"mode"`      // 分析模式
 }
@@ -112,4 +112,15 @@ type GrammarFollowSetResponse struct {
 	Msg       string              `json:"msg"`
 	// Error     string              `json:"error,omitempty"`
 	Result bool `json:"result"`
+}
+
+type GrammarGenerateExampleStringRequest struct {
+	Grammar model.Grammar `json:"grammar" binding:"required"`
+}
+
+type GrammarGenerateExampleStringResponse struct {
+	Msg            string   `json:"msg"`
+	Result         bool     `json:"result"`
+	AcceptExamples []string `json:"accept"`
+	RejectExamples []string `json:"reject"`
 }

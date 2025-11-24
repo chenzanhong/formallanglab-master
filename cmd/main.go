@@ -31,7 +31,6 @@ import (
 func init() {
 	mtr.PrometheusRegister()     // 初始化 Prometheus
 	binding.RegisterValidation() // 注册自定义验证器
-	// logs.InitLoggerFromEnv()
 }
 
 func main() {
@@ -50,19 +49,6 @@ func main() {
 	if err != nil {
 		zlog.Fatalf("Failed to initialize database: %v", err)
 	}
-	// apiKey := os.Getenv("DASHSCOPE_API_KEY")
-	// if apiKey == "" {
-	// 	zlog.Fatal("DASHSCOPE_API_KEY is required")
-	// }
-	// baseURL := os.Getenv("DASHSCOPE_BASE_URL")
-	// if baseURL == "" {
-	// 	zlog.Fatal("DASHSCOPE_BASE_URL is required")
-	// }
-	// aiClient := openai.NewClient(
-	// 	option.WithAPIKey(apiKey),
-	// 	// 以下是北京地域base_url，如果使用新加坡地域的模型，需要将base_url替换为：https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-	// 	option.WithBaseURL(baseURL),
-	// )
 
 	// 2. 初始化OSS客户端
 	ossClient, err := oss.NewAliyunOSSClient()
@@ -71,26 +57,17 @@ func main() {
 	}
 
 	// 3. 组装服务
-	// userRepo := rep.NewUserRepository(repo.DB, repo.Redis)
-	// emailRepo := rep.NewEmailRepository(repo.DB, repo.Redis)
 	storeRepo := rep.NewStoreRepository(repo.DB)
-	// aiRepo := rep.NewAIRepository(repo.Redis)
 	learnRepo := rep.NewLearnRepository(repo.DB)
 	kafkaProducer := kafka_s.NewDefaultKafkaProducerService()
-	// userService := userSvc.NewUserService(userRepo, emailRepo)
-	// emailService := emailSvc.NewEmailService(emailRepo, userRepo, kafkaProducer)
-	// aiService := aiSvc.NewAIService(&aiClient, aiRepo)
 	storeService := storeSvc.NewStoreService(storeRepo)
 	learnService := learnSvc.NewLearnService(learnRepo, ossClient)
 
 	// 4. 初始化处理器
-	// userHandler := api.NewUserHandler(userService)
-	// emailHandler := api.NewEmailHandler(emailService)
 	storeHandler := api.NewStoreHandler(storeService)
 	learnHandler := api.NewLearnHandler(learnService)
 
 	// 5. 注册路由
-	// r := api.SetupRouter(userService, emailService, aiService, learnHandler, enable_pprof)
 	r := api.SetupRouter(storeHandler, learnHandler)
 
 	// 5. 创建 HTTP 服务实例
@@ -157,13 +134,6 @@ func main() {
 		}
 	} else {
 		zlog.Error("Failed to get underlying SQL DB from GORM")
-	}
-
-	// 12. 关闭 Redis 连接
-	if err := repo.Redis.Close(); err != nil {
-		zlog.Errorf("Redis Close error: %v", err)
-	} else {
-		zlog.Info("Redis connection closed")
 	}
 
 	// 13. 关闭Kafka生产者

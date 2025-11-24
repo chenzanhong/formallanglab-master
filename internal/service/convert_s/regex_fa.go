@@ -3,6 +3,7 @@ package convert_s
 
 import (
 	"backend/internal/domain/model" // 👈 替换为你的实际路径
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -37,7 +38,7 @@ type astNode struct {
 }
 
 // ===== 1. 词法分析器（支持 + ?）=====
-func lex(pattern string) []token {
+func lex(pattern string) ([]token, error) {
 	var tokens []token
 	runes := []rune(pattern)
 	i := 0
@@ -63,13 +64,15 @@ func lex(pattern string) []token {
 			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
 				tokens = append(tokens, token{typ: tokChar, value: model.Symbol(string(r))})
 			} else {
-				panic(fmt.Sprintf("invalid character in regex: %c", r))
+				// panic(fmt.Sprintf("invalid character in regex: %c", r))
+				// 不panic，而是返回错误
+				return nil, errors.New(fmt.Sprintf("invalid character in regex: %c", r))
 			}
 		}
 		i++
 	}
 	tokens = append(tokens, token{typ: tokEOF})
-	return tokens
+	return tokens, nil
 }
 
 // ===== 2. 递归下降解析器（处理 + ?）=====
@@ -164,13 +167,16 @@ func (p *parser) parseAtom() *astNode {
 	}
 }
 
-func parseRegex(pattern string) *astNode {
+func parseRegex(pattern string) (*astNode, error) {
 	if strings.TrimSpace(pattern) == "" {
-		return nil
+		return nil, nil
 	}
-	tokens := lex(pattern)
+	tokens, err := lex(pattern)
+	if err != nil {
+		return nil, err
+	}
 	p := &parser{tokens: tokens, pos: 0}
-	return p.parseUnion()
+	return p.parseUnion(), nil
 }
 
 // ===== 3. Thompson 构造器（不变）=====
@@ -232,11 +238,11 @@ func (tb *thompsonBuilder) build(node *astNode) (model.State, model.State) {
 
 	case "union":
 		s := tb.newState()
-		a := tb.newState()
 		lStart, lAccept := tb.build(node.left)
 		rStart, rAccept := tb.build(node.right)
 		tb.addTransition(s, lStart, model.Epsilon)
 		tb.addTransition(s, rStart, model.Epsilon)
+		a := tb.newState()
 		tb.addTransition(lAccept, a, model.Epsilon)
 		tb.addTransition(rAccept, a, model.Epsilon)
 		return s, a
@@ -263,9 +269,11 @@ func (tb *thompsonBuilder) build(node *astNode) (model.State, model.State) {
 }
 
 func RegexToFA(pattern string) (*model.Automaton, error) {
-	ast := parseRegex(pattern)
-	if ast == nil {
-		return nil, fmt.Errorf("empty or invalid pattern")
+	ast, err := parseRegex(pattern)
+	if err != nil {
+		return nil, err
+	} else if ast == nil {
+		return nil, fmt.Errorf("empty pattern")
 	}
 
 	builder := newThompsonBuilder()

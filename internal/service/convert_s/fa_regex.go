@@ -57,7 +57,7 @@ func needWrap(s string) bool {
 			rightCount++
 		}
 	}
-	fmt.Println(leftCount, " ", rightCount)
+	// fmt.Println(leftCount, " ", rightCount)
 	return has && (leftCount != rightCount || (leftCount == 0 && rightCount == 0))
 }
 
@@ -148,7 +148,7 @@ func FAToRegex(a *model.Automaton) model.Regex {
 				regexMap[t.FromState][to] = unionRegex(current, input)
 			}
 
-			fmt.Println("from:", t.FromState, "input:", input, "to:", to, "regex:", regexMap[t.FromState][to])
+			// fmt.Println("from:", t.FromState, "input:", input, "to:", to, "regex:", regexMap[t.FromState][to])
 		}
 	}
 
@@ -192,14 +192,14 @@ func FAToRegex(a *model.Automaton) model.Regex {
 				var newPath model.Symbol
 				if loop == model.Epsilon {
 					newPath = concatRegex(ir, rj)
-					fmt.Println(1, " ", i, " ", r, " ", j)
+					// fmt.Println(1, " ", i, " ", r, " ", j)
 				} else {
 					newPath = concatRegex(concatRegex(ir, starLoop), rj)
-					fmt.Println(2, " ", i, " ", r, " ", j)
+					// fmt.Println(2, " ", i, " ", r, " ", j)
 				}
 				oldPath := regexMap[i][j]
 				regexMap[i][j] = unionRegex(oldPath, newPath)
-				fmt.Println("oldPath:", oldPath, " newPath", newPath, "union:", regexMap[i][j])
+				// fmt.Println("oldPath:", oldPath, " newPath", newPath, "union:", regexMap[i][j])
 			}
 		}
 

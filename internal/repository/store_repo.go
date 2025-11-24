@@ -3,6 +3,7 @@ package repository
 import (
 	"backend/internal/domain/storage"
 	"context"
+	"fmt"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -62,6 +63,7 @@ func (r *StoreRepositoryImpl) FindAutomatonByUsername(ctx context.Context, usern
 
 // CreateGrammar 创建文法记录
 func (r *StoreRepositoryImpl) CreateGrammar(ctx context.Context, g *storage.GrammarRecord) error {
+	fmt.Println("r.Create: ", g.Name)
 	return r.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "username"}, {Name: "grammar_hash"}},
@@ -105,7 +107,7 @@ func (r *StoreRepositoryImpl) FindAutomatonsAfterID(ctx context.Context, usernam
 // FindGrammarsAfterID 根据用户名和lastID分页查询文法列表
 func (r *StoreRepositoryImpl) FindGrammarsAfterID(ctx context.Context, username string, lastID uint, limit int) ([]storage.GrammarRecord, bool, error) {
 	var records []storage.GrammarRecord
-	query := r.db.WithContext(ctx).Where("username = ?", username).Select("id, grammar, created_at")
+	query := r.db.WithContext(ctx).Where("username = ?", username).Select("id, name, grammar, created_at")
 
 	if lastID > 0 {
 		query = query.Where("id > ?", lastID)
@@ -137,7 +139,7 @@ func (r *StoreRepositoryImpl) CreateRegex(ctx context.Context, re *storage.Regex
 
 func (r *StoreRepositoryImpl) FindRegexesByUsername(ctx context.Context, username string) ([]storage.RegexRecord, error) {
 	var records []storage.RegexRecord
-	if err := r.db.WithContext(ctx).Where("username = ?", username).Select("id, pattern").Find(&records).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("username = ?", username).Select("id, name, pattern, created_at").Find(&records).Error; err != nil {
 		return nil, err
 	}
 	return records, nil

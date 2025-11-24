@@ -163,7 +163,7 @@ func TestParseStringWithMode(t *testing.T) {
 	inputStr := "acb"
 
 	for _, mode := range modes {
-		result := grammar_s.ParseStringWithMode(grammar, inputStr, mode, false)
+		result := grammar_s.ParseStringWithMode(grammar, inputStr, grammar_s.Mode(mode), false)
 		fmt.Printf("模式 %s: %s (方法: %s)\n", mode,
 			map[bool]string{true: "接受", false: "拒绝"}[result.Accepted],
 			result.Method)

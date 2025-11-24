@@ -5,6 +5,8 @@ AutomatonCleanup                              // 去无效符号、不可达状�
 DFAMinimize                             // DFA 最小化
 AutomatonStringRecognize						// 字符串识别
 NFADeterminization                     	// NFA 转 DFA
+AutomatonEquivalenceCheck				// 判断两个有限自动机是否等价
+AutomatonGenerateExampleString					// 生成字符串示例，含可识别和不可识别的
 */
 package api
 
@@ -21,7 +23,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func AutomatonValidate(c *gin.Context) { // 是否有效
+// 是否有效
+func AutomatonValidate(c *gin.Context) {
 	start := time.Now()
 	defer func() {
 		metrics.ObserveOperationDuration("automaton", "validate", time.Since(start).Seconds())
@@ -54,7 +57,8 @@ func AutomatonValidate(c *gin.Context) { // 是否有效
 	})
 }
 
-func AutomatonCleanup(c *gin.Context) { // 去无效符号、无效状态以及相关的转移函数
+// 去无效符号、无效状态以及相关的转移函数
+func AutomatonCleanup(c *gin.Context) {
 	start := time.Now()
 	defer func() {
 		metrics.ObserveOperationDuration("automaton", "cleanup", time.Since(start).Seconds())
@@ -89,7 +93,8 @@ func AutomatonCleanup(c *gin.Context) { // 去无效符号、无效状态以及�
 	})
 }
 
-func DFAMinimize(c *gin.Context) { // DFA 最小化
+// DFA 最小化
+func DFAMinimize(c *gin.Context) {
 	start := time.Now()
 	defer func() {
 		metrics.ObserveOperationDuration("automaton", "minimize", time.Since(start).Seconds())
@@ -131,7 +136,8 @@ func DFAMinimize(c *gin.Context) { // DFA 最小化
 	})
 }
 
-func AutomatonStringRecognize(c *gin.Context) { // 字符串识别，
+// 字符串识别，
+func AutomatonStringRecognize(c *gin.Context) {
 	start := time.Now()
 	defer func() {
 		metrics.ObserveOperationDuration("automaton", "string_recognize", time.Since(start).Seconds())
@@ -173,7 +179,8 @@ func AutomatonStringRecognize(c *gin.Context) { // 字符串识别，
 	})
 }
 
-func NFADeterminization(c *gin.Context) { // NFA 转 DFA，子集构造法
+// NFA 转 DFA，子集构造法
+func NFADeterminization(c *gin.Context) {
 	start := time.Now()
 	defer func() {
 		metrics.ObserveOperationDuration("automaton", "nfa_to_dfa", time.Since(start).Seconds())
@@ -190,7 +197,7 @@ func NFADeterminization(c *gin.Context) { // NFA 转 DFA，子集构造法
 	err := automaton_s.AutomatonValidate(&req.Automaton) // 包含了DFA还是NFA的判断
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.NFADeterminizationResponse{
-			Msg:    "无效的自动机" + err.Error(),
+			Msg:    "无效的自动机：" + err.Error(),
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "nfa_to_dfa", "failure: invalid Automaton")
@@ -215,5 +222,88 @@ func NFADeterminization(c *gin.Context) { // NFA 转 DFA，子集构造法
 		Automaton:     new_Automaton,
 		AutomatonFlow: new_Automaton.ToReactFlow(),
 		Result:        true,
+	})
+}
+
+// 判断两个有限自动机是否等价
+func AutomatonEquivalenceCheck(c *gin.Context) {
+	start := time.Now()
+	defer func() {
+		metrics.ObserveOperationDuration("automaton", "equivalence_check", time.Since(start).Seconds())
+	}()
+	var req dto.AutomatonEquivalenceCheckRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		metrics.IncOperation("automaton", "equivalence_check", "failure: parameter parsing error")
+		c.JSON(http.StatusBadRequest, dto.AutomatonEquivalenceCheckResponse{
+			Msg:    "参数解析错误",
+			Result: false,
+		})
+		return
+	}
+	err := automaton_s.AutomatonValidate(&req.Automaton1) // 包含了DFA还是NFA的判断
+	if err != nil {
+		metrics.IncOperation("automaton", "equivalence_check", "failure: invalid Automaton1")
+		c.JSON(http.StatusBadRequest, dto.AutomatonEquivalenceCheckResponse{
+			Msg:    "无效的自动机1：" + err.Error(),
+			Result: false,
+		})
+		return
+	}
+	err = automaton_s.AutomatonValidate(&req.Automaton2) // 包含了DFA还是NFA的判断
+	if err != nil {
+		metrics.IncOperation("automaton", "equivalence_check", "failure: invalid Automaton2")
+		c.JSON(http.StatusBadRequest, dto.AutomatonEquivalenceCheckResponse{
+			Msg:    "无效的自动机2：" + err.Error(),
+			Result: false,
+		})
+		return
+	}
+	dfa1, dfa2, isEquivalent := automaton_s.AutomatonEquivalenceCheck(&req.Automaton1, &req.Automaton2)
+	if isEquivalent {
+		metrics.IncOperation("automaton", "equivalence_check", "success")
+	} else {
+		metrics.IncOperation("automaton", "equivalence_check", "failure: not equivalent")
+	}
+	c.JSON(http.StatusOK, dto.AutomatonEquivalenceCheckResponse{
+		Msg:           "自动机等价检查完成",
+		Result:        true,
+		IsEquivalent:  isEquivalent,
+		MinimizedDFA1: dfa1,
+		MinimizedDFA2: dfa2,
+	})
+}
+
+// 生成自动机字符串示例
+func AutomatonGenerateExampleString(c *gin.Context) {
+	start := time.Now()
+	defer func() {
+		metrics.ObserveOperationDuration("automaton", "generate_example", time.Since(start).Seconds())
+	}()
+	var req dto.AutomatonGenerateExampleStringRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.AutomatonGenerateExampleStringResponse{
+			Msg:    "参数解析错误",
+			Result: false,
+		})
+		metrics.IncOperation("automaton", "generate_example", "failure: parameter parsing error")
+		return
+	}
+	err := automaton_s.AutomatonValidate(&req.Automaton) // 包含了DFA还是NFA的判断
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.AutomatonGenerateExampleStringResponse{
+			Msg:    "无效的自动机：" + err.Error(),
+			Result: false,
+		})
+		metrics.IncOperation("automaton", "generate_example", "failure: invalid Automaton")
+		return
+	}
+
+	accept, reject := automaton_s.AutomatonGenerateExampleString(&req.Automaton)
+	metrics.IncOperation("automaton", "generate_example", "success")
+	c.JSON(http.StatusOK, dto.AutomatonGenerateExampleStringResponse{
+		Msg:            "示例字符串生成成功",
+		Result:         true,
+		AcceptExamples: accept,
+		RejectExamples: reject,
 	})
 }

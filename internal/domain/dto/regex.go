@@ -13,7 +13,7 @@ type RegexValidateResponse struct {
 	Msg     string      `json:"msg"`
 	Pattern model.Regex `json:"pattern,omitempty"`
 	// Error   interface{} `json:"error,omitempty"`
-	Result  bool        `json:"result"`
+	Result bool `json:"result"`
 }
 
 // 正则表达式识别请求
@@ -24,8 +24,30 @@ type RegexRecognizeRequest struct {
 
 // 正则表达式识别响应
 type RegexRecognizeResponse struct {
-	Matched bool        `json:"matched"`
-	Msg     string      `json:"msg"`
+	Matched bool   `json:"matched"`
+	Msg     string `json:"msg"`
 	// Error   interface{} `json:"error,omitempty"`
-	Result  bool        `json:"result"`
+	Result bool `json:"result"`
+}
+
+type RegexEquivalenceCheckRequest struct {
+	Pattern1 model.Regex `json:"pattern1" binding:"required"`
+	Pattern2 model.Regex `json:"pattern2" binding:"required"`
+}
+
+type RegexEquivalenceCheckResponse struct {
+	Msg          string `json:"msg"`
+	IsEquivalent bool   `json:"isEquivalent"`
+	Result       bool   `json:"result"`
+}
+
+type RegexGenerateExampleStringRequest struct {
+	Pattern model.Regex `json:"pattern" binding:"required"`
+}
+
+type RegexGenerateExampleStringResponse struct {
+	Msg            string   `json:"msg"`
+	Result         bool     `json:"result"`
+	AcceptExamples []string `json:"accept"`
+	RejectExamples []string `json:"reject"`
 }

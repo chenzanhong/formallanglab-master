@@ -37,9 +37,9 @@ func GrammarToFA(c *gin.Context) {
 	}
 
 	// 检查是否为有效文法
-	if err:=grammar_s.GrammarCheckValidity(&req.Grammar); err!= nil {
+	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		c.JSON(http.StatusBadRequest, dto.GrammarToFAResponse{
-			Msg:    "无效的文法，请检查文法规则"+err.Error(),
+			Msg:    "无效的文法，请检查文法规则" + err.Error(),
 			Result: false,
 		})
 		metrics.IncOperation("convert", "grammar_to_nfa", "failure: invalid grammar")
@@ -93,7 +93,7 @@ func FAToGrammar(c *gin.Context) {
 		metrics.IncOperation("convert", "fa_to_grammar", "failure: invalid automaton")
 		return
 	}
-	fmt.Println("自动机转文法：%v", req.Automaton)
+	fmt.Printf("自动机转文法：%v", req.Automaton)
 
 	// 3.调用convert_s提供的方法进行转换
 	grammar := convert_s.FAToGrammar(&req.Automaton)
@@ -136,7 +136,7 @@ func RegexToFA(c *gin.Context) {
 	nfa, err := convert_s.RegexToFA(string(req.Pattern))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.RegexToFAResponse{
-			Msg:    "转换失败，输入为空或无效的正则表达式",
+			Msg:    "转换失败：" + err.Error(),
 			Result: false,
 		})
 		metrics.IncOperation("convert", "regex_to_nfa", "failure: conversion failed")
