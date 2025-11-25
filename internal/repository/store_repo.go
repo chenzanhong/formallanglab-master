@@ -4,6 +4,7 @@ import (
 	"backend/internal/domain/storage"
 	"context"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -43,10 +44,15 @@ func NewStoreRepository(db *gorm.DB) StoreRepository {
 
 // CreateAutomaton 创建自动机记录
 func (r *StoreRepositoryImpl) CreateAutomaton(ctx context.Context, a *storage.AutomatonRecord) error {
+	a.CreatedAt = time.Now().UTC()
 	return r.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "username"}, {Name: "automaton_hash"}},
-			DoNothing: true,
+			Columns: []clause.Column{{Name: "username"}, {Name: "automaton_hash"}},
+			// 后面可以增加是否为更新name字段的返回值，以增加前端用户体验
+			DoUpdates: clause.Assignments(map[string]interface{}{
+				"name":       a.Name,
+				"created_at": a.CreatedAt,
+			}),
 		}).
 		Create(a).
 		Error
@@ -63,11 +69,14 @@ func (r *StoreRepositoryImpl) FindAutomatonByUsername(ctx context.Context, usern
 
 // CreateGrammar 创建文法记录
 func (r *StoreRepositoryImpl) CreateGrammar(ctx context.Context, g *storage.GrammarRecord) error {
-	fmt.Println("r.Create: ", g.Name)
+	g.CreatedAt = time.Now().UTC()
 	return r.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "username"}, {Name: "grammar_hash"}},
-			DoNothing: true,
+			Columns: []clause.Column{{Name: "username"}, {Name: "grammar_hash"}},
+			DoUpdates: clause.Assignments(map[string]interface{}{
+				"name":       g.Name,
+				"created_at": g.CreatedAt,
+			}),
 		}).
 		Create(g).
 		Error
@@ -100,7 +109,7 @@ func (r *StoreRepositoryImpl) FindAutomatonsAfterID(ctx context.Context, usernam
 	if hasMore {
 		records = records[:limit]
 	}
-
+	fmt.Printf("%v", records[len(records)-1].CreatedAt)
 	return records, hasMore, nil
 }
 
@@ -128,10 +137,14 @@ func (r *StoreRepositoryImpl) FindGrammarsAfterID(ctx context.Context, username 
 
 // CreateRegex 创建正则表达式记录
 func (r *StoreRepositoryImpl) CreateRegex(ctx context.Context, re *storage.RegexRecord) error {
+	re.CreatedAt = time.Now().UTC()
 	return r.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "username"}, {Name: "pattern"}},
-			DoNothing: true,
+			Columns: []clause.Column{{Name: "username"}, {Name: "pattern"}},
+			DoUpdates: clause.Assignments(map[string]interface{}{
+				"name":       re.Name,
+				"created_at": re.CreatedAt,
+			}),
 		}).
 		Create(re).
 		Error

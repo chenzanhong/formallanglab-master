@@ -126,13 +126,15 @@ func DFAMinimize(c *gin.Context) {
 		metrics.IncOperation("automaton", "minimize", "failure: not dfa")
 		return
 	}
-	new_Automaton := automaton_s.DFAMinimize(&req.Automaton) // reduce
+	// 使用带有过程记录的最小化方法
+	new_Automaton, process := automaton_s.DFAMinimizeWithProcess(&req.Automaton) // reduce
 	metrics.IncOperation("automaton", "minimize", "success")
 	c.JSON(http.StatusOK, dto.DFAMinimizeResponse{
 		Msg:           "最小化成功",
 		Result:        true,
 		Automaton:     new_Automaton,
 		AutomatonFlow: new_Automaton.ToReactFlow(),
+		Process:       process,
 	})
 }
 

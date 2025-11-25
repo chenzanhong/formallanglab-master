@@ -212,13 +212,22 @@ func FAToRegex(c *gin.Context) {
 	// 简化自动机，删除不可达状态和不可派生状态
 
 	// 3.调用convert_s提供的方法进行转换
-	regex := convert_s.FAToRegex(&req.Automaton)
+	process, err := convert_s.FAToRegexWithProcess(&req.Automaton)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.FAToRegexResponse{
+			Msg:    "转换失败：" + err.Error(),
+			Result: false,
+		})
+		metrics.IncOperation("convert", "fa_to_regex", "failure: conversion failed")
+		return
+	}
 
 	// 4.响应结果
 	c.JSON(http.StatusOK, dto.FAToRegexResponse{
 		Msg:     "自动机转正则表达式成功",
 		Result:  true,
-		Pattern: regex,
+		Pattern: process.FinalRegex,
+		Process: process,
 	})
 	metrics.IncOperation("convert", "fa_to_regex", "success")
 }

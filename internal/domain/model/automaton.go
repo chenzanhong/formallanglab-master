@@ -14,6 +14,12 @@ type State string
 
 // const Epsilon Symbol = "ε" // 定义ε作为特殊输入符号，表示空转移符号
 
+const (
+	DeadState State = "dead_state"
+	UniqueInitialState State = "initial"
+	UniqueFinalState State = "final"
+)
+
 // Transition 表示一个状态转移规则
 type Transition struct {
 	FromState State   `json:"fromState"` // 起始状态
@@ -330,7 +336,6 @@ func (a *Automaton) FindReachableStates() []State {
 }
 
 // =================== 自动机转换为 ReactFlow 格式 ===================
-
 type ReactFlowNode struct {
 	ID   string `json:"id"`
 	Type string `json:"type"` // "initial" | "default"
@@ -446,18 +451,6 @@ func (r *ReactFlowAutomaton) ToAutomaton() *Automaton {
 	return &automaton
 }
 
-// =================== 自动机识别字符串的过程记录 ===================
-type RecognitionStep struct {
-	Step      int    `json:"step"`
-	State     State  `json:"state"`
-	Input     Symbol `json:"input"`
-	NextState State  `json:"nextState"`
-}
-
-type RecognitionResult struct {
-	IsAccepted bool              `json:"isAccepted"`
-	Steps      []RecognitionStep `json:"steps"`
-}
 
 /*
 前端传给后端的自动机格式：

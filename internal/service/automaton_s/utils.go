@@ -123,3 +123,35 @@ func computeEpsilonClosureWithMap(nfa *model.Automaton, states []model.State) []
 
 	return closure
 }
+
+func DeepCopyAutomaton(a *model.Automaton) *model.Automaton {
+	if a == nil {
+		return nil
+	}
+	// 创建新的自动机实例
+	newAutomaton := &model.Automaton{
+		States:          make([]model.State, len(a.States)),
+		Alphabet:        a.Alphabet,
+		Transitions:     make([]model.Transition, len(a.Transitions)),
+		InitialState:    a.InitialState,
+		AcceptingStates: make([]model.State, len(a.AcceptingStates)),
+		Type:            a.Type,
+		TransMap:        make(map[model.State]map[model.Symbol][]model.State),
+	}
+
+	// 复制状态、接受状态和转换
+	copy(newAutomaton.States, a.States)
+	copy(newAutomaton.AcceptingStates, a.AcceptingStates)
+	copy(newAutomaton.Transitions, a.Transitions)
+
+	// 复制转换映射
+	for state, transitions := range a.TransMap {
+		newTransMap := make(map[model.Symbol][]model.State)
+		for sym, targets := range transitions {
+			newTransMap[sym] = append([]model.State(nil), targets...)
+		}
+		newAutomaton.TransMap[state] = newTransMap
+	}
+
+	return newAutomaton
+}

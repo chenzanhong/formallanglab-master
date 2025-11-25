@@ -44,6 +44,7 @@ type DFAMinimizeResponse struct {
 	Result        bool                      `json:"result"`
 	Automaton     *model.Automaton          `json:"automaton,omitempty"`
 	AutomatonFlow *model.ReactFlowAutomaton `json:"automatonFlow,omitempty"`
+	Process       *model.MinimizationProcess `json:"process,omitempty"`
 	// Error         string                    `json:"error,omitempty"`
 }
 

@@ -9,10 +9,10 @@ type RegexToFARequest struct {
 
 // 正则表达式转FA响应
 type RegexToFAResponse struct {
-	Msg           string          `json:"msg"`
-	Result        bool            `json:"result"`
-	Automaton     *model.Automaton `json:"automaton,omitempty"`
-	AutomatonFlow *model.ReactFlowAutomaton  `json:"automatonFlow,omitempty"` // ToReactFlow的结果
+	Msg           string                    `json:"msg"`
+	Result        bool                      `json:"result"`
+	Automaton     *model.Automaton          `json:"automaton,omitempty"`
+	AutomatonFlow *model.ReactFlowAutomaton `json:"automatonFlow,omitempty"` // ToReactFlow的结果
 }
 
 // 文法转FA请求
@@ -24,7 +24,7 @@ type GrammarToFARequest struct {
 type GrammarToFAResponse struct {
 	Msg           string                    `json:"msg"`
 	Result        bool                      `json:"result"`
-	Automaton     *model.Automaton           `json:"automaton,omitempty"`
+	Automaton     *model.Automaton          `json:"automaton,omitempty"`
 	AutomatonFlow *model.ReactFlowAutomaton `json:"automatonFlow,omitempty"` // ToReactFlow的结果
 }
 
@@ -35,8 +35,8 @@ type FAToGrammarRequest struct {
 
 // 自动机转文法响应
 type FAToGrammarResponse struct {
-	Msg     string      `json:"msg"`
-	Result  bool        `json:"result"`
+	Msg     string         `json:"msg"`
+	Result  bool           `json:"result"`
 	Grammar *model.Grammar `json:"grammar,omitempty"`
 }
 
@@ -47,7 +47,8 @@ type FAToRegexRequest struct {
 
 // 自动机转正则表达式响应
 type FAToRegexResponse struct {
-	Msg     string      `json:"msg"`
-	Result  bool        `json:"result"`
-	Pattern model.Regex `json:"pattern,omitempty"`
+	Msg     string                   `json:"msg"`
+	Result  bool                     `json:"result"`
+	Pattern model.Regex              `json:"pattern,omitempty"`
+	Process *model.ConversionProcess `json:"process,omitempty"`
 }
