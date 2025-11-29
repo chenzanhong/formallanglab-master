@@ -111,12 +111,12 @@ func recognizeDFA(automaton *model.Automaton, str string) (*model.RecognitionRes
 
 // recognizeNFA 识别NFA是否接受输入字符串 str，DFS
 func recognizeNFA(automaton *model.Automaton, str string) (*model.RecognitionResult, error) {
-	// 处理空串
+	// 处理空字符串
 	if str == "" {
 		if ContainsState(automaton.AcceptingStates, automaton.InitialState) {
 			return &model.RecognitionResult{IsAccepted: true}, nil
 		}
-		return &model.RecognitionResult{IsAccepted: false}, fmt.Errorf("该自动机无法识别空串")
+		return &model.RecognitionResult{IsAccepted: false}, fmt.Errorf("该自动机无法识别空字符串")
 	}
 
 	var mustFailed bool
@@ -208,7 +208,7 @@ func dfsForNFA(
 
 // recognizeEpsilonNFA 识别带ε的NFA是否接受输入字符串 str，DFS
 func recognizeEpsilonNFA(automaton *model.Automaton, str string) (*model.RecognitionResult, error) {
-	// 处理空串
+	// 处理空字符串
 	if str == "" {
 		// 如果初始状态本身就是接受状态？
 		if ContainsState(automaton.AcceptingStates, automaton.InitialState) {
@@ -219,7 +219,7 @@ func recognizeEpsilonNFA(automaton *model.Automaton, str string) (*model.Recogni
 		if steps, found := findEpsilonPathToAccept(automaton, automaton.InitialState, []model.RecognitionStep{}, visited); found {
 			return &model.RecognitionResult{IsAccepted: true, Steps: steps}, nil // 此时的 steps 包含了 ε-转移
 		}
-		return &model.RecognitionResult{IsAccepted: false, Steps: []model.RecognitionStep{}}, fmt.Errorf("该自动机无法识别空串")
+		return &model.RecognitionResult{IsAccepted: false, Steps: []model.RecognitionStep{}}, fmt.Errorf("该自动机无法识别空字符串")
 	}
 
 	// 记录是否确定一定会识别失败
@@ -413,7 +413,7 @@ func isAcceptedForEpsilonNFA(automaton *model.Automaton, symbols []model.Symbol)
 // func findAcceptPathForEpsilonNFA(automaton *model.Automaton, symbols []model.Symbol) ([]model.RecognitionStep, bool) {
 // 	initialClosure, initialSteps := computeEpsilonClosureWithPath([]model.State{automaton.InitialState}, *automaton)
 
-// 	// 空串情况
+// 	// 空字符串情况
 // 	if len(symbols) == 0 {
 // 		for _, s := range initialClosure {
 // 			if ContainsState(automaton.AcceptingStates, s) {

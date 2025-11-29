@@ -2,7 +2,9 @@ package regex_s
 
 import (
 	"backend/internal/domain/model"
+	"backend/internal/service/automaton_s"
 	"backend/pkg/util"
+	"fmt"
 	"regexp"
 	"slices"
 )
@@ -11,23 +13,45 @@ const (
 	maxExampleNum = 6
 )
 
-// 理论：转DFA+补集
-// 实用：枚举+验证
+// 生成正则表达式可匹配和不可匹配的字符串示例。
 func RegexGenerateExampleString(regex model.Regex) (accept, reject []string) {
-	pattern := string(regex)
+	// 转DFA+补集
+	return regexGenerateExampleStringByCompletedDFAAndBFS(regex)
+	// 枚举+验证
+	return regexGenerateExampleStringByEnumAndVerify(regex)
+}
 
+// 转DFA+补集
+func regexGenerateExampleStringByCompletedDFAAndBFS(regex model.Regex) (accept, reject []string) {
+	a, err := RegexToFA(regex)
+	if err != nil { // 转换失败
+		fmt.Println("转为DFA失败")
+		return regexGenerateExampleStringByEnumAndVerify(regex)
+	}
+	if a.Type != model.DFA {
+		a = automaton_s.NFAToDFA(a)
+	}
+	if err := a.CompleteDFA(); err != nil { // 完备化失败
+		fmt.Printf("完备化失败：%v", err)
+		return regexGenerateExampleStringByEnumAndVerify(regex)
+	}
+	return automaton_s.GenerateExampleStringsFromCompletedDFA(a)
+}
+
+// 枚举+验证
+func regexGenerateExampleStringByEnumAndVerify(regex model.Regex) (accept, reject []string) {
+	pattern := string(regex)
 	// 编译正则表达式为完整匹配模式（^...$）
 	re, err := regexp.Compile("^(?:" + pattern + ")$")
 	if err != nil {
 		msg := "(编译失败: " + err.Error() + ")"
 		return []string{msg}, []string{msg}
 	}
-
 	// 提取字母表
 	alphabet := extractAlphabet(pattern)
 
 	// 生成候选字符串
-	candidates := util.GenerateStrings(alphabet, min(len(regex)*2, len(regex)+3))
+	candidates := util.GenerateStrings(alphabet, min(len(pattern)*2, len(pattern)+3))
 
 	acceptMap := make(map[string]bool)
 	rejectMap := make(map[string]bool)
@@ -49,9 +73,13 @@ func RegexGenerateExampleString(regex model.Regex) (accept, reject []string) {
 		}
 	}
 
-	// 确保数量不超过maxExampleNum
-	accept = util.SamplingExampleStrings(acceptByLen, maxExampleNum)
-	reject = util.SamplingExampleStrings(rejectByLen, maxExampleNum)
+	// 随机采样
+	if len(accept) > maxExampleNum {
+		accept = util.SamplingExampleStrings(accept, maxExampleNum)
+	}
+	if len(reject) > maxExampleNum {
+		reject = util.SamplingExampleStrings(reject, maxExampleNum)
+	}
 
 	// 兜底
 	if len(accept) == 0 {

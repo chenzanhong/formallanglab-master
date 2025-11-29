@@ -3,23 +3,25 @@ package grammar_s
 import (
 	"backend/internal/domain/model"
 	"backend/internal/service/automaton_s"
-	"backend/internal/service/convert_s"
+	"fmt"
 )
 
 // 采用理论方法：转为最小DFA，判断是否同构。
 // 默认输入的文法为正则文法
-func GrammarIsEquivalent(g1, g2 *model.Grammar) bool {
+func GrammarIsEquivalent(g1, g2 *model.Grammar) (bool, error) {
 	if g1 == nil || g2 == nil {
-		return false
+		return false, fmt.Errorf("有自动机为空，请检查输入")
 	}
-	// 判断左/右线性
-	linear1 := DetermineLinearity(g1)
-	linear2 := DetermineLinearity(g2)
 
 	// 转自动机
-	fa1 := convert_s.RegularGrammarToFA(g1, linear1)
-	fa2 := convert_s.RegularGrammarToFA(g2, linear2)
-
+	fa1, err := RegularGrammarToFA(g1)
+	if err != nil {
+		return false, err
+	}
+	fa2, err := RegularGrammarToFA(g2)
+	if err != nil {
+		return false, err
+	}
 	// FA 简化
 	automaton_s.Cleanup(fa1)
 	automaton_s.Cleanup(fa2)
@@ -41,5 +43,5 @@ func GrammarIsEquivalent(g1, g2 *model.Grammar) bool {
 	fa2 = automaton_s.DFAMinimize(fa2)
 
 	// DFA同构判断
-	return automaton_s.AreDFAsIsomorphic(fa1, fa2)
+	return automaton_s.AreDFAsIsomorphic(fa1, fa2), nil
 }

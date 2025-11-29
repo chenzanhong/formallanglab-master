@@ -358,9 +358,9 @@ func canDeriveEpsilon(grammar *model.Grammar) bool {
 
 // RecognizeString 判断字符串是否被文法生成（BFS 模拟推导）
 func RecognizeString(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth int) (bool, []string, error) {
-	// 支持两种空串表示：[] 和 [ε]
+	// 支持两种空字符串表示：[] 和 [ε]
 	if len(input) == 0 || (len(input) == 1 && input[0] == model.Epsilon) {
-		// 处理空串
+		// 处理空字符串
 		if canDeriveEpsilon(g) {
 			for _, prod := range g.Productions {
 				if prod.Left[0] == g.StartSymbol && len(prod.Right) == 1 && prod.Right[0] == model.Epsilon {
@@ -863,16 +863,16 @@ func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth
 		Steps:  []model.ParseStep{},
 	}
 
-	// 处理空串情况
+	// 处理空字符串情况
 	if len(input) == 0 || (len(input) == 1 && input[0] == model.Epsilon) {
-		// 检查是否可以推导出空串
+		// 检查是否可以推导出空字符串
 		if canDeriveEpsilon(g) {
 			result.Accepted = true
-			result.Message = "空串被文法接受"
+			result.Message = "空字符串被文法接受"
 			return result
 		}
 		result.Accepted = false
-		result.Error = "文法不能推导出空串"
+		result.Error = "文法不能推导出空字符串"
 		return result
 	}
 

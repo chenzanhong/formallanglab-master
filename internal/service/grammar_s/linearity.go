@@ -9,12 +9,12 @@ import (
 // 返回值：
 //   - model.RightLinear: 右线性
 //   - model.LeftLinear: 左线性
-//   - model.InvalidGrammar: 非正则或无效
+//   - model.InvalidLinearity: 非正则或非线性
 //
 // 默认输入的文法为正则文法
-func DetermineLinearity(g *model.Grammar) model.GrammarLinearity {
+func DetermineLinearity(g *model.Grammar) {
 	if g == nil {
-		return model.InvalidLinearity
+		return
 	}
 
 	hasRightLinear := false
@@ -34,21 +34,25 @@ func DetermineLinearity(g *model.Grammar) model.GrammarLinearity {
 			hasLeftLinear = true
 		} else {
 			// 理论上不会走到这里（因为前提是正则文法）
-			return model.InvalidLinearity
+			g.GrammarLinearity = model.InvalidLinearity
+			return
 		}
 	}
 
 	// 必须全部一致：不能混合
 	if hasRightLinear && !hasLeftLinear {
-		return model.RightLinear
+		g.GrammarLinearity = model.RightLinear
+		return
 	}
 	if hasLeftLinear && !hasRightLinear {
-		return model.LeftLinear
+		g.GrammarLinearity = model.LeftLinear
+		return
 	}
 	// 全是 ε/终结符产生式（无非终结符出现在右部），视为右线性（惯例）
 	if !hasRightLinear && !hasLeftLinear {
-		return model.RightLinear
+		g.GrammarLinearity = model.RightLinear
+		return
 	}
 	// 混合了左右线性 → 不合法（但 IsRegular 应已排除）
-	return model.InvalidLinearity
+	g.GrammarLinearity = model.InvalidLinearity
 }

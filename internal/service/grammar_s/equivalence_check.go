@@ -87,7 +87,7 @@ func countDerivationsOptimized(g *model.Grammar, w []model.Symbol) int {
 		dp[A] = table
 	}
 
-	// 处理空串推导 A → ε（修正：ε可以在任意位置推导）
+	// 处理空字符串推导 A → ε（修正：ε可以在任意位置推导）
 	for _, p := range g.Productions {
 		if len(p.Right) == 0 || (len(p.Right) == 1 && p.Right[0] == model.Epsilon) {
 			A := p.Left[0]

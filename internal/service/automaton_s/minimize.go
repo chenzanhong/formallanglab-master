@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-// DFAMinimize 是 DFA 最小化的统一入口（默认使用表格填充法）
-// 可根据需要切换为 Hopcroft 算法（如通过配置 flag）
+// DFAMinimize 是 DFA 最小化的统一入口（默认使用 Hopcroft 算法）
+// 备选算法为表格填充算法
 func DFAMinimize(automaton *model.Automaton) *model.Automaton {
 	// 可选：未来可加 algo := config.GetMinimizationAlgo()
 	minimized, _ := minimizeByHopcroft(automaton)
@@ -70,11 +70,13 @@ func minimizeByTableFilling(automaton *model.Automaton) *model.Automaton {
 	return buildMinimizedDFA(reduced, classes, acceptingSet)
 }
 
-// minimizeByHopcroft 使用 Hopcroft 算法对 DFA 进行最小化（备用实现）
+// minimizeByHopcroft 使用 Hopcroft 算法对 DFA 进行最小化
 // 修改minimizeByHopcroft函数，添加过程记录功能
 func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.MinimizationProcess) {
-	// 先确保automaton为完备的，可能添加死状态"dead_state"
-	// automaton = CompleteDFA(automaton, model.DeadState)
+	// 先确保automaton为完备的，但是可能添加陷阱状态"dead_state"，用户体验不好，这里先不采用完备化
+	// if err := automaton.CompleteDFA(); err != nil { // 一般不会err，handler层确保了是有效DFA。
+	// 	return automaton, nil
+	// }
 	// 创建过程记录器
 	process := &model.MinimizationProcess{
 		Steps: []model.MinimizationStep{},
@@ -95,31 +97,29 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 
 	// 记录步骤：初始状态（移除不可达状态后）
 	stepCount++
-	partitionMap := []map[model.State]struct{}{}
-	stateSet := make(map[model.State]struct{})
-	for _, state := range reduced.States {
-		stateSet[state] = struct{}{}
-	}
-	partitionMap = append(partitionMap, stateSet)
+	partition := [][]model.State{}
+	stateList := make([]model.State, 0, len(reduced.States))
+	stateList = append(stateList, reduced.States...)
+	partition = append(partition, stateList)
 	process.Steps = append(process.Steps, model.MinimizationStep{
-		Step:         stepCount,
-		PartitionMap: partitionMap,
-		Actions:      actions,
+		Step:          stepCount,
+		Partition:     partition,
+		Actions:       actions,
+		AutomatonFlow: reduced.ToReactFlow(),
 	})
 
 	if len(reduced.States) <= 1 {
 		// 记录最终步骤
 		stepCount++
-		finalPartition := []map[model.State]struct{}{}
-		finalStateSet := make(map[model.State]struct{})
-		for _, state := range reduced.States {
-			finalStateSet[state] = struct{}{}
-		}
-		finalPartition = append(finalPartition, finalStateSet)
+		finalPartition := [][]model.State{}
+		finalStateList := make([]model.State, 0, len(reduced.States))
+		finalStateList = append(finalStateList, reduced.States...)
+		finalPartition = append(finalPartition, finalStateList)
 		process.Steps = append(process.Steps, model.MinimizationStep{
-			Step:         stepCount,
-			PartitionMap: finalPartition,
-			Actions:      []string{"状态数量 <= 1，无需进一步最小化"},
+			Step:          stepCount,
+			Partition:     finalPartition,
+			Actions:       []string{"状态数量 <= 1，无需进一步最小化"},
+			AutomatonFlow: automaton.ToReactFlow(),
 		})
 		return reduced, process
 	}
@@ -134,7 +134,7 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 		acceptingSet[s] = true
 	}
 
-	var P [][]model.State
+	var P [][]model.State //
 	P = append(P, reduced.AcceptingStates)
 	nonAccepting := []model.State{}
 	for _, s := range reduced.States {
@@ -149,18 +149,25 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 	// 记录步骤：初始划分
 	stepCount++
 	actions = append(actions, "根据接受/非接受状态进行初始划分")
-	initialPartition := []map[model.State]struct{}{}
+	initialPartition := [][]model.State{}
 	for _, block := range P {
-		stateSet := make(map[model.State]struct{})
-		for _, state := range block {
-			stateSet[state] = struct{}{}
-		}
-		initialPartition = append(initialPartition, stateSet)
+		stateList := make([]model.State, 0, len(block))
+		stateList = append(stateList, block...)
+		initialPartition = append(initialPartition, stateList)
 	}
+	// 临时构建 stateToClass
+	tempStateToClass := make(map[model.State][]model.State)
+	for _, cls := range P {
+		for _, s := range cls {
+			tempStateToClass[s] = cls
+		}
+	}
+	currentDFA := buildMinimizedDFAFromClasses(reduced, P, acceptingSet, tempStateToClass)
 	process.Steps = append(process.Steps, model.MinimizationStep{
-		Step:         stepCount,
-		PartitionMap: initialPartition,
-		Actions:      actions,
+		Step:          stepCount,
+		Partition:     initialPartition,
+		Actions:       actions,
+		AutomatonFlow: currentDFA.ToReactFlow(),
 	})
 
 	// W 是待处理的划分块（初始为接受状态块）
@@ -170,9 +177,9 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 	for len(W) > 0 {
 		A := W[0]
 		W = W[1:]
-		actions = []string{fmt.Sprintf("选择划分块 %v 进行处理", A)}
 
 		for _, c := range reduced.Alphabet {
+			actions = []string{fmt.Sprintf("选择划分块 %v 进行处理", A)}
 			// 找到所有能通过 c 转移到 A 中状态的前驱状态
 			X := make(map[model.State]bool)
 			preStates := make([]model.State, 0)
@@ -208,7 +215,6 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 					// 分裂 Y 为 YInX 和 YNotInX
 					newP = append(newP, YInX, YNotInX)
 					splitted = true
-					actions = append(actions, fmt.Sprintf("将划分块 %v 分裂为 %v 和 %v", Y, YInX, YNotInX))
 
 					// 更新 W
 					found := false
@@ -226,7 +232,6 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 							W = append(W, YInX)
 							W = append(W, YNotInX)
 							found = true
-							actions = append(actions, "更新待处理划分块列表")
 							break
 						}
 					}
@@ -240,47 +245,53 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 						// 这里直接都添加，不考虑是否完备
 						W = append(W, YInX)
 						W = append(W, YNotInX)
-						actions = append(actions, "将较小的新划分块加入待处理列表")
 					}
+					actions = append(actions, fmt.Sprintf("将划分块 %v 分裂为新划分块 %v 和 %v，并将新划分块加入待处理列表", Y, YInX, YNotInX))
 				}
 			}
 
 			// 如果有分裂发生，记录新的划分
+			newPartition := [][]model.State{}
 			if splitted {
-				stepCount++
-				newPartition := []map[model.State]struct{}{}
 				for _, block := range newP {
-					stateSet := make(map[model.State]struct{})
-					for _, state := range block {
-						stateSet[state] = struct{}{}
-					}
-					newPartition = append(newPartition, stateSet)
+					stateList := make([]model.State, 0, len(block))
+					stateList = append(stateList, block...)
+					newPartition = append(newPartition, stateList)
 				}
-				process.Steps = append(process.Steps, model.MinimizationStep{
-					Step:         stepCount,
-					PartitionMap: newPartition,
-					Actions:      actions,
-				})
+			} else {
+				// 无需分裂，保持原划分，保持为上一步的划分
+				if stepCount > 0 {
+					newPartition = process.Steps[stepCount-1].Partition
+				}
+				actions = append(actions, "没有划分块需要分裂")
 			}
 
+			stepCount++
+			// 临时构建 stateToClass
+			tempStateToClass := make(map[model.State][]model.State)
+			for _, cls := range P {
+				for _, s := range cls {
+					tempStateToClass[s] = cls
+				}
+			}
+			currentDFA = buildMinimizedDFAFromClasses(reduced, P, acceptingSet, tempStateToClass)
+			process.Steps = append(process.Steps, model.MinimizationStep{
+				Step:          stepCount,
+				Partition:     newPartition,
+				Actions:       actions,
+				AutomatonFlow: currentDFA.ToReactFlow(),
+			})
 			P = newP
 		}
 	}
 
 	// 记录最终步骤：最小化完成
 	stepCount++
-	finalPartition := []map[model.State]struct{}{}
-	for _, block := range P {
-		stateSet := make(map[model.State]struct{})
-		for _, state := range block {
-			stateSet[state] = struct{}{}
-		}
-		finalPartition = append(finalPartition, stateSet)
-	}
+	finalPartition := P
 	process.Steps = append(process.Steps, model.MinimizationStep{
-		Step:         stepCount,
-		PartitionMap: finalPartition,
-		Actions:      []string{"划分不再变化，最小化完成"},
+		Step:      stepCount,
+		Partition: finalPartition,
+		Actions:   []string{"划分不再变化，最小化完成"},
 	})
 
 	// 构建等价类映射
@@ -299,24 +310,14 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 	fmt.Println("DFA 最小化过程记录:")
 	for _, step := range process.Steps {
 		fmt.Printf("步骤 %d:\n", step.Step)
-		fmt.Printf("  划分: %v\n", step.PartitionMap)
+		fmt.Printf("  划分: %v\n", step.Partition)
 		fmt.Printf("  操作: %v\n\n", step.Actions)
 	}
 
-	// 把可能添加的死状态去除，经过buildMinimizedDFAFromClasses后，model.DeadState被[]包裹
-	// UnCompleteDFA(minimizedDFA, "["+model.DeadState+"]")
-	// 返回前，把PartitionMap数据复制到Partition
-	for i := range process.Steps {
-		process.Steps[i].PMap2P()
-	}
-	return minimizedDFA, process
-}
+	// 把可能添加的陷阱状态去除，经过buildMinimizedDFAFromClasses后，model.DeadState被[]包裹
+	// UnCompleteDFA(minimizedDFA, "["+model.SinkState+"]")
 
-// 辅助函数：深度复制状态集合
-func copyStates(src, dst []model.State) {
-	for i := range src {
-		dst[i] = src[i]
-	}
+	return minimizedDFA, process
 }
 
 func filterStates(states []model.State, reachable map[model.State]bool) []model.State {
@@ -413,6 +414,7 @@ func buildReverseTransitions(automaton *model.Automaton) map[model.State]map[mod
 	return rev
 }
 
+// 辅助函数：判断两个状态集合是否相等
 func equalSet(a, b []model.State) bool {
 	if len(a) != len(b) {
 		return false
@@ -498,7 +500,7 @@ func joinStates(states []model.State) string {
 	for i, s := range states {
 		strs[i] = string(s)
 	}
-	return fmt.Sprintf("%s", strings.Join(strs, ","))
+	return strings.Join(strs, ",")
 }
 
 func getReachableStates(automaton *model.Automaton) map[model.State]bool {

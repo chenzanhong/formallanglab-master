@@ -73,7 +73,7 @@ type NFADeterminizationResponse struct {
 	Result        bool                      `json:"result"`
 	Automaton     *model.Automaton          `json:"automaton,omitempty"`
 	AutomatonFlow *model.ReactFlowAutomaton `json:"automatonFlow,omitempty"`
-	// Error         string                    `json:"error,omitempty"`
+	Process       *model.NFADeterminizationProcess `json:"process,omitempty"`
 }
 
 // AutomatonEquivalenceCheckRequest 自动机等价检查请求结构
@@ -98,6 +98,6 @@ type AutomatonGenerateExampleStringRequest struct {
 type AutomatonGenerateExampleStringResponse struct {
 	Msg            string   `json:"msg"`
 	Result         bool     `json:"result"`
-	AcceptExamples []string `json:"accept"`
-	RejectExamples []string `json:"reject"`
+	AcceptExamples []string `json:"accept,omitempty"`
+	RejectExamples []string `json:"reject,omitempty"`
 }

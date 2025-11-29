@@ -67,12 +67,12 @@ func setupAuthRoutes(router *gin.Engine, learnHandler *LearnHandler, storeHandle
 	// 自动机相关接口
 	automaton := r.Group("/automaton")
 	{
-		automaton.POST("/validate", AutomatonValidate)            // 是否有效
-		automaton.POST("/recognize", AutomatonStringRecognize)    // 字符串识别
-		automaton.POST("/cleanup", AutomatonCleanup)              // 去无效符号、不可达符号
-		automaton.POST("/minimize", DFAMinimize)                  // DFA 最小化
-		automaton.POST("/nfatodfa", NFADeterminization)           // NFA 转 DFA，NFA确定化
-		automaton.POST("/equivalence", AutomatonEquivalenceCheck) // 判断所给的两个自动机是否等价
+		automaton.POST("/validate", AutomatonValidate)              // 是否有效
+		automaton.POST("/recognize", AutomatonStringRecognize)      // 字符串识别
+		automaton.POST("/cleanup", AutomatonCleanup)                // 去无效符号、不可达符号
+		automaton.POST("/minimize", DFAMinimize)                    // DFA 最小化
+		automaton.POST("/nfatodfa", NFADeterminization)             // NFA 转 DFA，NFA确定化
+		automaton.POST("/equivalence", AutomatonEquivalenceCheck)   // 判断所给的两个自动机是否等价
 		automaton.POST("/generate", AutomatonGenerateExampleString) // 生成可接受和不可接受字符串
 	}
 

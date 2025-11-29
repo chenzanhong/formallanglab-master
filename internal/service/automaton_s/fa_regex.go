@@ -1,21 +1,20 @@
-package convert_s
+package automaton_s
 
 import (
 	"backend/internal/domain/model"
-	"backend/internal/service/automaton_s"
 	"errors"
 	"fmt"
 	"strings"
 )
 
-// concatRegex 拼接两个正则表达式，注意空串和 ε 的处理
+// concatRegex 拼接两个正则表达式，注意空字符串和 ε 的处理
 func concatRegex(r1, r2 model.Symbol) model.Symbol {
 	// 不可达
-	if r1 == "" || r1 == "∅" {
-		return "∅"
+	if r1 == "" || r1 == model.EmptySet {
+		return model.EmptySet
 	}
-	if r2 == "" || r2 == "∅" {
-		return "∅"
+	if r2 == "" || r2 == model.EmptySet {
+		return model.EmptySet
 	}
 	// ε 连接不改变
 	if r1 == "ε" {
@@ -65,10 +64,10 @@ func needWrap(s string) bool {
 
 // unionRegex 并联两个正则表达式
 func unionRegex(r1, r2 model.Symbol) model.Symbol {
-	if r1 == "∅" {
+	if r1 == model.EmptySet {
 		return r2
 	}
-	if r2 == "∅" {
+	if r2 == model.EmptySet {
 		return r1
 	}
 	if r1 == r2 {
@@ -82,7 +81,7 @@ func unionRegex(r1, r2 model.Symbol) model.Symbol {
 
 // starRegex Kleene 星
 func starRegex(alphabet []model.Symbol, r model.Symbol) model.Symbol {
-	if r == "∅" || r == "ε" {
+	if r == model.EmptySet || r == "ε" {
 		return "ε"
 	}
 	str := string(r)
@@ -137,9 +136,9 @@ func FAToRegex(a *model.Automaton) model.Regex {
 	for _, s1 := range a.States {
 		regexMap[s1] = make(map[model.State]model.Symbol)
 		for _, s2 := range a.States {
-			regexMap[s1][s2] = "∅"
+			regexMap[s1][s2] = model.EmptySet
 		}
-		regexMap[s1][s1] = model.Epsilon // 自环初始为 ε（允许不走）
+		regexMap[s1][s1] = model.EmptySet // 自环初始为 ∅
 	}
 
 	// 初始化转移
@@ -147,7 +146,7 @@ func FAToRegex(a *model.Automaton) model.Regex {
 		for _, to := range t.ToStates {
 			input := t.Input
 			current := regexMap[t.FromState][to]
-			if current == "∅" || t.FromState == to { // 自环或空转移
+			if current == model.EmptySet || t.FromState == to { // 自环或空转移
 				regexMap[t.FromState][to] = input
 			} else {
 				regexMap[t.FromState][to] = unionRegex(current, input)
@@ -179,17 +178,17 @@ func FAToRegex(a *model.Automaton) model.Regex {
 				continue
 			}
 			for _, j := range a.States {
-				if j == r || eliminatedStates[j] {
+				if j == r || eliminatedStates[j] || j == i {
 					continue
 				}
 				// i -> r
 				ir := regexMap[i][r]
-				if ir == "∅" {
+				if ir == model.EmptySet {
 					continue
 				}
 				// r -> j
 				rj := regexMap[r][j]
-				if rj == "∅" {
+				if rj == model.EmptySet {
 					continue
 				}
 
@@ -213,8 +212,8 @@ func FAToRegex(a *model.Automaton) model.Regex {
 
 	// Step 5: 结果在 initial -> accept 之间
 	result := regexMap[a.InitialState][finalState]
-	if result == "∅" {
-		return model.Regex("∅")
+	if result == model.EmptySet {
+		return model.Regex(model.EmptySet)
 	}
 	if result == "ε" {
 		return model.Regex("ε")
@@ -229,7 +228,7 @@ func FAToRegexWithProcess(a *model.Automaton) (*model.ConversionProcess, error) 
 	}
 
 	// 1. 深拷贝
-	aCopy := automaton_s.DeepCopyAutomaton(a)
+	aCopy := a.Clone()
 	a = aCopy
 
 	// 2. 添加唯一初态和唯一终态
@@ -256,9 +255,10 @@ func FAToRegexWithProcess(a *model.Automaton) (*model.ConversionProcess, error) 
 	for _, s1 := range a.States {
 		regexMap[s1] = make(map[model.State]model.Symbol)
 		for _, s2 := range a.States {
-			regexMap[s1][s2] = "∅"
+			regexMap[s1][s2] = model.EmptySet
 		}
-		regexMap[s1][s1] = model.Epsilon // 自环初始为 ε（允许不走）
+		// regexMap[s1][s1] = model.Epsilon // 自环初始为 ε（允许不走）
+		regexMap[s1][s1] = model.EmptySet
 	}
 
 	// 4. 初始化转移
@@ -266,7 +266,7 @@ func FAToRegexWithProcess(a *model.Automaton) (*model.ConversionProcess, error) 
 		for _, to := range t.ToStates {
 			input := t.Input
 			current := regexMap[t.FromState][to]
-			if current == "∅" || t.FromState == to { // 自环或空转移
+			if current == model.EmptySet || t.FromState == to { // 自环或空转移
 				regexMap[t.FromState][to] = input
 			} else {
 				regexMap[t.FromState][to] = unionRegex(current, input)
@@ -304,12 +304,12 @@ func FAToRegexWithProcess(a *model.Automaton) (*model.ConversionProcess, error) 
 
 				// i -> r
 				ir := regexMap[i][r]
-				if ir == "∅" {
+				if ir == model.EmptySet {
 					continue
 				}
 				// r -> j
 				rj := regexMap[r][j]
-				if rj == "∅" {
+				if rj == model.EmptySet {
 					continue
 				}
 
@@ -342,9 +342,9 @@ func FAToRegexWithProcess(a *model.Automaton) (*model.ConversionProcess, error) 
 		snapshot := buildGNFASnapshot(a.States, regexMap, eliminated, initial, final)
 
 		step := model.ConversionStep{
-			EliminatedState:  r,
-			UpdatedPaths:     updatedPaths,
-			CurrentAutomaton: snapshot,
+			EliminatedState: r,
+			UpdatedPaths:    updatedPaths,
+			AutomatonFlow:   snapshot.ToReactFlow(),
 		}
 		processSteps = append(processSteps, step)
 	}
@@ -376,7 +376,7 @@ func buildGNFASnapshot(
 	var transitions []model.Transition
 	for _, i := range curStates {
 		for _, j := range curStates {
-			if regexMap[i][j] != "∅" {
+			if regexMap[i][j] != model.EmptySet {
 				transitions = append(transitions, model.Transition{
 					FromState: i,
 					Input:     regexMap[i][j],

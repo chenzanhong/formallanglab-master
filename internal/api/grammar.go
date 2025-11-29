@@ -398,7 +398,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 
 	// time1 := time.Now()
 	// 再判断是否等价 GrammarIsEquivalent较IsEquivalent慢一点
-	if !grammar_s.GrammarIsEquivalent(&req.Grammar1, &req.Grammar2) {
+	if is, err := grammar_s.GrammarIsEquivalent(&req.Grammar1, &req.Grammar2); !is || err != nil {
 		metrics.IncOperation("grammar", "equivalence_check", "success: not equivalent")
 		zlog.Infow("文法等价性检查成功", "detail", "两个文法不等价")
 		// fmt.Println("耗时：", time.Since(time1))

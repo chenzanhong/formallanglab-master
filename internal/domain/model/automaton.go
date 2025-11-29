@@ -15,9 +15,9 @@ type State string
 // const Epsilon Symbol = "ε" // 定义ε作为特殊输入符号，表示空转移符号
 
 const (
-	DeadState State = "dead_state"
-	UniqueInitialState State = "initial"
-	UniqueFinalState State = "final"
+	SinkState          State = "__sink__"  // 陷阱状态
+	UniqueInitialState State = "_initial_" // 唯一初始状态
+	UniqueFinalState   State = "_final_"   // 唯一接受状态
 )
 
 // Transition 表示一个状态转移规则
@@ -37,13 +37,13 @@ const (
 
 // Automaton 基础自动机结构
 type Automaton struct {
-	States          []State                      `json:"states"`          // 状态集合
-	Alphabet        []Symbol                     `json:"alphabet"`        // 符号表
-	Transitions     []Transition                 `json:"transitions"`     // 状态转移规则集合
-	InitialState    State                        `json:"initialState"`    // 初始状态
-	AcceptingStates []State                      `json:"acceptingStates"` // 接受状态集合
-	Type            AutomatonType                `json:"type"`            // 类型
-	TransMap        map[State]map[Symbol][]State `json:"-"`               // Map存储状态转移规则，识别字符串时效率高；不参与 JSON 序列化
+	States          []State                      `json:"states"`                    // 状态集合
+	Alphabet        []Symbol                     `json:"alphabet"`                  // 符号表
+	Transitions     []Transition                 `json:"transitions"`               // 状态转移规则集合
+	InitialState    State                        `json:"initialState,omitempty"`    // 初始状态
+	AcceptingStates []State                      `json:"acceptingStates,omitempty"` // 接受状态集合
+	Type            AutomatonType                `json:"type"`                      // 类型
+	TransMap        map[State]map[Symbol][]State `json:"-"`                         // Map存储状态转移规则，识别字符串时效率高；不参与 JSON 序列化
 }
 
 // 按字符集以及最长匹配原则切分字符串，返回可被正确切分的符号序列
@@ -181,34 +181,62 @@ func (a *Automaton) ISValidate() error {
 	return nil
 }
 
-// CompleteDFA 将自动机转换为等价的完备 DFA
-// 前提：调用者应确保 a 是一个有效的 DFA（可通过 a.ISValidate() 验证）
-// 步骤：
-//  1. 移除不可达状态
-//  2. 添加陷阱状态（若需要）
-//  3. 补全所有缺失的转移
-func (a *Automaton) CompleteDFA() error {
-	// Step 0: 确保是 DFA
-	if a.Type != DFA {
-		if err := a.ISValidate(); err != nil {
-			return fmt.Errorf("failed to determine the validity of the Automaton: %w", err)
-		}
-		if a.Type != DFA {
-			return fmt.Errorf("cannot complete non-DFA")
+// Clone 返回 Automaton 的深拷贝
+func (a *Automaton) Clone() *Automaton {
+	if a == nil {
+		return nil
+	}
+
+	clone := &Automaton{
+		States:          make([]State, len(a.States)),
+		Alphabet:        make([]Symbol, len(a.Alphabet)),
+		Transitions:     make([]Transition, len(a.Transitions)),
+		InitialState:    a.InitialState,
+		AcceptingStates: make([]State, len(a.AcceptingStates)),
+		Type:            a.Type,
+		// TransMap 不复制，因为它是运行时缓存
+	}
+
+	copy(clone.States, a.States)
+	copy(clone.Alphabet, a.Alphabet)
+	copy(clone.AcceptingStates, a.AcceptingStates)
+
+	for i, t := range a.Transitions {
+		toStates := make([]State, len(t.ToStates))
+		copy(toStates, t.ToStates)
+		clone.Transitions[i] = Transition{
+			FromState: t.FromState,
+			Input:     t.Input,
+			ToStates:  toStates,
 		}
 	}
 
-	// Step 1: 找出所有可达状态
-	reachable := a.FindReachableStates()
+	return clone
+}
 
-	// 构建可达状态集合（用于快速查找）
+// CompleteDFA 将自动机原地转换为等价的完备 DFA
+// 前提：调用者应确保 a 是一个有效的 DFA（可通过 a.ISValidate() 验证）
+// 步骤：
+//  1. 移除不可达状态
+//  2. 清理字母表（移除 ε）
+//  3. 添加陷阱状态（若需要）
+//  4. 补全所有缺失的转移
+func (a *Automaton) CompleteDFA() error {
+	if err := a.ISValidate(); err != nil {
+		return fmt.Errorf("validation failed: %w", err)
+	}
+	if a.Type != DFA {
+		return fmt.Errorf("only DFA can be completed")
+	}
+
+	// Step 1: 找出可达状态并过滤
+	reachable := a.FindReachableStates()
 	reachableSet := make(map[State]bool)
 	for _, s := range reachable {
 		reachableSet[s] = true
 	}
 
-	// 过滤状态、接受状态、转移
-	newStates := reachable
+	// 过滤接受状态
 	newAccepting := []State{}
 	for _, s := range a.AcceptingStates {
 		if reachableSet[s] {
@@ -216,45 +244,43 @@ func (a *Automaton) CompleteDFA() error {
 		}
 	}
 
+	// 过滤转移（同时排除 ε）
 	newTransitions := []Transition{}
 	for _, t := range a.Transitions {
-		if reachableSet[t.FromState] {
-			// 只保留起点可达的转移
+		if reachableSet[t.FromState] && t.Input != Epsilon {
 			newTransitions = append(newTransitions, t)
 		}
 	}
 
-	// 更新自动机
-	a.States = newStates
-	a.AcceptingStates = newAccepting
-	a.Transitions = newTransitions
+	// 清理字母表：移除 ε（DFA 不应包含）
+	cleanAlphabet := []Symbol{}
+	for _, sym := range a.Alphabet {
+		if sym != Epsilon {
+			cleanAlphabet = append(cleanAlphabet, sym)
+		}
+	}
 
-	// Step 2: 构建当前转移映射（用于检查缺失）
+	// Step 2: 构建转移映射（基于过滤后的转移）
 	transMap := make(map[State]map[Symbol]State)
-	for _, t := range a.Transitions {
-		if t.Input == Epsilon {
-
-			return fmt.Errorf("unexpected epsilon in DFA")
+	for _, t := range newTransitions {
+		if len(t.ToStates) != 1 {
+			return fmt.Errorf("DFA transition must have exactly one target state")
 		}
 		if _, ok := transMap[t.FromState]; !ok {
 			transMap[t.FromState] = make(map[Symbol]State)
 		}
-		transMap[t.FromState][t.Input] = t.ToStates[0] // DFA only
+		transMap[t.FromState][t.Input] = t.ToStates[0]
 	}
 
-	// Step 3: 创建陷阱状态（仅当需要时）
-	sinkState := State("__sink__")
+	// Step 3: 检查是否需要 sink 并收集缺失转移
+	sinkState := SinkState
 	hasSink := false
-	missingTransitions := []Transition{}
+	maxMissing := len(reachable) * len(cleanAlphabet)
+	missingTransitions := make([]Transition, 0, maxMissing)
 
-	// 遍历每个可达状态和每个字母表符号
-	for _, state := range a.States {
-		for _, sym := range a.Alphabet {
-			if sym == Epsilon {
-				continue // DFA 不应有 ε
-			}
+	for _, state := range reachable {
+		for _, sym := range cleanAlphabet {
 			if _, exists := transMap[state][sym]; !exists {
-				// 缺失转移：指向 sink
 				missingTransitions = append(missingTransitions, Transition{
 					FromState: state,
 					Input:     sym,
@@ -265,30 +291,29 @@ func (a *Automaton) CompleteDFA() error {
 		}
 	}
 
-	// 如果有缺失转移，添加 sink 状态及其自环
-	if hasSink {
-		// 添加 sink 状态
-		a.States = append(a.States, sinkState)
+	// Step 4: 更新 a 的字段
+	a.States = reachable
+	a.AcceptingStates = newAccepting
+	a.Alphabet = cleanAlphabet
+	a.Transitions = newTransitions
 
-		// sink 对所有输入自环
-		for _, sym := range a.Alphabet {
-			if sym == Epsilon {
-				continue
-			}
+	if hasSink {
+		a.States = append(a.States, sinkState)
+		// 添加 sink 自环
+		for _, sym := range cleanAlphabet {
 			a.Transitions = append(a.Transitions, Transition{
 				FromState: sinkState,
 				Input:     sym,
 				ToStates:  []State{sinkState},
 			})
 		}
-
-		// 添加缺失的转移
 		a.Transitions = append(a.Transitions, missingTransitions...)
 	}
 
-	// 重新构建 TransMap（供后续识别使用）
+	// 重建内部转移映射（如用于模拟或识别）
 	a.InitTransMap()
-	a.Type = DFA // 仍为 DFA
+	a.Type = DFA // 明确标记为 DFA（尽管本来就是）
+
 	return nil
 }
 
@@ -334,6 +359,7 @@ func (a *Automaton) FindReachableStates() []State {
 	}
 	return reachable
 }
+
 
 // =================== 自动机转换为 ReactFlow 格式 ===================
 type ReactFlowNode struct {
@@ -396,9 +422,6 @@ func (a *Automaton) ToReactFlow() *ReactFlowAutomaton {
 	for _, t := range a.Transitions {
 		for _, toState := range t.ToStates {
 			label := string(t.Input)
-			if t.Input == Epsilon {
-				label = "ε"
-			}
 			edge := ReactFlowEdge{
 				ID:     fmt.Sprintf("e%d", edgeID),
 				Source: string(t.FromState),
@@ -437,7 +460,7 @@ func (r *ReactFlowAutomaton) ToAutomaton() *Automaton {
 	var symbolMap = make(map[string]bool)
 	//
 	for _, edge := range r.Edges {
-		if !symbolMap[edge.Label] {
+		if !symbolMap[edge.Label] && edge.Label != string(Epsilon) {
 			automaton.Alphabet = append(automaton.Alphabet, Symbol(edge.Label)) // 符号集
 			symbolMap[edge.Label] = true
 		}
@@ -450,7 +473,6 @@ func (r *ReactFlowAutomaton) ToAutomaton() *Automaton {
 
 	return &automaton
 }
-
 
 /*
 前端传给后端的自动机格式：

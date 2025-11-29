@@ -2,6 +2,7 @@ package grammar_s
 
 import (
 	"backend/internal/domain/model"
+	"backend/internal/service/automaton_s"
 	"backend/pkg/util"
 	"math/rand/v2"
 )
@@ -25,7 +26,32 @@ func isTerminals(ss []model.Symbol, set map[model.Symbol]bool) bool {
 	return true
 }
 
+// 生成文法可推导和不可推导的字符串示例
 func GrammarGenerateExampleString(g *model.Grammar) (accept, reject []string) {
+	// 转DFA+补集
+	if g.GrammarType == model.RegularGrammar {
+		grammarGenerateExampleStringByCompletedDFAAndBFS(g)
+	}
+	// 枚举+验证
+	return grammarGenerateExampleStringByEnumAndVerify(g)
+}
+
+func grammarGenerateExampleStringByCompletedDFAAndBFS(g *model.Grammar) (accept, reject []string) {
+	DetermineLinearity(g)
+	a, err := RegularGrammarToFA(g)
+	if err != nil { // 非线性，但是理论上不会出现，前面已经确认是正则文法了
+		return grammarGenerateExampleStringByEnumAndVerify(g)
+	}
+	if a.Type != model.DFA {
+		a = automaton_s.NFAToDFA(a)
+	}
+	if err := a.CompleteDFA(); err != nil { // 完备化失败
+		return grammarGenerateExampleStringByEnumAndVerify(g)
+	}
+	return automaton_s.GenerateExampleStringsFromCompletedDFA(a)
+}
+
+func grammarGenerateExampleStringByEnumAndVerify(g *model.Grammar) (accept, reject []string) {
 	// 检查文法类型：只支持 Regular 和 CFG（即 2/3 型）
 	if g.GrammarType != model.RegularGrammar && g.GrammarType != model.ContextFreeGrammar {
 		msg := "(仅支持 2 型/3 型文法示例生成)"
@@ -77,7 +103,7 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 		nonTerminalsSet[s] = true
 	}
 
-	times := 0
+	times := 0 // 避免左递归导致无限步
 	for len(queue) > 0 && len(accept) < maxExampleNum && times < maxTimes {
 		times++
 		node := queue[0]

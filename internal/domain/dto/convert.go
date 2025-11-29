@@ -2,18 +2,7 @@ package dto
 
 import "backend/internal/domain/model"
 
-// 正则表达式转FA请求
-type RegexToFARequest struct {
-	Pattern model.Regex `json:"pattern" binding:"required"`
-}
-
-// 正则表达式转FA响应
-type RegexToFAResponse struct {
-	Msg           string                    `json:"msg"`
-	Result        bool                      `json:"result"`
-	Automaton     *model.Automaton          `json:"automaton,omitempty"`
-	AutomatonFlow *model.ReactFlowAutomaton `json:"automatonFlow,omitempty"` // ToReactFlow的结果
-}
+// 文法/正则表达式转自动机的响应要带上
 
 // 文法转FA请求
 type GrammarToFARequest struct {
@@ -24,8 +13,7 @@ type GrammarToFARequest struct {
 type GrammarToFAResponse struct {
 	Msg           string                    `json:"msg"`
 	Result        bool                      `json:"result"`
-	Automaton     *model.Automaton          `json:"automaton,omitempty"`
-	AutomatonFlow *model.ReactFlowAutomaton `json:"automatonFlow,omitempty"` // ToReactFlow的结果
+	Process       *model.GrammarToFAProcess `json:"process,omitempty"`
 }
 
 // 自动机转文法请求
@@ -51,4 +39,16 @@ type FAToRegexResponse struct {
 	Result  bool                     `json:"result"`
 	Pattern model.Regex              `json:"pattern,omitempty"`
 	Process *model.ConversionProcess `json:"process,omitempty"`
+}
+
+// 正则表达式转FA请求
+type RegexToFARequest struct {
+	Pattern model.Regex `json:"pattern" binding:"required"`
+}
+
+// 正则表达式转FA响应
+type RegexToFAResponse struct {
+	Msg           string                    `json:"msg"`
+	Result        bool                      `json:"result"`
+	Process       *model.RegexToFAProcess   `json:"process,omitempty"`
 }

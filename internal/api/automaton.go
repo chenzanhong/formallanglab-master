@@ -216,14 +216,25 @@ func NFADeterminization(c *gin.Context) {
 		return
 	}
 
-	new_Automaton := automaton_s.NFAToDFA(&req.Automaton)
-
+	// new_Automaton := automaton_s.NFAToDFA(&req.Automaton)
+	// 使用带有过程记录的最小化方法
+	process := automaton_s.NFAToDFAWithProcess(&req.Automaton) // reduce
+	if process == nil {
+		c.JSON(http.StatusBadRequest, dto.NFADeterminizationResponse{
+			Msg:    "NFA转换为DFA失败",
+			Result: false,
+		})
+		metrics.IncOperation("automaton", "nfa_to_dfa", "failure: nfa_to_dfa failed")
+		return
+	}
+	
 	metrics.IncOperation("automaton", "nfa_to_dfa", "success")
 	c.JSON(http.StatusOK, dto.NFADeterminizationResponse{
 		Msg:           "NFA转换为DFA成功",
-		Automaton:     new_Automaton,
-		AutomatonFlow: new_Automaton.ToReactFlow(),
+		Automaton:     process.FinalAutomaton,
+		AutomatonFlow: process.FinalAutomaton.ToReactFlow(),
 		Result:        true,
+		Process:       process,
 	})
 }
 

@@ -9,7 +9,10 @@ import (
 // Symbol 表示一个符号，可以是终结符、非终结符或者自动机所识别的一个符号
 type Symbol string
 
-const Epsilon Symbol = "ε" // 定义ε作为特殊输入符号，表示空转移符号
+const (
+	Epsilon  Symbol = "ε" // 定义ε作为特殊输入符号，表示空转移符号
+	EmptySet Symbol = "∅" // 空集
+)
 
 type GrammarType int
 
@@ -24,9 +27,9 @@ const (
 type GrammarLinearity string
 
 const (
-	InvalidLinearity = "invalid_linear"
-	LeftLinear  = "left_linear"
-	RightLinear = "right_linear"
+	InvalidLinearity = "非线性"
+	LeftLinear       = "左线性"
+	RightLinear      = "右线性"
 )
 
 var GrammarTypeNameMap = map[GrammarType]string{
@@ -56,13 +59,15 @@ type Production struct {
 
 // Grammar 表示整个文法
 type Grammar struct {
-	StartSymbol  Symbol       `json:"startSymbol"`                           // 起始符号
-	Terminals    []Symbol     `json:"terminals"`                             // 终结符集合
-	NonTerminals []Symbol     `json:"nonTerminals"`                          // 非终结符集合
-	Productions  []Production `json:"productions"`                           // 产生式集合
-	GrammarType  GrammarType  `json:"grammarType" default:"PhraseStructure"` // 文法类型
+	StartSymbol      Symbol           `json:"startSymbol"`                           // 起始符号
+	Terminals        []Symbol         `json:"terminals"`                             // 终结符集合
+	NonTerminals     []Symbol         `json:"nonTerminals"`                          // 非终结符集合
+	Productions      []Production     `json:"productions"`                           // 产生式集合
+	GrammarType      GrammarType      `json:"grammarType" default:"PhraseStructure"` // 文法类型
+	GrammarLinearity GrammarLinearity `json:"-"`
 }
 
+// CFGView 表示上下文无关文法/正则文法的视图结构
 type CFGView struct {
 	StartSymbol  Symbol                `json:"startSymbol"`  // 起始符号
 	Terminals    []Symbol              `json:"terminals"`    // 终结符集合

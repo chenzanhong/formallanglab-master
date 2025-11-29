@@ -41,7 +41,7 @@ func GenerateStrings(terminals []string, maxLen int) []string {
 
 	// 生成所有可能的字符串（包括空字符串）
 	var result []string
-	queue := []string{terminals[0]}
+	queue := []string{""}
 
 	for len(queue) > 0 {
 		s := queue[0]
@@ -66,7 +66,17 @@ func GenerateStrings(terminals []string, maxLen int) []string {
 	return result
 }
 
-func SamplingExampleStrings(samplingByLen map[int][]string, maxExampleNum int) []string {
+// 随机采样
+func SamplingExampleStrings(ss []string, maxExampleNum int) []string {
+	simpleMap := make(map[string]bool)
+	samplingByLen := make(map[int][]string)
+
+	for _, s := range ss {
+		if !simpleMap[s] {
+			samplingByLen[len(s)] = append(samplingByLen[len(s)], s)
+			simpleMap[s] = true
+		}
+	}
 	var sampling []string
 	lengths := make([]int, 0, len(samplingByLen))
 	for l := range samplingByLen {
@@ -119,13 +129,13 @@ func PrintAutomaton(a *model.Automaton) {
 	fmt.Printf("Type: %s\n", typeStr)
 
 	// 状态集合
-	fmt.Printf("States: [%s]\n", strings.Join(quoteStates(a.States), ", "))
+	fmt.Printf("States: [%s]\n", strings.Join(QuoteStates(a.States), ", "))
 
 	// 初始状态
 	fmt.Printf("Initial State: %q\n", a.InitialState)
 
 	// 接受状态
-	fmt.Printf("Accepting States: [%s]\n", strings.Join(quoteStates(a.AcceptingStates), ", "))
+	fmt.Printf("Accepting States: [%s]\n", strings.Join(QuoteStates(a.AcceptingStates), ", "))
 
 	// 字母表（隐藏 ε，因为它不应在 Alphabet 中；但若存在也显示）
 	alphabetToShow := make([]string, 0, len(a.Alphabet))
@@ -150,17 +160,26 @@ func PrintAutomaton(a *model.Automaton) {
 				}
 				return fmt.Sprintf("%q", string(t.Input))
 			}()
-			toStrs := quoteStates(t.ToStates)
+			toStrs := QuoteStates(t.ToStates)
 			fmt.Printf("  %d. %q --%s--> [%s]\n", i+1, t.FromState, input, strings.Join(toStrs, ", "))
 		}
 	}
 }
 
 // 辅助函数：将 []State 转为带引号的字符串切片
-func quoteStates(states []model.State) []string {
+func QuoteStates(states []model.State) []string {
 	result := make([]string, len(states))
 	for i, s := range states {
 		result[i] = fmt.Sprintf("%q", s)
+	}
+	return result
+}
+
+// 把[]model.Symbol转为[]model.State
+func SymbolsToStates(syms []model.Symbol) []model.State {
+	result := make([]model.State, len(syms))
+	for i, sym := range syms {
+		result[i] = model.State(sym)
 	}
 	return result
 }

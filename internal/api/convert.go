@@ -9,9 +9,11 @@ package api
 
 import (
 	"backend/internal/domain/dto"
+	"backend/internal/domain/model"
 	"backend/internal/metrics"
-	"backend/internal/service/convert_s"
+	"backend/internal/service/automaton_s"
 	"backend/internal/service/grammar_s"
+	"backend/internal/service/regex_s"
 	re "backend/internal/service/regex_s"
 	"fmt"
 	"net/http"
@@ -57,15 +59,15 @@ func GrammarToFA(c *gin.Context) {
 		return
 	}
 	fmt.Printf("文法转自动机，文法：%v", req.Grammar)
-	automaton := convert_s.RegularGrammarToFA(&req.Grammar, isRightLinear)
+	// automaton := grammar_s.RegularGrammarToFA(&req.Grammar, isRightLinear)
+	process := grammar_s.RegularGrammarToFAWithProcess(&req.Grammar, isRightLinear)
 
 	metrics.IncOperation("convert", "grammar_to_nfa", "success")
 	// 响应结果
 	c.JSON(http.StatusOK, dto.GrammarToFAResponse{
 		Msg:           "正则文法转自动机成功",
 		Result:        true,
-		Automaton:     automaton,
-		AutomatonFlow: automaton.ToReactFlow(),
+		Process:       process,
 	})
 }
 
@@ -95,8 +97,8 @@ func FAToGrammar(c *gin.Context) {
 	}
 	fmt.Printf("自动机转文法：%v", req.Automaton)
 
-	// 3.调用convert_s提供的方法进行转换
-	grammar := convert_s.FAToGrammar(&req.Automaton)
+	// 3.调用automaton_s提供的方法进行转换
+	grammar := automaton_s.FAToGrammar(&req.Automaton)
 
 	// 4.响应结果
 	c.JSON(http.StatusOK, dto.FAToGrammarResponse{
@@ -133,7 +135,8 @@ func RegexToFA(c *gin.Context) {
 		return
 	}
 
-	nfa, err := convert_s.RegexToFA(string(req.Pattern))
+	// nfa, err := regex_s.RegexToFA(req.Pattern)
+	process, err := regex_s.RegexToFAWithSteps(req.Pattern)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.RegexToFAResponse{
 			Msg:    "转换失败：" + err.Error(),
@@ -146,8 +149,11 @@ func RegexToFA(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.RegexToFAResponse{
 		Msg:           "正则表达式转NFA成功",
 		Result:        true,
-		Automaton:     nfa,
-		AutomatonFlow: nfa.ToReactFlow(),
+		Process: &model.RegexToFAProcess{
+			Regex:          req.Pattern,
+			Steps:          process.Steps,
+			FinalAutomaton: process.FinalAutomaton,
+		},
 	})
 }
 
@@ -211,8 +217,8 @@ func FAToRegex(c *gin.Context) {
 
 	// 简化自动机，删除不可达状态和不可派生状态
 
-	// 3.调用convert_s提供的方法进行转换
-	process, err := convert_s.FAToRegexWithProcess(&req.Automaton)
+	// 3.调用automaton_s提供的方法进行转换
+	process, err := automaton_s.FAToRegexWithProcess(&req.Automaton)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.FAToRegexResponse{
 			Msg:    "转换失败：" + err.Error(),
