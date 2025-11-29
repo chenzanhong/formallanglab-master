@@ -74,6 +74,7 @@ func rightLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 
 	// 状态转移
 	automaton.Transitions = make([]model.Transition, 0)
+	var hasModelAccept bool = false
 	for _, production := range g.Productions {
 		// fmt.Printf("产生式：%v", production)
 		var transition model.Transition
@@ -84,6 +85,9 @@ func rightLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 			// fmt.Println("单一", production.Right[0])
 			// 如果是终结符，直接转移到接受状态
 			if g.CheckIsTerminal(production.Right[0]) {
+				if !hasModelAccept {
+					hasModelAccept = true
+				}
 				transition.Input = production.Right[0] // 终结符
 				transition.ToStates = append(transition.ToStates, model.AcceptState)
 				automaton.Transitions = append(automaton.Transitions, transition)
@@ -132,11 +136,8 @@ func rightLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 		}
 	}
 
-	for _, s := range automaton.AcceptingStates {
-		if s == model.AcceptState {
-			automaton.States = append(automaton.States, model.AcceptState)
-			break
-		}
+	if hasModelAccept {
+		automaton.States = append(automaton.States, model.AcceptState)
 	}
 	return &automaton
 }
@@ -155,8 +156,6 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 		automaton.States = append(automaton.States, model.State(sym))
 	}
 	automaton.InitialState = model.State(g.StartSymbol)
-	automaton.States = append(automaton.States, model.AcceptState)
-	automaton.AcceptingStates = []model.State{model.AcceptState}
 
 	process.Steps = append(process.Steps, model.GrammarToFAStep{
 		Action:      "init",
@@ -164,11 +163,11 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 		NewStates:   util.SymbolsToStates(g.NonTerminals),
 	})
 
-	process.Steps = append(process.Steps, model.GrammarToFAStep{
-		Action:      "create_accept_state",
-		Description: "创建唯一接受状态‘accept’",
-		NewStates:   []model.State{model.AcceptState},
-	})
+	// process.Steps = append(process.Steps, model.GrammarToFAStep{
+	// 	Action:      "create_accept_state",
+	// 	Description: "创建唯一接受状态‘accept’",
+	// 	NewStates:   []model.State{model.AcceptState},
+	// })
 
 	// 中间状态计数器
 	intermediateStateIndex := 0
@@ -177,6 +176,8 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 		return model.State(fmt.Sprintf("%s_%d", from, intermediateStateIndex))
 	}
 
+	var hasModelAccept bool = false
+	var newStateFmt string = fmt.Sprintf("，新增加接受状态：%s", model.AcceptState)
 	// 遍历所有产生式
 	for _, prod := range g.Productions {
 		step := model.GrammarToFAStep{
@@ -209,6 +210,10 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 			}
 			automaton.Transitions = append(automaton.Transitions, trans)
 			step.Description = fmt.Sprintf("因产生式 %s → %s，新增转移 %s → %s → %s", leftSym, input, fromState, input, toState)
+			if !hasModelAccept {
+				hasModelAccept = true
+				step.Description += newStateFmt
+			}
 
 		// 3) 形如 A -> B，新增转移 A →ε→ B
 		case rightLen == 1 && g.CheckIsNonTerminal(prod.Right[0]):
@@ -243,7 +248,6 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 			currentState := fromState
 			newStates := make([]model.State, 0)
 			newTransitions := make([]model.Transition, 0)
-
 			// 处理前n个符号（终结符）
 			for i := 0; i < rightLen; i++ {
 				input := prod.Right[i]
@@ -277,6 +281,10 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 				util.SymbolsToString(prod.Right),
 				len(newStates),
 				model.AcceptState)
+			if !hasModelAccept {
+				hasModelAccept = true
+				step.Description += newStateFmt
+			}
 
 		// 6） 形如 A -> wB，w =a1a2a3...an，n>1，需展开为 A →a1→ A_1 →a2→ A_2 →...→ A_n-1 →an→ B
 		case rightLen > 2 && g.CheckIsNonTerminal(prod.Right[rightLen-1]):
@@ -330,11 +338,8 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 		process.Steps = append(process.Steps, step)
 	}
 
-	for _, s := range automaton.AcceptingStates {
-		if s == model.AcceptState {
-			automaton.States = append(automaton.States, model.AcceptState)
-			break
-		}
+	if hasModelAccept {
+		automaton.States = append(automaton.States, model.AcceptState)
 	}
 	process.FinalAutomaton = &automaton
 

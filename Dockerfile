@@ -92,3 +92,6 @@ CMD ["/app/master-server"]
 #      -v $(pwd)/migrations:/app/migrations \
 #      -v $(pwd)/knowledge:/app/knowledge \
 #      gdesign-master
+
+# docker build -t crpi-tcnuencv1iecgx03.cn-hangzhou.personal.cr.aliyuncs.com/chenzh2004/formallanglab-master .
+# docker push crpi-tcnuencv1iecgx03.cn-hangzhou.personal.cr.aliyuncs.com/chenzh2004/formallanglab-master
