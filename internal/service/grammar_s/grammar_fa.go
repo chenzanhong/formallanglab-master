@@ -63,7 +63,6 @@ func rightLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 
 	// 接受状态，只有一个
 	automaton.AcceptingStates = make([]model.State, 0)
-	automaton.AcceptingStates = append(automaton.AcceptingStates, model.AcceptState)
 
 	// 记录遇到多符号产生式右部时，需要添加的中间状态的序号
 	// 中间状态索引，形如 A -> ab……B 时，需要添加中间状态
@@ -86,7 +85,7 @@ func rightLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 			// 如果是终结符，直接转移到接受状态
 			if g.CheckIsTerminal(production.Right[0]) {
 				transition.Input = production.Right[0] // 终结符
-				transition.ToStates = append(transition.ToStates, automaton.AcceptingStates[0])
+				transition.ToStates = append(transition.ToStates, model.AcceptState)
 				automaton.Transitions = append(automaton.Transitions, transition)
 			} else if production.Right[0] == model.Epsilon {
 				// 空转移，加入接受态
@@ -133,6 +132,12 @@ func rightLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 		}
 	}
 
+	for _, s := range automaton.AcceptingStates {
+		if s == model.AcceptState {
+			automaton.States = append(automaton.States, model.AcceptState)
+			break
+		}
+	}
 	return &automaton
 }
 
@@ -186,16 +191,14 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 		fmt.Printf("%v", prod)
 		switch {
 		// 1) 形如 A -> ε，将A加入接收状态
-		// case rightLen == 1 && prod.Right[0] == model.Epsilon:
-		// 	fmt.Println("形如 A -> ε")
-		// 	// 将A加入接收状态
-		// 	automaton.AcceptingStates = append(automaton.AcceptingStates, fromState)
-		// 	step.Description = fmt.Sprintf("因产生式 %s → ε，将状态 %s 加入接受状态集合", leftSym, fromState)
+		case rightLen == 1 && prod.Right[0] == model.Epsilon:
+			fmt.Println("形如 A -> ε")
+			// 将A加入接收状态
+			automaton.AcceptingStates = append(automaton.AcceptingStates, fromState)
+			step.Description = fmt.Sprintf("因产生式 %s → ε，将状态 %s 加入接受状态集合", leftSym, fromState)
 
 		// 2) 形如 A -> a，新增转移 A →a→ accept
-		// case rightLen == 1 && g.CheckIsTerminal(prod.Right[0]):
-
-		case rightLen == 1 && !g.CheckIsNonTerminal(prod.Right[0]):
+		case rightLen == 1 && g.CheckIsTerminal(prod.Right[0]):
 			fmt.Println("形如 A -> a")
 			input := prod.Right[0]
 			toState := model.AcceptState
@@ -327,6 +330,12 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 		process.Steps = append(process.Steps, step)
 	}
 
+	for _, s := range automaton.AcceptingStates {
+		if s == model.AcceptState {
+			automaton.States = append(automaton.States, model.AcceptState)
+			break
+		}
+	}
 	process.FinalAutomaton = &automaton
 
 	return process
@@ -378,8 +387,8 @@ func leftLinearGrammarToFAByReverse(g *model.Grammar) *model.Automaton {
 func leftLinearGrammarToFAByBuild(g *model.Grammar) *model.Automaton {
 	var a model.Automaton
 	// 1. 状态：每个非终结符作为一个状态；新增一个初始状态q0
-	a.States = append(a.States, model.State("initial"))
-	a.InitialState = model.State("initial")
+	a.States = append(a.States, model.InitialState)
+	a.InitialState = model.InitialState
 	for _, nonTerm := range g.NonTerminals {
 		a.States = append(a.States, model.State(nonTerm))
 	}
@@ -429,7 +438,7 @@ func leftLinearGrammarToFAByBuild(g *model.Grammar) *model.Automaton {
 				a.Transitions = append(a.Transitions, newTransition)
 				// 新增转移 A1 →a2→ A2 →...→ An-1
 				for i := 2; i < wLength; i++ {
-					newTransition := model.Transition{
+					newTransition = model.Transition{
 						FromState: newState,
 						Input:     model.Symbol(production.Right[i]),
 					}
@@ -468,7 +477,7 @@ func leftLinearGrammarToFAByBuild(g *model.Grammar) *model.Automaton {
 				a.Transitions = append(a.Transitions, newTransition)
 				// 新增转移 A1 →a2→ A2 →...→ An-1
 				for i := 1; i < wLength-1; i++ {
-					newTransition := model.Transition{ // 新创建
+					newTransition = model.Transition{ // 新创建
 						FromState: newState,
 						Input:     model.Symbol(production.Right[i]),
 					}
@@ -486,6 +495,22 @@ func leftLinearGrammarToFAByBuild(g *model.Grammar) *model.Automaton {
 				a.Transitions = append(a.Transitions, newTransition)
 			}
 		}
+	}
+
+	// 在构建完所有状态和转移后，添加：
+	a.AcceptingStates = []model.State{model.State(g.StartSymbol)}
+
+	// 如果存在 S → ε 的产生式，则 q0 也应是接受状态
+	hasEpsilonFromStart := false
+	for _, prod := range g.Productions {
+		if len(prod.Left) == 1 && prod.Left[0] == g.StartSymbol &&
+			len(prod.Right) == 1 && prod.Right[0] == model.Epsilon {
+			hasEpsilonFromStart = true
+			break
+		}
+	}
+	if hasEpsilonFromStart {
+		a.AcceptingStates = append(a.AcceptingStates, model.InitialState)
 	}
 
 	return &a
@@ -563,7 +588,6 @@ func leftLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProces
 				ToStates:  []model.State{fromNonTerminal},
 			}
 			automaton.Transitions = append(automaton.Transitions, transition)
-			automaton.AcceptingStates = append(automaton.AcceptingStates, fromNonTerminal) // 新增终态
 			step.NewTransitions = append(step.NewTransitions, transition)
 			step.Description = fmt.Sprintf("处理产生式 %s → %s：新增转移 %s →%s→ %s", leftSym, right[0], initialState, input, fromNonTerminal)
 
@@ -711,6 +735,23 @@ func leftLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProces
 		}
 		process.Steps = append(process.Steps, step)
 	}
+
+	// 在构建完所有状态和转移后，添加：
+	automaton.AcceptingStates = []model.State{model.State(g.StartSymbol)}
+
+	// 如果存在 S → ε 的产生式，则 q0 也应是接受状态
+	hasEpsilonFromStart := false
+	for _, prod := range g.Productions {
+		if len(prod.Left) == 1 && prod.Left[0] == g.StartSymbol &&
+			len(prod.Right) == 1 && prod.Right[0] == model.Epsilon {
+			hasEpsilonFromStart = true
+			break
+		}
+	}
+	if hasEpsilonFromStart {
+		automaton.AcceptingStates = append(automaton.AcceptingStates, model.InitialState)
+	}
+
 	process.FinalAutomaton = &automaton
 	return process
 }

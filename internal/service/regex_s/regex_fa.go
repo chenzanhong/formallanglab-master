@@ -424,9 +424,10 @@ func RegexToFAWithSteps(regex model.Regex) (result *model.RegexToFAProcess, err 
 		steps:    make([]BuildStep, 0),
 	}
 
-	_, _ = builder.build(ast) // 忽略返回值，我们只关心 steps
+	start, end := builder.build(ast) // 忽略返回值，我们只关心 steps
 	finalAutomaton := builder.steps[len(builder.steps)-1].AutomatonFlow.ToAutomaton()
-
+	finalAutomaton.InitialState = start
+	finalAutomaton.AcceptingStates = append(finalAutomaton.AcceptingStates, end)
 	return &model.RegexToFAProcess{
 		Regex:          regex,
 		Steps:          builder.steps,
