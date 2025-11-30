@@ -107,7 +107,7 @@ func RegexRecognize(c *gin.Context) {
 		metrics.IncOperation("regex", "recognize", "failure: recognition failed")
 		zlog.Warnw("正则表达式匹配失败", "detail", "正则表达式无法匹配给定的字符串")
 		c.JSON(http.StatusOK, dto.RegexRecognizeResponse{
-			Msg:     "recognition failed: " + err.Error(),
+			Msg:     "recognition failed",
 			Matched: false,
 			Result:  false,
 		})
