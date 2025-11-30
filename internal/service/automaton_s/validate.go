@@ -24,6 +24,6 @@ func AutomatonValidate(automaton *model.Automaton) error {
 		return errors.New("automaton cannot be nil")
 	}
 
-	// 2. 调用 Automaton 对象的 ISValidate 方法进行验证
-	return automaton.ISValidate()
+	// 2. 调用 Automaton 对象的 Validate 方法进行验证
+	return automaton.Validate()
 }

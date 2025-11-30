@@ -32,7 +32,7 @@ func RegexValidate(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("regex", "validate", "failure: parameter parsing error")
 		zlog.Warnw("正则表达式验证失败", "detail", "参数解析失败，请检查请求格式是否正确")
-		c.JSON(400, dto.RegexValidateResponse{
+		c.JSON(http.StatusBadRequest, dto.RegexValidateResponse{
 			Msg:    "Invalid request format: " + err.Error(),
 			Valid:  false,
 			Result: false,

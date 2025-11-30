@@ -133,7 +133,7 @@ func recognizeNFA(automaton *model.Automaton, str string) (*model.RecognitionRes
 		mustFailed = true
 	}
 
-	var deepest []model.RecognitionStep
+	deepest := []model.RecognitionStep{} // 使用空切片初始化，确保JSON序列化为[]而不是null
 	pathFound, finalSteps := dfsForNFA(
 		automaton,
 		automaton.InitialState,
@@ -242,7 +242,7 @@ func recognizeEpsilonNFA(automaton *model.Automaton, str string) (*model.Recogni
 		mustFailed = true
 	}
 
-	var deepest []model.RecognitionStep
+	deepest := []model.RecognitionStep{} // 使用空切片初始化，确保JSON序列化为[]而不是null
 	pathFound, finalSteps := dfsWithEpsilon(
 		automaton,
 		automaton.InitialState,
@@ -358,7 +358,7 @@ func dfsWithEpsilon(
 func computeEpsilonClosureWithPath(states []model.State, automaton model.Automaton) ([]model.State, []model.RecognitionStep) {
 	closure := make([]model.State, 0)
 	visited := make(map[model.State]bool)
-	var steps []model.RecognitionStep
+	steps := []model.RecognitionStep{} // 使用空切片初始化，确保JSON序列化为[]而不是null
 	queue := append([]model.State(nil), states...)
 
 	for _, s := range states {

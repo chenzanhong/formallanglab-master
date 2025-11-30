@@ -15,6 +15,9 @@ const (
 
 // 生成正则表达式可匹配和不可匹配的字符串示例。
 func RegexGenerateExampleString(regex model.Regex) (accept, reject []string) {
+	if regex == model.EmptyLanguageToken {
+		return []string{}, []string{}
+	}
 	// 转DFA+补集
 	return regexGenerateExampleStringByCompletedDFAAndBFS(regex)
 	// 枚举+验证

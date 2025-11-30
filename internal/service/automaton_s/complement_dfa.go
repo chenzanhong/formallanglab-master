@@ -41,7 +41,7 @@ func ComplementDFA(a *model.Automaton) (*model.Automaton, error) {
 	aCopy.AcceptingStates = newAccepting
 
 	// 可选：重新验证（调试用）
-	if err := aCopy.ISValidate(); err != nil {
+	if err := aCopy.Validate(); err != nil {
 		return nil, fmt.Errorf("complemented automaton is invalid: %w", err)
 	}
 

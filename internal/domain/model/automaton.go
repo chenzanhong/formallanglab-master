@@ -46,6 +46,17 @@ type Automaton struct {
 	TransMap        map[State]map[Symbol][]State `json:"-"`                         // Map存储状态转移规则，识别字符串时效率高；不参与 JSON 序列化
 }
 
+func NewEmptyLanguageAutomaton() *Automaton {
+	return &Automaton{
+		States:          []State{"q0"},
+		Alphabet:        []Symbol{},
+		Transitions:     []Transition{},
+		InitialState:    "q0",
+		AcceptingStates: []State{},
+		Type:            DFA,
+	}
+}
+
 // 按字符集以及最长匹配原则切分字符串，返回可被正确切分的符号序列
 func (a *Automaton) SplitString(s string) ([]Symbol, error) {
 	if len(s) == 0 || s == "" {
@@ -108,7 +119,7 @@ func (a *Automaton) InitTransMap() {
 }
 
 // 简单判断自动机结构是否正确，并进行不完整的类型判断（未考虑不可达状态）
-func (a *Automaton) ISValidate() error {
+func (a *Automaton) Validate() error {
 	// 使用 map 提高查找效率
 	stateSet := make(map[State]bool)
 	alphabetSet := make(map[Symbol]bool)
@@ -215,14 +226,14 @@ func (a *Automaton) Clone() *Automaton {
 }
 
 // CompleteDFA 将自动机原地转换为等价的完备 DFA
-// 前提：调用者应确保 a 是一个有效的 DFA（可通过 a.ISValidate() 验证）
+// 前提：调用者应确保 a 是一个有效的 DFA（可通过 a.Validate() 验证）
 // 步骤：
 //  1. 移除不可达状态
 //  2. 清理字母表（移除 ε）
 //  3. 添加陷阱状态（若需要）
 //  4. 补全所有缺失的转移
 func (a *Automaton) CompleteDFA() error {
-	if err := a.ISValidate(); err != nil {
+	if err := a.Validate(); err != nil {
 		return fmt.Errorf("validation failed: %w", err)
 	}
 	if a.Type != DFA {
@@ -360,6 +371,19 @@ func (a *Automaton) FindReachableStates() []State {
 	return reachable
 }
 
+// GNFA 表示广义非确定有限自动机，边标签为正则表达式
+type GNFA struct {
+	States       []State
+	Transitions  []GNFATransition
+	InitialState State
+	FinalState   State
+}
+
+type GNFATransition struct {
+	FromState State
+	ToState   State
+	Label     Regex // 注意：这里是 Regex，不是 Symbol
+}
 
 // =================== 自动机转换为 ReactFlow 格式 ===================
 type ReactFlowNode struct {
@@ -385,6 +409,56 @@ type ReactFlowEdge struct {
 type ReactFlowAutomaton struct {
 	Nodes []ReactFlowNode `json:"nodes"`
 	Edges []ReactFlowEdge `json:"edges"`
+}
+
+// ToReactFlow 将 GNFA 转换为 ReactFlow 可视化格式
+func (g *GNFA) ToReactFlow() *ReactFlowAutomaton {
+	// 构建节点
+	nodeSet := make(map[State]bool)
+	for _, s := range g.States {
+		nodeSet[s] = true
+	}
+
+	nodes := make([]ReactFlowNode, 0, len(g.States))
+	for _, state := range g.States {
+		isInitial := state == g.InitialState
+		isAccepting := state == g.FinalState
+
+		node := ReactFlowNode{
+			ID: string(state),
+			Type: func() string {
+				if isInitial {
+					return "initial"
+				}
+				return "default"
+			}(),
+			Data: struct {
+				Label       string `json:"label"`
+				IsAccepting bool   `json:"isAccepting"`
+			}{
+				Label:       string(state),
+				IsAccepting: isAccepting,
+			},
+		}
+		nodes = append(nodes, node)
+	}
+
+	// 构建边
+	edges := make([]ReactFlowEdge, 0, len(g.Transitions))
+	for idx, t := range g.Transitions {
+		edge := ReactFlowEdge{
+			ID:     fmt.Sprintf("gnfa_e%d", idx+1),
+			Source: string(t.FromState),
+			Target: string(t.ToState),
+			Label:  string(t.Label), // 直接使用 Regex 字符串
+		}
+		edges = append(edges, edge)
+	}
+
+	return &ReactFlowAutomaton{
+		Nodes: nodes,
+		Edges: edges,
+	}
 }
 
 // Automaton 转为 *ReactFlowAutomaton

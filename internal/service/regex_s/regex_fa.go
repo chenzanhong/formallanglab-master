@@ -235,13 +235,13 @@ type thompsonBuilder struct {
 
 func newThompsonBuilder() *thompsonBuilder {
 	return &thompsonBuilder{
-		states:             append(make([]model.State, 0), model.AcceptState, model.InitialState),
+		states:             append(make([]model.State, 0), model.UniqueInitialState, model.UniqueFinalState),
 		trans:              make([]model.Transition, 0),
 		nextID:             0,
 		alphabet:           make(map[model.Symbol]bool),
 		steps:              make([]BuildStep, 0),
-		uniqueInitialState: model.InitialState,
-		uniqueAcceptState:  model.AcceptState,
+		uniqueInitialState: model.UniqueInitialState,
+		uniqueAcceptState:  model.UniqueFinalState,
 	}
 }
 
@@ -363,6 +363,9 @@ func (tb *thompsonBuilder) recordStep(node *astNode, start, end model.State) {
 
 // 正则表达式转FA，不带转换过程
 func RegexToFA(regex model.Regex) (*model.Automaton, error) {
+	if regex == model.EmptyLanguageToken {
+		return model.NewEmptyLanguageAutomaton(), nil
+	}
 	pattern := string(regex)
 	ast, err := parseRegex(pattern)
 	if err != nil {
@@ -395,6 +398,13 @@ func RegexToFA(regex model.Regex) (*model.Automaton, error) {
 
 // RegexToFAWithSteps 正则表达式转FA，返回完整的转换步骤序列
 func RegexToFAWithSteps(regex model.Regex) (result *model.RegexToFAProcess, err error) {
+	if regex == model.EmptyLanguageToken {
+		return &model.RegexToFAProcess{
+			Regex:          regex,
+			Steps:          []model.RegexToFAStep{},
+			FinalAutomaton: model.NewEmptyLanguageAutomaton(),
+		}, nil
+	}
 	defer func() {
 		if r := recover(); r != nil {
 			errMsg := fmt.Errorf("regex to fa with steps: recovered from panic, %v", r)

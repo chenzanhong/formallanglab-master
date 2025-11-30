@@ -8,13 +8,13 @@ import (
 )
 
 // concatRegex 拼接两个正则表达式，注意空字符串和 ε 的处理
-func concatRegex(r1, r2 model.Symbol) model.Symbol {
+func concatRegex(r1, r2 model.Regex) model.Regex {
 	// 不可达
-	if r1 == "" || r1 == model.EmptySet {
-		return model.EmptySet
+	if r1 == "" || r1 == model.EmptyLanguageToken {
+		return model.EmptyLanguageToken
 	}
-	if r2 == "" || r2 == model.EmptySet {
-		return model.EmptySet
+	if r2 == "" || r2 == model.EmptyLanguageToken {
+		return model.EmptyLanguageToken
 	}
 	// ε 连接不改变
 	if r1 == "ε" {
@@ -24,14 +24,14 @@ func concatRegex(r1, r2 model.Symbol) model.Symbol {
 		return r1
 	}
 	// 加括号避免歧义，对包含 '|' 且 '|' 未被括号包裹的表达式加括号
-	wrap := func(s model.Symbol) string {
+	wrap := func(s model.Regex) string {
 		str := string(s)
 		if str[0] != '(' && needWrap(str) {
 			return "(" + str + ")"
 		}
 		return str
 	}
-	return model.Symbol(wrap(r1) + wrap(r2))
+	return model.Regex(wrap(r1) + wrap(r2))
 }
 
 // 检查字符串的|是否需要加括号，分别从左到右和从右到遍历字符串，记录每个位置的(与)的数量
@@ -63,11 +63,11 @@ func needWrap(s string) bool {
 }
 
 // unionRegex 并联两个正则表达式
-func unionRegex(r1, r2 model.Symbol) model.Symbol {
-	if r1 == model.EmptySet {
+func unionRegex(r1, r2 model.Regex) model.Regex {
+	if r1 == model.EmptyLanguageToken {
 		return r2
 	}
-	if r2 == model.EmptySet {
+	if r2 == model.EmptyLanguageToken {
 		return r1
 	}
 	if r1 == r2 {
@@ -76,20 +76,20 @@ func unionRegex(r1, r2 model.Symbol) model.Symbol {
 	if (r1 == "ε" && r2 == "") || (r2 == "ε" && r1 == "") {
 		return "ε"
 	}
-	return model.Symbol(string(r1) + "|" + string(r2))
+	return model.Regex(string(r1) + "|" + string(r2))
 }
 
 // starRegex Kleene 星
-func starRegex(alphabet []model.Symbol, r model.Symbol) model.Symbol {
-	if r == model.EmptySet || r == "ε" {
+func starRegex(alphabet []model.Symbol, r model.Regex) model.Regex {
+	if r == model.EmptyLanguageToken || r == "ε" {
 		return "ε"
 	}
 	str := string(r)
 	// 单一符号或括号包裹的符号
-	if containSymbol(alphabet, r) || (strings.HasPrefix(str, "(") && strings.HasSuffix(str, ")")) {
-		return model.Symbol(str + "*")
+	if containSymbol(alphabet, model.Symbol(r)) || (strings.HasPrefix(str, "(") && strings.HasSuffix(str, ")")) {
+		return model.Regex(str + "*")
 	}
-	return model.Symbol("(" + str + ")*")
+	return model.Regex("(" + str + ")*")
 }
 
 func containSymbol(alphabet []model.Symbol, sym model.Symbol) bool {
@@ -132,21 +132,21 @@ func FAToRegex(a *model.Automaton) model.Regex {
 
 	// Step 2: 构建状态间正则表达式的邻接矩阵（map of map）
 	// regexMap[i][j] = 从 i 到 j 的当前正则表达式（初始为 ∅）
-	regexMap := make(map[model.State]map[model.State]model.Symbol)
+	regexMap := make(map[model.State]map[model.State]model.Regex)
 	for _, s1 := range a.States {
-		regexMap[s1] = make(map[model.State]model.Symbol)
+		regexMap[s1] = make(map[model.State]model.Regex)
 		for _, s2 := range a.States {
-			regexMap[s1][s2] = model.EmptySet
+			regexMap[s1][s2] = model.EmptyLanguageToken
 		}
-		regexMap[s1][s1] = model.EmptySet // 自环初始为 ∅
+		regexMap[s1][s1] = model.EmptyLanguageToken // 自环初始为 ∅
 	}
 
 	// 初始化转移
 	for _, t := range a.Transitions {
 		for _, to := range t.ToStates {
-			input := t.Input
+			input := model.Regex(t.Input)
 			current := regexMap[t.FromState][to]
-			if current == model.EmptySet || t.FromState == to { // 自环或空转移
+			if current == model.EmptyLanguageToken || t.FromState == to { // 自环或空转移
 				regexMap[t.FromState][to] = input
 			} else {
 				regexMap[t.FromState][to] = unionRegex(current, input)
@@ -183,18 +183,18 @@ func FAToRegex(a *model.Automaton) model.Regex {
 				}
 				// i -> r
 				ir := regexMap[i][r]
-				if ir == model.EmptySet {
+				if ir == model.EmptyLanguageToken {
 					continue
 				}
 				// r -> j
 				rj := regexMap[r][j]
-				if rj == model.EmptySet {
+				if rj == model.EmptyLanguageToken {
 					continue
 				}
 
 				// 新路径：ir · (loop)* · rj
-				var newPath model.Symbol
-				if loop == model.Epsilon {
+				var newPath model.Regex
+				if loop == model.Regex(model.Epsilon) {
 					newPath = concatRegex(ir, rj)
 					// fmt.Println(1, " ", i, " ", r, " ", j)
 				} else {
@@ -212,13 +212,7 @@ func FAToRegex(a *model.Automaton) model.Regex {
 
 	// Step 5: 结果在 initial -> accept 之间
 	result := regexMap[a.InitialState][finalState]
-	if result == model.EmptySet {
-		return model.Regex(model.EmptySet)
-	}
-	if result == "ε" {
-		return model.Regex("ε")
-	}
-	return model.Regex(result)
+	return result
 }
 
 // FAToRegexWithProcess 带过程记录的 NFA/DFA 转换为等价的正则表达式（状态消除法）
@@ -251,23 +245,23 @@ func FAToRegexWithProcess(a *model.Automaton) (*model.ConversionProcess, error) 
 	a.AcceptingStates = []model.State{final}
 
 	// 3. 初始化regexMap
-	regexMap := make(map[model.State]map[model.State]model.Symbol)
+	regexMap := make(map[model.State]map[model.State]model.Regex)
 	for _, s1 := range a.States {
-		regexMap[s1] = make(map[model.State]model.Symbol)
+		regexMap[s1] = make(map[model.State]model.Regex)
 		for _, s2 := range a.States {
-			regexMap[s1][s2] = model.EmptySet
+			regexMap[s1][s2] = model.EmptyLanguageToken
 		}
 		// regexMap[s1][s1] = model.Epsilon // 自环初始为 ε（允许不走）
-		regexMap[s1][s1] = model.EmptySet
+		regexMap[s1][s1] = model.EmptyLanguageToken
 	}
 
 	// 4. 初始化转移
 	for _, t := range a.Transitions {
 		for _, to := range t.ToStates {
-			input := t.Input
+			input := model.Regex(t.Input)
 			current := regexMap[t.FromState][to]
-			if current == model.EmptySet || t.FromState == to { // 自环或空转移
-				regexMap[t.FromState][to] = input
+			if current == model.EmptyLanguageToken || t.FromState == to { // 自环或空转移
+				regexMap[t.FromState][to] = model.Regex(input)
 			} else {
 				regexMap[t.FromState][to] = unionRegex(current, input)
 			}
@@ -275,7 +269,7 @@ func FAToRegexWithProcess(a *model.Automaton) (*model.ConversionProcess, error) 
 	}
 
 	// 5. 确定要消除的状态
-	var statesToEliminate []model.State
+	statesToEliminate := []model.State{}
 	for _, s := range a.States {
 		if s != a.InitialState && s != final {
 			statesToEliminate = append(statesToEliminate, s)
@@ -283,13 +277,13 @@ func FAToRegexWithProcess(a *model.Automaton) (*model.ConversionProcess, error) 
 	}
 
 	eliminated := make(map[model.State]bool)
-	var processSteps []model.ConversionStep
+	processSteps := []model.ConversionStep{}
 
 	alphabet := a.Alphabet // 用于starRegex
 
 	// 6. 逐个消除状态
 	for _, r := range statesToEliminate {
-		var updatedPaths []model.PathUpdate
+		updatedPaths := []model.PathUpdate{}
 		loop := regexMap[r][r]
 		starLoop := starRegex(alphabet, loop)
 
@@ -304,18 +298,18 @@ func FAToRegexWithProcess(a *model.Automaton) (*model.ConversionProcess, error) 
 
 				// i -> r
 				ir := regexMap[i][r]
-				if ir == model.EmptySet {
+				if ir == model.EmptyLanguageToken {
 					continue
 				}
 				// r -> j
 				rj := regexMap[r][j]
-				if rj == model.EmptySet {
+				if rj == model.EmptyLanguageToken {
 					continue
 				}
 
 				// 新路径：ir · (loop)* · rj
-				var newPath model.Symbol
-				if loop == model.Epsilon {
+				var newPath model.Regex
+				if loop == model.Regex(model.Epsilon) {
 					newPath = concatRegex(ir, rj)
 					// fmt.Println(1, " ", i, " ", r, " ", j)
 				} else {
@@ -353,7 +347,7 @@ func FAToRegexWithProcess(a *model.Automaton) (*model.ConversionProcess, error) 
 
 	return &model.ConversionProcess{
 		Steps:        processSteps,
-		FinalRegex:   model.Regex(result),
+		FinalRegex:   result,
 		InitialState: initial,
 		FinalState:   final,
 	}, nil
@@ -361,37 +355,35 @@ func FAToRegexWithProcess(a *model.Automaton) (*model.ConversionProcess, error) 
 
 func buildGNFASnapshot(
 	states []model.State,
-	regexMap map[model.State]map[model.State]model.Symbol,
+	regexMap map[model.State]map[model.State]model.Regex,
 	eliminated map[model.State]bool,
 	initial model.State,
 	final model.State,
-) model.Automaton {
-	var curStates []model.State
+) *model.GNFA {
+	curStates := []model.State{}
 	for _, s := range states {
 		if !eliminated[s] {
 			curStates = append(curStates, s)
 		}
 	}
 
-	var transitions []model.Transition
+	transitions := []model.GNFATransition{}
 	for _, i := range curStates {
 		for _, j := range curStates {
-			if regexMap[i][j] != model.EmptySet {
-				transitions = append(transitions, model.Transition{
+			if regexMap[i][j] != model.EmptyLanguageToken {
+				transitions = append(transitions, model.GNFATransition{
 					FromState: i,
-					Input:     regexMap[i][j],
-					ToStates:  []model.State{j},
+					ToState:   j,
+					Label:     regexMap[i][j],
 				})
 			}
 		}
 	}
-	// 构建当前GNFA快照
-	return model.Automaton{
-		States:          curStates,
-		Alphabet:        nil, // GNFAB不需要字母表
-		Transitions:     transitions,
-		InitialState:    initial,
-		AcceptingStates: []model.State{final},
-		Type:            model.EpsilonNFA,
+
+	return &model.GNFA{
+		States:       curStates,
+		Transitions:  transitions,
+		InitialState: initial,
+		FinalState:   final,
 	}
 }

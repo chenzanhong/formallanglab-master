@@ -72,7 +72,7 @@ func buildDFAFromSource(source interface{}) (*model.Automaton, error) {
 		if s == nil {
 			return nil, fmt.Errorf("automaton is nil")
 		}
-		if err := s.ISValidate(); err != nil {
+		if err := s.Validate(); err != nil {
 			return nil, fmt.Errorf("无效的自动机")
 		}
 		if s.Type != model.DFA {

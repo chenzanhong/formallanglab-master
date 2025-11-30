@@ -65,9 +65,9 @@ func GrammarToFA(c *gin.Context) {
 	metrics.IncOperation("convert", "grammar_to_nfa", "success")
 	// 响应结果
 	c.JSON(http.StatusOK, dto.GrammarToFAResponse{
-		Msg:           "正则文法转自动机成功",
-		Result:        true,
-		Process:       process,
+		Msg:     "正则文法转自动机成功",
+		Result:  true,
+		Process: process,
 	})
 }
 
@@ -87,7 +87,7 @@ func FAToGrammar(c *gin.Context) {
 		return
 	}
 	// 2.判断是否为有效自动机
-	if req.Automaton.ISValidate() != nil {
+	if req.Automaton.Validate() != nil {
 		c.JSON(http.StatusBadRequest, dto.FAToGrammarResponse{
 			Msg:    "无效的自动机，请检查自动机状态",
 			Result: false,
@@ -147,8 +147,8 @@ func RegexToFA(c *gin.Context) {
 	}
 	metrics.IncOperation("convert", "regex_to_nfa", "success")
 	c.JSON(http.StatusOK, dto.RegexToFAResponse{
-		Msg:           "正则表达式转NFA成功",
-		Result:        true,
+		Msg:    "正则表达式转NFA成功",
+		Result: true,
 		Process: &model.RegexToFAProcess{
 			Regex:          req.Pattern,
 			Steps:          process.Steps,
@@ -206,7 +206,7 @@ func FAToRegex(c *gin.Context) {
 	}
 
 	// 2.判断是否为有效自动机
-	if req.Automaton.ISValidate() != nil {
+	if req.Automaton.Validate() != nil {
 		c.JSON(http.StatusBadRequest, dto.FAToRegexResponse{
 			Msg:    "无效的自动机，请检查自动机状态",
 			Result: false,

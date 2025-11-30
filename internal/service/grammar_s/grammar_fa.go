@@ -89,7 +89,7 @@ func rightLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 					hasModelAccept = true
 				}
 				transition.Input = production.Right[0] // 终结符
-				transition.ToStates = append(transition.ToStates, model.AcceptState)
+				transition.ToStates = append(transition.ToStates, model.UniqueFinalState)
 				automaton.Transitions = append(automaton.Transitions, transition)
 			} else if production.Right[0] == model.Epsilon {
 				// 空转移，加入接受态
@@ -137,7 +137,7 @@ func rightLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 	}
 
 	if hasModelAccept {
-		automaton.States = append(automaton.States, model.AcceptState)
+		automaton.States = append(automaton.States, model.UniqueFinalState)
 	}
 	return &automaton
 }
@@ -166,7 +166,7 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 	// process.Steps = append(process.Steps, model.GrammarToFAStep{
 	// 	Action:      "create_accept_state",
 	// 	Description: "创建唯一接受状态‘accept’",
-	// 	NewStates:   []model.State{model.AcceptState},
+	// 	NewStates:   []model.State{model.UniqueFinalState},
 	// })
 
 	// 中间状态计数器
@@ -177,7 +177,7 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 	}
 
 	var hasModelAccept bool = false
-	var newStateFmt string = fmt.Sprintf("，新增加接受状态：%s", model.AcceptState)
+	var newStateFmt string = fmt.Sprintf("，新增加接受状态：%s", model.UniqueFinalState)
 	// 遍历所有产生式
 	for _, prod := range g.Productions {
 		step := model.GrammarToFAStep{
@@ -202,7 +202,7 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 		case rightLen == 1 && g.CheckIsTerminal(prod.Right[0]):
 			fmt.Println("形如 A -> a")
 			input := prod.Right[0]
-			toState := model.AcceptState
+			toState := model.UniqueFinalState
 			trans := model.Transition{
 				FromState: fromState,
 				Input:     input,
@@ -256,7 +256,7 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 					newTransitions = append(newTransitions, model.Transition{
 						FromState: currentState,
 						Input:     input,
-						ToStates:  []model.State{model.AcceptState},
+						ToStates:  []model.State{model.UniqueFinalState},
 					})
 				} else {
 					// 创建中间状态
@@ -280,7 +280,7 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 				leftSym,
 				util.SymbolsToString(prod.Right),
 				len(newStates),
-				model.AcceptState)
+				model.UniqueFinalState)
 			if !hasModelAccept {
 				hasModelAccept = true
 				step.Description += newStateFmt
@@ -339,7 +339,7 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 	}
 
 	if hasModelAccept {
-		automaton.States = append(automaton.States, model.AcceptState)
+		automaton.States = append(automaton.States, model.UniqueFinalState)
 	}
 	process.FinalAutomaton = &automaton
 
@@ -392,8 +392,8 @@ func leftLinearGrammarToFAByReverse(g *model.Grammar) *model.Automaton {
 func leftLinearGrammarToFAByBuild(g *model.Grammar) *model.Automaton {
 	var a model.Automaton
 	// 1. 状态：每个非终结符作为一个状态；新增一个初始状态q0
-	a.States = append(a.States, model.InitialState)
-	a.InitialState = model.InitialState
+	a.States = append(a.States, model.UniqueInitialState)
+	a.InitialState = model.UniqueInitialState
 	for _, nonTerm := range g.NonTerminals {
 		a.States = append(a.States, model.State(nonTerm))
 	}
@@ -515,7 +515,7 @@ func leftLinearGrammarToFAByBuild(g *model.Grammar) *model.Automaton {
 		}
 	}
 	if hasEpsilonFromStart {
-		a.AcceptingStates = append(a.AcceptingStates, model.InitialState)
+		a.AcceptingStates = append(a.AcceptingStates, model.UniqueInitialState)
 	}
 
 	return &a
@@ -544,7 +544,7 @@ func leftLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProces
 	// 因为其产生式从右向左生成字符串，而自动机从左向右读取输入。
 	// 因此需引入新的初始状态 "initial" 来启动识别过程。
 	// 创建唯一的初始状态
-	initialState := model.InitialState
+	initialState := model.UniqueInitialState
 	automaton.InitialState = initialState
 	automaton.States = append(automaton.States, initialState)
 
@@ -754,7 +754,7 @@ func leftLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProces
 		}
 	}
 	if hasEpsilonFromStart {
-		automaton.AcceptingStates = append(automaton.AcceptingStates, model.InitialState)
+		automaton.AcceptingStates = append(automaton.AcceptingStates, model.UniqueInitialState)
 	}
 
 	process.FinalAutomaton = &automaton

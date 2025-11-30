@@ -11,7 +11,6 @@ type Symbol string
 
 const (
 	Epsilon  Symbol = "ε" // 定义ε作为特殊输入符号，表示空转移符号
-	EmptySet Symbol = "∅" // 空集
 )
 
 type GrammarType int

@@ -27,8 +27,8 @@ func GrammarIsEquivalent(g1, g2 *model.Grammar) (bool, error) {
 	automaton_s.Cleanup(fa2)
 
 	// 判断FA类型
-	fa1.ISValidate()
-	fa2.ISValidate()
+	fa1.Validate()
+	fa2.Validate()
 
 	// 转DFA
 	if fa1.Type != model.DFA {

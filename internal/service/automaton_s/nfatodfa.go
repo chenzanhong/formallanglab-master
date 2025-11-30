@@ -158,7 +158,7 @@ func NFAToDFAWithProcess(nfa *model.Automaton) *model.NFADeterminizationProcess 
 	queue := [][]model.State{initialSet}
 
 	// 记录转换过程
-	var steps []model.NFADeterminizationStep
+	steps := []model.NFADeterminizationStep{} // 使用空切片初始化，确保JSON序列化为[]而不是null
 	step := 0
 	// 初始快照
 	initialDFA := &model.Automaton{

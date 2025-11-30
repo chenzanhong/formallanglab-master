@@ -26,6 +26,11 @@ import (
 */
 // RegexEquivalenceCheck 检查两个正则表达式是否等价
 func RegexEquivalenceCheck(pattern1 model.Regex, pattern2 model.Regex) (bool, error) {
+	if (pattern1 == model.EmptyLanguageToken) != (pattern2 == model.EmptyLanguageToken) { // 一个为空集
+		return false, nil
+	} else if pattern1 == model.EmptyLanguageToken && pattern2 == model.EmptyLanguageToken { // 都为空集
+		return true, nil
+	}
 	// 提取字母表
 	alphabet1 := extractAlphabet(string(pattern1))
 	alphabet2 := extractAlphabet(string(pattern2))

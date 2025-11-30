@@ -9,10 +9,6 @@ import (
 
 // ========== 文法转自动机 ==========
 
-// 用于统一的接受状态
-const AcceptState State = "accept"
-const InitialState State = "initial"
-
 type GrammarToFAStep struct {
 	Production          *Production  `json:"production,omitempty"`
 	Action              string       `json:"action"`
@@ -33,9 +29,9 @@ type GrammarToFAProcess struct {
 type PathUpdate struct {
 	From     State  `json:"from"`
 	To       State  `json:"to"`
-	OldRegex Symbol `json:"oldRegex"`
-	NewPart  Symbol `json:"newPart"`
-	NewRegex Symbol `json:"newRegex"`
+	OldRegex Regex `json:"oldRegex"`
+	NewPart  Regex `json:"newPart"`
+	NewRegex Regex `json:"newRegex"`
 }
 
 type ConversionStep struct {
