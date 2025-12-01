@@ -162,6 +162,8 @@ func CalculateFirstCached(grammar *model.Grammar) map[model.Symbol]map[model.Sym
 // CalculateFirst 计算每个符号的 FIRST 集
 func CalculateFirst(grammar *model.Grammar) map[model.Symbol]map[model.Symbol]struct{} {
 	firstSet := make(map[model.Symbol]map[model.Symbol]struct{})
+	// ε 的 FIRST 集是 {ε}
+	firstSet[model.Epsilon] = map[model.Symbol]struct{}{model.Epsilon: {}}
 
 	// 初始化所有终结符的 FIRST 集
 	for _, terminal := range grammar.Terminals {
@@ -951,7 +953,12 @@ func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth
 					// 替换匹配的符号序列为产生式右部
 					newSymbols := make([]model.Symbol, 0, len(curr.symbols)-leftLen+len(prod.Right))
 					newSymbols = append(newSymbols, curr.symbols[:i]...)
-					newSymbols = append(newSymbols, prod.Right...)
+					// 过滤掉 ε
+					for _, sym := range prod.Right {
+						if sym != model.Epsilon {
+							newSymbols = append(newSymbols, sym)
+						}
+					}
 					newSymbols = append(newSymbols, curr.symbols[i+leftLen:]...)
 
 					if len(newSymbols) > maxWidth {
@@ -995,24 +1002,27 @@ func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth
 //                         5. 分析模式统一接口模块
 // ===================================================================================
 
+// ========== 标记开始: 分析模式定义 ==========
 type Mode string
 
 const (
-	LL1Mode              Mode = "ll1"
-	LL1RecoveryMode      Mode = "ll1_recovery"
-	RecursiveDescentMode Mode = "recursive_descent"
-	LR0Mode              Mode = "lr0"
-	LR1Mode              Mode = "lr1"
-	BFSMode              Mode = "bfs"
-	AutoMode             Mode = "auto"
+	LL1Mode              Mode = "ll1"               // LL(1)分析模式
+	LL1RecoveryMode      Mode = "ll1_recovery"      // LL(1)带错误恢复的分析模式
+	RecursiveDescentMode Mode = "recursive_descent" // 递归下降分析模式
+	LR0Mode              Mode = "lr0"               // LR(0)分析模式
+	LR1Mode              Mode = "lr1"               // LR(1)分析模式，未实现
+	BFSMode              Mode = "bfs"               // 广度优先分析模式
+	AutoMode             Mode = "auto"              // 自动选择最优分析模式
 )
+
+// ========== 标记结束: 分析模式定义 ==========
 
 // ParseStringWithMode 根据指定模式分析输入串
 func ParseStringWithMode(grammar *model.Grammar, input string, mode Mode, showSteps bool) *model.ParseResult {
 	// 转换输入为符号数组
 	var inputSymbols []model.Symbol
 	var err error
-	if input == "" {
+	if input == "" || input == string(model.EmptyLanguageToken) {
 		inputSymbols = []model.Symbol{model.Epsilon}
 	} else {
 		inputSymbols, err = grammar.StringToSymbols(input)
@@ -1042,6 +1052,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode Mode, showSt
 		}
 		return result
 
+	// 教学用
 	case LL1RecoveryMode:
 		// 检查文法是否为CFG
 		_, err := grammar.ToCFGView()
@@ -1090,6 +1101,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode Mode, showSt
 		}
 		return result
 
+	// 暂未实现
 	case LR1Mode:
 		// 检查文法是否为CFG
 		_, err := grammar.ToCFGView()
@@ -1118,42 +1130,40 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode Mode, showSt
 	default:
 		// 自动选择最适合的分析方法
 
-		// 尝试使用ToCFGView检查文法是否为CFG
-		_, cfgErr := grammar.ToCFGView()
-		if cfgErr == nil {
-			// 是CFG，尝试LL(1)
-			if isLL1, _ := IsLL1(grammar); isLL1 {
-				result := LL1ParseDetailed(grammar, inputSymbols)
-				if !showSteps {
-					result.Steps = nil
-				}
-				if result.Accepted {
-					return result
-				}
-				// 未接受
-				fmt.Println("auto, but LL1 recognize failed")
+		// 检查是否为 CFG
+		if _, cfgErr := grammar.ToCFGView(); cfgErr != nil {
+			// 非 CFG，只能用 BFS（穷举推导）
+			result := BFSParseDetailed(grammar, inputSymbols, 100, 100)
+			if !showSteps {
+				result.Steps = nil
 			}
-
-			// 尝试递归下降
-			if canUseRecursiveDescent(grammar) {
-				result := RecursiveDescentParse(grammar, inputSymbols)
-				if !showSteps {
-					result.Steps = nil
-				}
-				if result.Accepted {
-					return result
-				}
-				// 未接受
-				fmt.Println("auto, but recursive descent parse recognize failed")
-			}
+			return result
 		}
 
-		// 默认使用 BFS 推导
+		// ✅ 策略：优先尝试最健壮的递归下降
+		if canUseRecursiveDescent(grammar) {
+			result := RecursiveDescentParse(grammar, inputSymbols)
+			if !showSteps {
+				result.Steps = nil
+			}
+			// 无论是否接受，都返回结果（比 BFS 更高效、步骤更清晰）
+			return result
+		}
+
+		// 其次尝试 LL(1)（如果文法是 LL(1)）
+		if isLL1, _ := IsLL1(grammar); isLL1 {
+			result := LL1ParseDetailed(grammar, inputSymbols)
+			if !showSteps {
+				result.Steps = nil
+			}
+			return result
+		}
+
+		// 最后 fallback 到 BFS
 		result := BFSParseDetailed(grammar, inputSymbols, 100, 100)
 		if !showSteps {
 			result.Steps = nil
 		}
-		fmt.Println("auto, bfs parse")
 		return result
 	}
 }

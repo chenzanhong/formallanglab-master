@@ -104,9 +104,10 @@ func main() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			zlog.Fatalf("HTTP server ListenAndServe error: %v", err)
 		}
+		zlog.Info("server exited")
 	}()
 
-	zlog.Info("Server started on :8080")
+	zlog.Info("Server started on :8081")
 
 	// 8. 等待中断信号
 	<-ctx.Done()
