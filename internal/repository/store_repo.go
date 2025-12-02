@@ -3,7 +3,6 @@ package repository
 import (
 	"backend/internal/domain/storage"
 	"context"
-	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -109,7 +108,6 @@ func (r *StoreRepositoryImpl) FindAutomatonsAfterID(ctx context.Context, usernam
 	if hasMore {
 		records = records[:limit]
 	}
-	fmt.Printf("%v", records[len(records)-1].CreatedAt)
 	return records, hasMore, nil
 }
 

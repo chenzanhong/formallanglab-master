@@ -8,7 +8,7 @@ import (
 	"fmt"
 )
 
-var grammar = &model.Grammar{
+var grammar = &model.Grammar{ // a+|ba*
 	StartSymbol:  model.Symbol("S"),
 	NonTerminals: []model.Symbol{"S", "A", "B"},
 	Terminals:    []model.Symbol{"a", "b"},
@@ -40,9 +40,54 @@ var automaton = &model.Automaton{
 var regex = model.Regex("a(b|c)*a+")
 
 func main() {
+	testGrammarRecognizeString()
 	// testGrammarGenerateExampleString()
 	// testAutomatonGenerateExampleString()
-	testRegexGenerateExampleString()
+	// testRegexGenerateExampleString()
+}
+
+func testGrammarRecognizeString() {
+	// 定义要测试的字符串和模式
+	testString := "ba"
+	modes := []struct {
+		mode grammar_s.Mode
+		name string
+	}{
+		{grammar_s.RecursiveDescentMode, "递归下降分析"},
+		{grammar_s.BFSMode, "BFS分析"},
+		{grammar_s.LL1Mode, "LL(1)分析"},
+		{grammar_s.LR0Mode, "LR(0)分析"},
+	}
+
+	fmt.Println("===== 语法识别测试 =====")
+	fmt.Printf("测试字符串: %s\n\n", testString)
+
+	// 使用不同模式进行测试
+	for _, m := range modes {
+		fmt.Printf("【%s】\n", m.name)
+		result := grammar_s.ParseStringWithMode(grammar, testString, m.mode, true)
+
+		// 格式化输出结果
+		fmt.Printf("是否接受: %v\n", result.Accepted)
+		fmt.Printf("分析方法: %s\n", result.Method)
+		if result.Message != "" {
+			fmt.Printf("信息: %s\n", result.Message)
+		}
+		if result.Error != "" {
+			fmt.Printf("错误信息: %s\n", result.Error)
+		}
+
+		// 输出解析步骤（如果有）
+		if len(result.Steps) > 0 {
+			fmt.Println("解析步骤:")
+			for i, step := range result.Steps {
+				fmt.Printf("  %2d. 符号栈: %v,  输入串: %v, 产生式：%v，动作: %s\n",
+					i+1, step.Stack, step.Input, step.Production, step.Action)
+			}
+		}
+		fmt.Println()
+	}
+	fmt.Println("========================")
 }
 
 func testGrammarGenerateExampleString() {
