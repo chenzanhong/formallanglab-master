@@ -439,6 +439,317 @@ func RecognizeString(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth 
 	return false, nil, nil
 }
 
+// BFSParseDetailed BFS推导详细分析版本 - 仅记录成功路径
+func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth int) *model.ParseResult {
+	result := &model.ParseResult{
+		Method: "BFS 推导模拟",
+		Steps:  []model.ParseStep{},
+	}
+
+	// 标准化输入：将 [ε] 视为空串
+	normalizedInput := input
+	if len(input) == 1 && input[0] == model.Epsilon {
+		normalizedInput = []model.Symbol{}
+	}
+
+	// 处理空字符串情况
+	if len(normalizedInput) == 0 {
+		if canDeriveEpsilon(g) {
+			result.Accepted = true
+			result.Message = "空字符串被文法接受"
+			// 可选：添加步骤
+			result.Steps = []model.ParseStep{{
+				StepType:    "accept",
+				Description: "文法可推导出空串",
+				Stack:       []model.Symbol{},
+				Input:       []model.Symbol{},
+				Action:      "接受空输入",
+			}}
+			return result
+		}
+		result.Accepted = false
+		result.Error = "文法不能推导出空字符串"
+		return result
+	}
+
+	// BFS 状态：保存当前符号串、完整推导历史（每步的句型）、产生式路径
+	type state struct {
+		symbols []model.Symbol   // 当前符号串
+		history [][]model.Symbol // 每一步的句型快照，history[0] = [S]
+		path    []string         // 产生式字符串序列，如 ["S → b B"]
+	}
+
+	startSymbols := []model.Symbol{g.StartSymbol}
+	queue := []state{{
+		symbols: startSymbols,
+		history: [][]model.Symbol{copySymbols(startSymbols)},
+		path:    []string{}, // 尚未应用任何产生式
+	}}
+
+	visited := make(map[string]bool)
+
+	for len(queue) > 0 {
+		curr := queue[0]
+		queue = queue[1:]
+
+		// 去重 & 步数限制
+		key := symbolsToStringJoinSep(curr.symbols)
+		if visited[key] || len(curr.path) >= maxSteps {
+			continue
+		}
+		visited[key] = true
+
+		// 成功匹配
+		if symbolsEqual(curr.symbols, normalizedInput) {
+			steps := make([]model.ParseStep, 0, len(curr.history)+1)
+
+			// 初始步骤
+			steps = append(steps, model.ParseStep{
+				StepType:    "init",
+				Description: "开始BFS推导",
+				Stack:       copySymbols(curr.history[0]),
+				Input:       normalizedInput,
+				Action:      "从起始符号开始",
+			})
+
+			// 中间推导步骤（从第1步到第n步）
+			for i := 1; i < len(curr.history); i++ {
+				steps = append(steps, model.ParseStep{
+					StepType:    "predict",
+					Description: "应用产生式: " + curr.path[i-1],
+					Stack:       copySymbols(curr.history[i]),
+					Input:       normalizedInput,
+					Action:      "推导: " + curr.path[i-1],
+				})
+			}
+
+			// 接受步骤
+			steps = append(steps, model.ParseStep{
+				StepType:    "accept",
+				Description: "成功推导出输入串",
+				Stack:       copySymbols(normalizedInput),
+				Input:       normalizedInput,
+				Action:      "接受输入串",
+			})
+
+			result.Steps = steps
+			result.Accepted = true
+			result.Message = fmt.Sprintf("输入串通过 %d 步推导被接受", len(curr.path))
+			return result
+		}
+
+		// 剪枝：避免过长符号串
+		if len(curr.symbols) > len(normalizedInput)+20 || len(curr.symbols) > maxWidth {
+			continue
+		}
+
+		// 尝试每个产生式
+		for _, prod := range g.Productions {
+			leftLen := len(prod.Left)
+			if leftLen == 0 {
+				continue // 非法产生式
+			}
+
+			// 在当前符号串中查找所有匹配位置
+			for i := 0; i <= len(curr.symbols)-leftLen; i++ {
+				match := true
+				for j := 0; j < leftLen; j++ {
+					if curr.symbols[i+j] != prod.Left[j] {
+						match = false
+						break
+					}
+				}
+
+				if match {
+					// 构造新符号串（过滤 ε）
+					newSymbols := make([]model.Symbol, 0, len(curr.symbols)-leftLen+len(prod.Right))
+					newSymbols = append(newSymbols, curr.symbols[:i]...)
+					for _, sym := range prod.Right {
+						if sym != model.Epsilon {
+							newSymbols = append(newSymbols, sym)
+						}
+					}
+					newSymbols = append(newSymbols, curr.symbols[i+leftLen:]...)
+
+					// 构建产生式字符串
+					leftStr := symbolsToStringJoinSep(prod.Left)
+					rightStr := symbolsToStringJoinSep(prod.Right)
+					stepStr := fmt.Sprintf("%s → %s", leftStr, rightStr)
+
+					// 新状态
+					newHistory := append([][]model.Symbol{}, curr.history...)
+					newHistory = append(newHistory, copySymbols(newSymbols))
+
+					newPath := append([]string{}, curr.path...)
+					newPath = append(newPath, stepStr)
+
+					queue = append(queue, state{
+						symbols: newSymbols,
+						history: newHistory,
+						path:    newPath,
+					})
+				}
+			}
+		}
+	}
+
+	result.Accepted = false
+	result.Error = fmt.Sprintf("在 %d 步内未找到匹配的推导路径", maxSteps)
+	return result
+}
+
+/*
+// BFSParseDetailed BFS推导详细分析版本 - 支持多符号左部产生式
+func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth int) *model.ParseResult {
+	result := &model.ParseResult{
+		Method: "BFS 推导模拟",
+		Steps:  []model.ParseStep{},
+	}
+
+	// 处理空字符串情况
+	if len(input) == 0 || (len(input) == 1 && input[0] == model.Epsilon) {
+		// 检查是否可以推导出空字符串
+		if canDeriveEpsilon(g) {
+			result.Accepted = true
+			result.Message = "空字符串被文法接受"
+			return result
+		}
+		result.Accepted = false
+		result.Error = "文法不能推导出空字符串"
+		return result
+	}
+
+	// BFS 队列：记录当前符号串和推导路径
+	type state struct {
+		symbols   []model.Symbol
+		steps     int
+		path      []string       // 推导历史，如 "S → aA"
+		callStack []model.Symbol // 调用栈，用于记录非终结符调用链
+	}
+
+	queue := []state{
+		{symbols: []model.Symbol{g.StartSymbol}, steps: 0, path: []string{string(g.StartSymbol)}},
+	}
+
+	visited := make(map[string]bool)
+	stepCount := 0
+
+	// 记录初始状态
+	result.Steps = append(result.Steps, model.ParseStep{
+		StepType:    "init",
+		Description: "初始化BFS推导，从起始符号开始",
+		Stack:       []model.Symbol{}, // 使用调用栈而非符号栈
+		Input:       input,
+		InputPos:    0,
+		Action:      "开始推导",
+	})
+
+	for len(queue) > 0 && stepCount < maxSteps {
+		curr := queue[0]
+		queue = queue[1:]
+		stepCount++
+
+		// 去重
+		key := symbolsToStringJoinSep(curr.symbols)
+		if visited[key] || curr.steps >= maxSteps {
+			continue
+		}
+		visited[key] = true
+
+		// 检查是否匹配输入
+		if symbolsEqual(curr.symbols, input) {
+			result.Steps = append(result.Steps, model.ParseStep{
+				StepType:    "accept",
+				Description: "找到匹配的推导序列",
+				Stack:       copySymbols(curr.callStack), // 使用调用栈而非符号栈
+				Input:       input,
+				InputPos:    len(input),
+				Action:      "接受输入串",
+			})
+
+			result.Accepted = true
+			result.Message = fmt.Sprintf("输入串通过 %d 步推导被接受", curr.steps)
+			return result
+		}
+
+		// 剪枝：长度超过输入太多
+		if len(curr.symbols) > len(input)+15 {
+			continue
+		}
+
+		// 尝试应用每个产生式 - 支持多符号左部
+		for _, prod := range g.Productions {
+			leftLen := len(prod.Left)
+			// 尝试在当前符号串的每个可能位置匹配产生式左部
+			for i := 0; i <= len(curr.symbols)-leftLen; i++ {
+				// 检查从位置i开始的符号序列是否与产生式左部匹配
+				match := true
+				for j := 0; j < leftLen; j++ {
+					if curr.symbols[i+j] != prod.Left[j] {
+						match = false
+						break
+					}
+				}
+
+				if match {
+					// 替换匹配的符号序列为产生式右部
+					newSymbols := make([]model.Symbol, 0, len(curr.symbols)-leftLen+len(prod.Right))
+					newSymbols = append(newSymbols, curr.symbols[:i]...)
+					// 过滤掉 ε
+					for _, sym := range prod.Right {
+						if sym != model.Epsilon {
+							newSymbols = append(newSymbols, sym)
+						}
+					}
+					newSymbols = append(newSymbols, curr.symbols[i+leftLen:]...)
+
+					if len(newSymbols) > maxWidth {
+						continue
+					}
+
+					// 构建新推导路径
+					leftStr := symbolsToStringJoinSep(prod.Left)
+					rightStr := symbolsToStringJoinSep(prod.Right)
+					step := fmt.Sprintf("%s → %s", leftStr, rightStr)
+					newPath := append([]string{}, curr.path...)
+					newPath = append(newPath, step)
+
+					// 更新调用栈：将匹配的非终结符压入栈
+					newCallStack := copySymbols(curr.callStack)
+					for _, sym := range prod.Left {
+						if g.CheckIsNonTerminal(sym) {
+							newCallStack = append(newCallStack, sym)
+						}
+					}
+
+					// 记录推导步骤
+					result.Steps = append(result.Steps, model.ParseStep{
+						StepType:    "predict",
+						Description: fmt.Sprintf("应用产生式: %s → %s", leftStr, rightStr),
+						Stack:       newCallStack, // 使用调用栈而非符号栈
+						Input:       input,
+						InputPos:    0,
+						Action:      fmt.Sprintf("替换 %s 为 %s", leftStr, rightStr),
+						Production:  &prod,
+					})
+
+					queue = append(queue, state{
+						symbols:   newSymbols,
+						steps:     curr.steps + 1,
+						path:      newPath,
+						callStack: newCallStack,
+					})
+				}
+			}
+		}
+	}
+
+	result.Accepted = false
+	result.Error = fmt.Sprintf("在 %d 步内未找到匹配的推导", maxSteps)
+	return result
+}
+*/
+
 // ===================================================================================
 //                            4. LL(1)分析算法模块
 // ===================================================================================
@@ -850,316 +1161,6 @@ func LL1ParseWithRecovery(grammar *model.Grammar, input []model.Symbol) *model.P
 
 	return result
 }
-/* 
-// BFSParseDetailed BFS推导详细分析版本 - 支持多符号左部产生式
-func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth int) *model.ParseResult {
-	result := &model.ParseResult{
-		Method: "BFS 推导模拟",
-		Steps:  []model.ParseStep{},
-	}
-
-	// 处理空字符串情况
-	if len(input) == 0 || (len(input) == 1 && input[0] == model.Epsilon) {
-		// 检查是否可以推导出空字符串
-		if canDeriveEpsilon(g) {
-			result.Accepted = true
-			result.Message = "空字符串被文法接受"
-			return result
-		}
-		result.Accepted = false
-		result.Error = "文法不能推导出空字符串"
-		return result
-	}
-
-	// BFS 队列：记录当前符号串和推导路径
-	type state struct {
-		symbols   []model.Symbol
-		steps     int
-		path      []string       // 推导历史，如 "S → aA"
-		callStack []model.Symbol // 调用栈，用于记录非终结符调用链
-	}
-
-	queue := []state{
-		{symbols: []model.Symbol{g.StartSymbol}, steps: 0, path: []string{string(g.StartSymbol)}},
-	}
-
-	visited := make(map[string]bool)
-	stepCount := 0
-
-	// 记录初始状态
-	result.Steps = append(result.Steps, model.ParseStep{
-		StepType:    "init",
-		Description: "初始化BFS推导，从起始符号开始",
-		Stack:       []model.Symbol{}, // 使用调用栈而非符号栈
-		Input:       input,
-		InputPos:    0,
-		Action:      "开始推导",
-	})
-
-	for len(queue) > 0 && stepCount < maxSteps {
-		curr := queue[0]
-		queue = queue[1:]
-		stepCount++
-
-		// 去重
-		key := symbolsToStringJoinSep(curr.symbols)
-		if visited[key] || curr.steps >= maxSteps {
-			continue
-		}
-		visited[key] = true
-
-		// 检查是否匹配输入
-		if symbolsEqual(curr.symbols, input) {
-			result.Steps = append(result.Steps, model.ParseStep{
-				StepType:    "accept",
-				Description: "找到匹配的推导序列",
-				Stack:       copySymbols(curr.callStack), // 使用调用栈而非符号栈
-				Input:       input,
-				InputPos:    len(input),
-				Action:      "接受输入串",
-			})
-
-			result.Accepted = true
-			result.Message = fmt.Sprintf("输入串通过 %d 步推导被接受", curr.steps)
-			return result
-		}
-
-		// 剪枝：长度超过输入太多
-		if len(curr.symbols) > len(input)+15 {
-			continue
-		}
-
-		// 尝试应用每个产生式 - 支持多符号左部
-		for _, prod := range g.Productions {
-			leftLen := len(prod.Left)
-			// 尝试在当前符号串的每个可能位置匹配产生式左部
-			for i := 0; i <= len(curr.symbols)-leftLen; i++ {
-				// 检查从位置i开始的符号序列是否与产生式左部匹配
-				match := true
-				for j := 0; j < leftLen; j++ {
-					if curr.symbols[i+j] != prod.Left[j] {
-						match = false
-						break
-					}
-				}
-
-				if match {
-					// 替换匹配的符号序列为产生式右部
-					newSymbols := make([]model.Symbol, 0, len(curr.symbols)-leftLen+len(prod.Right))
-					newSymbols = append(newSymbols, curr.symbols[:i]...)
-					// 过滤掉 ε
-					for _, sym := range prod.Right {
-						if sym != model.Epsilon {
-							newSymbols = append(newSymbols, sym)
-						}
-					}
-					newSymbols = append(newSymbols, curr.symbols[i+leftLen:]...)
-
-					if len(newSymbols) > maxWidth {
-						continue
-					}
-
-					// 构建新推导路径
-					leftStr := symbolsToStringJoinSep(prod.Left)
-					rightStr := symbolsToStringJoinSep(prod.Right)
-					step := fmt.Sprintf("%s → %s", leftStr, rightStr)
-					newPath := append([]string{}, curr.path...)
-					newPath = append(newPath, step)
-
-					// 更新调用栈：将匹配的非终结符压入栈
-					newCallStack := copySymbols(curr.callStack)
-					for _, sym := range prod.Left {
-						if g.CheckIsNonTerminal(sym) {
-							newCallStack = append(newCallStack, sym)
-						}
-					}
-
-					// 记录推导步骤
-					result.Steps = append(result.Steps, model.ParseStep{
-						StepType:    "predict",
-						Description: fmt.Sprintf("应用产生式: %s → %s", leftStr, rightStr),
-						Stack:       newCallStack, // 使用调用栈而非符号栈
-						Input:       input,
-						InputPos:    0,
-						Action:      fmt.Sprintf("替换 %s 为 %s", leftStr, rightStr),
-						Production:  &prod,
-					})
-
-					queue = append(queue, state{
-						symbols:   newSymbols,
-						steps:     curr.steps + 1,
-						path:      newPath,
-						callStack: newCallStack,
-					})
-				}
-			}
-		}
-	}
-
-	result.Accepted = false
-	result.Error = fmt.Sprintf("在 %d 步内未找到匹配的推导", maxSteps)
-	return result
-}
- */
-
-// BFSParseDetailed BFS推导详细分析版本 - 仅记录成功路径
-func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth int) *model.ParseResult {
-	result := &model.ParseResult{
-		Method: "BFS 推导模拟",
-		Steps:  []model.ParseStep{},
-	}
-
-	// 标准化输入：将 [ε] 视为空串
-	normalizedInput := input
-	if len(input) == 1 && input[0] == model.Epsilon {
-		normalizedInput = []model.Symbol{}
-	}
-
-	// 处理空字符串情况
-	if len(normalizedInput) == 0 {
-		if canDeriveEpsilon(g) {
-			result.Accepted = true
-			result.Message = "空字符串被文法接受"
-			// 可选：添加步骤
-			result.Steps = []model.ParseStep{{
-				StepType:    "accept",
-				Description: "文法可推导出空串",
-				Stack:       []model.Symbol{},
-				Input:       []model.Symbol{},
-				Action:      "接受空输入",
-			}}
-			return result
-		}
-		result.Accepted = false
-		result.Error = "文法不能推导出空字符串"
-		return result
-	}
-
-	// BFS 状态：保存当前符号串、完整推导历史（每步的句型）、产生式路径
-	type state struct {
-		symbols []model.Symbol     // 当前符号串
-		history [][]model.Symbol   // 每一步的句型快照，history[0] = [S]
-		path    []string           // 产生式字符串序列，如 ["S → b B"]
-	}
-
-	startSymbols := []model.Symbol{g.StartSymbol}
-	queue := []state{{
-		symbols: startSymbols,
-		history: [][]model.Symbol{copySymbols(startSymbols)},
-		path:    []string{}, // 尚未应用任何产生式
-	}}
-
-	visited := make(map[string]bool)
-
-	for len(queue) > 0 {
-		curr := queue[0]
-		queue = queue[1:]
-
-		// 去重 & 步数限制
-		key := symbolsToStringJoinSep(curr.symbols)
-		if visited[key] || len(curr.path) >= maxSteps {
-			continue
-		}
-		visited[key] = true
-
-		// 成功匹配
-		if symbolsEqual(curr.symbols, normalizedInput) {
-			steps := make([]model.ParseStep, 0, len(curr.history)+1)
-
-			// 初始步骤
-			steps = append(steps, model.ParseStep{
-				StepType:    "init",
-				Description: "开始BFS推导",
-				Stack:       copySymbols(curr.history[0]),
-				Input:       normalizedInput,
-				Action:      "从起始符号开始",
-			})
-
-			// 中间推导步骤（从第1步到第n步）
-			for i := 1; i < len(curr.history); i++ {
-				steps = append(steps, model.ParseStep{
-					StepType:    "predict",
-					Description: "应用产生式: " + curr.path[i-1],
-					Stack:       copySymbols(curr.history[i]),
-					Input:       normalizedInput,
-					Action:      "推导: " + curr.path[i-1],
-				})
-			}
-
-			// 接受步骤
-			steps = append(steps, model.ParseStep{
-				StepType:    "accept",
-				Description: "成功推导出输入串",
-				Stack:       copySymbols(normalizedInput),
-				Input:       normalizedInput,
-				Action:      "接受输入串",
-			})
-
-			result.Steps = steps
-			result.Accepted = true
-			result.Message = fmt.Sprintf("输入串通过 %d 步推导被接受", len(curr.path))
-			return result
-		}
-
-		// 剪枝：避免过长符号串
-		if len(curr.symbols) > len(normalizedInput)+20 || len(curr.symbols) > maxWidth {
-			continue
-		}
-
-		// 尝试每个产生式
-		for _, prod := range g.Productions {
-			leftLen := len(prod.Left)
-			if leftLen == 0 {
-				continue // 非法产生式
-			}
-
-			// 在当前符号串中查找所有匹配位置
-			for i := 0; i <= len(curr.symbols)-leftLen; i++ {
-				match := true
-				for j := 0; j < leftLen; j++ {
-					if curr.symbols[i+j] != prod.Left[j] {
-						match = false
-						break
-					}
-				}
-
-				if match {
-					// 构造新符号串（过滤 ε）
-					newSymbols := make([]model.Symbol, 0, len(curr.symbols)-leftLen+len(prod.Right))
-					newSymbols = append(newSymbols, curr.symbols[:i]...)
-					for _, sym := range prod.Right {
-						if sym != model.Epsilon {
-							newSymbols = append(newSymbols, sym)
-						}
-					}
-					newSymbols = append(newSymbols, curr.symbols[i+leftLen:]...)
-
-					// 构建产生式字符串
-					leftStr := symbolsToStringJoinSep(prod.Left)
-					rightStr := symbolsToStringJoinSep(prod.Right)
-					stepStr := fmt.Sprintf("%s → %s", leftStr, rightStr)
-
-					// 新状态
-					newHistory := append([][]model.Symbol{}, curr.history...)
-					newHistory = append(newHistory, copySymbols(newSymbols))
-
-					newPath := append([]string{}, curr.path...)
-					newPath = append(newPath, stepStr)
-
-					queue = append(queue, state{
-						symbols: newSymbols,
-						history: newHistory,
-						path:    newPath,
-					})
-				}
-			}
-		}
-	}
-
-	result.Accepted = false
-	result.Error = fmt.Sprintf("在 %d 步内未找到匹配的推导路径", maxSteps)
-	return result
-}
 
 // ===================================================================================
 //                         5. 分析模式统一接口模块
@@ -1309,10 +1310,10 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode Mode, showSt
 		if !showSteps {
 			rdResult.Steps = nil
 		}
-		if rdResult.Accepted{
+		if rdResult.Accepted {
 			return rdResult
 		}
-		
+
 		// 其次尝试 LL(1)（如果文法是 LL(1)），有确定性判定算法
 		var LL1Result *model.ParseResult
 		if isLL1, _ := IsLL1(grammar); isLL1 {
@@ -1320,7 +1321,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode Mode, showSt
 			if !showSteps {
 				LL1Result.Steps = nil
 			}
-			if LL1Result.Accepted{
+			if LL1Result.Accepted {
 				return LL1Result
 			}
 		}
@@ -1330,14 +1331,14 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode Mode, showSt
 		if !showSteps {
 			bfsResult.Steps = nil
 		}
-		if bfsResult.Accepted{
+		if bfsResult.Accepted {
 			return bfsResult
 		}
 
 		// 都识别失败，返回具有明显步骤展示的
-		if LL1Result != nil{
-			return  LL1Result
-		}else if rdResult.Error == ""{
+		if LL1Result != nil {
+			return LL1Result
+		} else if rdResult.Error == "" {
 			return rdResult
 		}
 		return bfsResult
@@ -1928,19 +1929,21 @@ func LR1ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 	result.Accepted = false
 	result.Error = "LR(1)分析器尚未实现"
 	return result
-} 
+}
 
 // ===================================================================================
 //                         9. 递归下降分析算法模块
 // ===================================================================================
+// 传统/手写的递归下降不依赖FIRST/FOLLOW的显示计算，但是这里为了自动化，引入了FIRST/FOLLOW，作为一种“教学型通用解析器”
 
 // RecursiveDescentParser 递归下降分析器结构
 type RecursiveDescentParser struct {
-	Grammar   *model.Grammar
-	Input     []model.Symbol
-	Pos       int
-	Steps     []model.ParseStep
-	callStack []model.Symbol // 调用栈，用于记录非终结符调用链
+	Grammar    *model.Grammar
+	Input      []model.Symbol
+	Pos        int
+	Steps      []model.ParseStep
+	callStack  []model.Symbol // 调用栈，用于记录非终结符调用链
+	currentStr []model.Symbol // 当前识别状态（句型），用于Stack字段记录
 }
 
 // canUseRecursiveDescent 判断文法是否适用于递归下降分析
@@ -2286,18 +2289,19 @@ func RecursiveDescentParse(grammar *model.Grammar, input []model.Symbol) *model.
 
 	// 创建解析器实例
 	parser := &RecursiveDescentParser{
-		Grammar:   processedGrammar,
-		Input:     append(copySymbols(input), "#"), // 添加输入结束标记
-		Pos:       0,
-		Steps:     []model.ParseStep{},
-		callStack: []model.Symbol{},
+		Grammar:    processedGrammar,
+		Input:      append(copySymbols(input), "#"), // 添加输入结束标记
+		Pos:        0,
+		Steps:      []model.ParseStep{},
+		callStack:  []model.Symbol{},
+		currentStr: []model.Symbol{processedGrammar.StartSymbol}, // 初始状态为起始符号
 	}
 
 	// 记录初始状态
 	parser.addStep(model.ParseStep{
 		StepType:    "init",
 		Description: "开始递归下降分析",
-		Stack:       []model.Symbol{}, // 初始时调用栈为空
+		Stack:       copySymbols(parser.currentStr), // 记录当前句型
 		Input:       parser.Input,
 		InputPos:    parser.Pos,
 		Action:      "从起始符号开始分析",
@@ -2307,10 +2311,12 @@ func RecursiveDescentParse(grammar *model.Grammar, input []model.Symbol) *model.
 	success := parser.parseSymbol(processedGrammar.StartSymbol)
 
 	if success && parser.getCurrentSymbol() == "#" {
+		// 更新当前句型为接受状态
+		parser.currentStr = []model.Symbol{}
 		parser.addStep(model.ParseStep{
 			StepType:    "accept",
 			Description: "递归下降分析成功",
-			Stack:       copySymbols(parser.callStack), // 使用最终调用栈状态
+			Stack:       copySymbols(parser.currentStr), // 记录最终识别状态
 			Input:       []model.Symbol{"#"},
 			InputPos:    parser.Pos,
 			Action:      "接受输入串",
@@ -2323,7 +2329,7 @@ func RecursiveDescentParse(grammar *model.Grammar, input []model.Symbol) *model.
 		parser.addStep(model.ParseStep{
 			StepType:    "error",
 			Description: "递归下降分析失败",
-			Stack:       copySymbols(parser.callStack), // 使用当前调用栈
+			Stack:       copySymbols(parser.currentStr), // 记录当前识别状态
 			Input:       parser.Input[parser.Pos:],
 			InputPos:    parser.Pos,
 			Action:      "拒绝输入串",
@@ -2353,10 +2359,20 @@ func (p *RecursiveDescentParser) getCurrentSymbol() model.Symbol {
 func (p *RecursiveDescentParser) consume(expected model.Symbol) bool {
 	if p.getCurrentSymbol() == expected {
 		p.Pos++
+		// 更新当前句型（移除已匹配的终结符）
+		if len(p.currentStr) > 0 {
+			// 简化处理：移除第一个符号假设它与当前匹配的符号对应
+			// 在实际递归下降中，我们可能需要更复杂的逻辑来跟踪句型变化
+			if len(p.currentStr) > 1 {
+				p.currentStr = p.currentStr[1:]
+			} else {
+				p.currentStr = []model.Symbol{}
+			}
+		}
 		p.addStep(model.ParseStep{
 			StepType:    "match",
 			Description: fmt.Sprintf("匹配终结符 %s", string(expected)),
-			Stack:       copySymbols(p.callStack), // 使用当前调用栈
+			Stack:       copySymbols(p.currentStr), // 记录当前句型
 			Input:       p.Input[p.Pos:],
 			InputPos:    p.Pos,
 			Action:      fmt.Sprintf("消费符号 %s", string(expected)),
@@ -2389,21 +2405,33 @@ func (p *RecursiveDescentParser) parseNonTerminal(nt model.Symbol) bool {
 	}()
 
 	current := p.getCurrentSymbol()
+
 	firstSet := CalculateFirstCached(p.Grammar)
+	followSet := CalculateFollowCached(p.Grammar, firstSet)
+	// 确保 FOLLOW(Start) 包含 '#'
+	if nt == p.Grammar.StartSymbol {
+		if followSet[nt] == nil {
+			followSet[nt] = make(map[model.Symbol]struct{})
+		}
+		followSet[nt]["#"] = struct{}{}
+	}
 
 	// 找到所有以 nt 为左部的产生式
 	var candidates []model.Production
 	for _, prod := range p.Grammar.Productions {
+		fmt.Println("产生式：", prod.String())
 		if len(prod.Left) > 0 && prod.Left[0] == nt {
+			fmt.Println("ok")
 			candidates = append(candidates, prod)
 		}
 	}
 
 	if len(candidates) == 0 {
+		fmt.Println("消费失败，无相关产生式的nt：", nt)
 		p.addStep(model.ParseStep{
 			StepType:    "error",
 			Description: fmt.Sprintf("未找到非终结符 %s 的产生式", string(nt)),
-			Stack:       copySymbols(p.callStack), // 使用完整调用栈
+			Stack:       copySymbols(p.currentStr), // 记录当前句型
 			Input:       p.Input[p.Pos:],
 			InputPos:    p.Pos,
 			Action:      "解析失败",
@@ -2414,43 +2442,65 @@ func (p *RecursiveDescentParser) parseNonTerminal(nt model.Symbol) bool {
 	// 选择适合的产生式（基于FIRST集）
 	var selectedProd *model.Production
 	for _, prod := range candidates {
+		fmt.Println("选择产生式中，现在的产生式：", prod.String())
 		if len(prod.Right) == 0 || (len(prod.Right) == 1 && prod.Right[0] == model.Epsilon) {
-			// 空产生式，检查FOLLOW集
-			followSet := CalculateFollowCached(p.Grammar, firstSet)
-			if _, inFollow := followSet[nt][current]; inFollow || current == "#" {
+			fmt.Println(1)
+			// 空产生式，检查 current 是否在 FOLLOW(nt) 中
+			if _, ok := followSet[nt][current]; ok {
+				fmt.Println(2)
 				selectedProd = &prod
 				break
 			}
 		} else {
 			// 非空产生式，检查FIRST集
-			firstSymbol := prod.Right[0]
-			if firstSymbol == current {
-				// 直接匹配
+			// firstSymbol := prod.Right[0]
+			// if firstSymbol == current {
+			// 	fmt.Println(3)
+			// 	// 直接匹配
+			// 	selectedProd = &prod
+			// 	break
+			// } else if p.Grammar.CheckIsNonTerminal(firstSymbol) {
+			// 	fmt.Println(4)
+			// 	// 检查FIRST集
+			// 	if _, inFirst := firstSet[firstSymbol][current]; inFirst {
+
+			// 		fmt.Println(5)
+			// 		selectedProd = &prod
+			// 		break
+			// 	}
+			// 	// 检查是否可以推出ε
+			// 	if _, hasEpsilon := firstSet[firstSymbol][model.Epsilon]; hasEpsilon {
+			// 		fmt.Println(6)
+			// 		// 递归检查后续符号
+			// 		if p.canDerive(prod.Right, current, firstSet) {
+			// 			fmt.Println(7)
+			// 			selectedProd = &prod
+			// 			break
+			// 		}
+			// 	}
+			// }
+
+			firstOfRight := p.calculateFirstOfSequence(prod.Right, firstSet)
+			if _, inFirst := firstOfRight[current]; inFirst {
 				selectedProd = &prod
 				break
-			} else if p.Grammar.CheckIsNonTerminal(firstSymbol) {
-				// 检查FIRST集
-				if _, inFirst := firstSet[firstSymbol][current]; inFirst {
+			}
+			if _, hasEpsilon := firstOfRight[model.Epsilon]; hasEpsilon {
+				if _, inFollow := followSet[nt][current]; inFollow {
 					selectedProd = &prod
 					break
 				}
-				// 检查是否可以推出ε
-				if _, hasEpsilon := firstSet[firstSymbol][model.Epsilon]; hasEpsilon {
-					// 递归检查后续符号
-					if p.canDerive(prod.Right, current, firstSet) {
-						selectedProd = &prod
-						break
-					}
-				}
 			}
+			fmt.Println(8)
 		}
 	}
 
 	if selectedProd == nil {
+		fmt.Println("消费失败，无对应产生式的nt：", nt)
 		p.addStep(model.ParseStep{
 			StepType:    "error",
 			Description: fmt.Sprintf("没有适合的产生式匹配当前输入 %s", string(current)),
-			Stack:       copySymbols(p.callStack), // 使用完整调用栈
+			Stack:       copySymbols(p.currentStr), // 记录当前句型
 			Input:       p.Input[p.Pos:],
 			InputPos:    p.Pos,
 			Action:      "解析失败",
@@ -2458,14 +2508,39 @@ func (p *RecursiveDescentParser) parseNonTerminal(nt model.Symbol) bool {
 		return false
 	}
 
+	// 更新当前句型（替换非终结符为产生式右部）
+	// 简化处理：找到非终结符并替换为产生式右部
+	newCurrentStr := []model.Symbol{}
+	replaced := false
+	for _, sym := range p.currentStr {
+		if sym == nt && !replaced {
+			// 替换非终结符为产生式右部
+			if len(selectedProd.Right) > 0 && selectedProd.Right[0] != model.Epsilon {
+				newCurrentStr = append(newCurrentStr, selectedProd.Right...)
+			}
+			replaced = true
+		} else {
+			newCurrentStr = append(newCurrentStr, sym)
+		}
+	}
+	// 如果没有找到要替换的非终结符（可能是初始状态），则直接使用产生式右部
+	if !replaced {
+		if len(selectedProd.Right) > 0 && selectedProd.Right[0] != model.Epsilon {
+			newCurrentStr = selectedProd.Right
+		} else {
+			newCurrentStr = []model.Symbol{}
+		}
+	}
+	p.currentStr = newCurrentStr
+
 	// 记录使用的产生式
 	p.addStep(model.ParseStep{
 		StepType:    "predict",
 		Description: fmt.Sprintf("使用产生式: %s → %s", string(nt), symbolsToStringJoinSepFast(selectedProd.Right)),
-		Stack:       copySymbols(p.callStack), // 使用完整调用栈
+		Stack:       copySymbols(p.currentStr), // 记录当前句型
 		Input:       p.Input[p.Pos:],
 		InputPos:    p.Pos,
-		Action:      fmt.Sprintf("选择产生式并展开 %s", string(nt)),
+		Action:      fmt.Sprintf("选择产生式%s并展开 %s", selectedProd.String(), string(nt)),
 		Production:  selectedProd,
 	})
 
@@ -2505,4 +2580,32 @@ func (p *RecursiveDescentParser) canDerive(symbols []model.Symbol, target model.
 		}
 	}
 	return false
+}
+
+// calculateFirstOfSequence 计算符号序列的FIRST集，用于正确选择产生式
+func (p *RecursiveDescentParser) calculateFirstOfSequence(seq []model.Symbol, firstSet map[model.Symbol]map[model.Symbol]struct{}) map[model.Symbol]struct{} {
+	result := make(map[model.Symbol]struct{})
+	for _, X := range seq {
+		if p.Grammar.CheckIsTerminal(X) {
+			result[X] = struct{}{}
+			return result
+		}
+
+		// 加入 FIRST(X) \ {ε}
+		for t := range firstSet[X] {
+			if t != model.Epsilon {
+				result[t] = struct{}{}
+			}
+		}
+
+		// 如果 ε ∉ FIRST(X)，停止
+		if _, hasEpsilon := firstSet[X][model.Epsilon]; !hasEpsilon {
+			return result
+		}
+		// 否则继续下一个符号
+	}
+
+	// 所有符号都能推出 ε
+	result[model.Epsilon] = struct{}{}
+	return result
 }

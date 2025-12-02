@@ -4,13 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 )
 
 // Symbol 表示一个符号，可以是终结符、非终结符或者自动机所识别的一个符号
 type Symbol string
 
 const (
-	Epsilon  Symbol = "ε" // 定义ε作为特殊输入符号，表示空转移符号
+	Epsilon Symbol = "ε" // 定义ε作为特殊输入符号，表示空转移符号
 )
 
 type GrammarType int
@@ -54,6 +55,18 @@ func NormalizeSymbol(s string) Symbol {
 type Production struct {
 	Left  []Symbol `json:"left"`  // 左部，通常是单个非终结符，但也可以是多个符号
 	Right []Symbol `json:"right"` // 右部，可以包含多个符号
+}
+
+func (p *Production) String() string {
+	var s strings.Builder
+	for _, sym := range p.Left {
+		s.WriteString(string(sym))
+	}
+	s.WriteString("->")
+	for _, sym := range p.Right {
+		s.WriteString(string(sym))
+	}
+	return s.String()
 }
 
 // Grammar 表示整个文法
