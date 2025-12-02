@@ -17,7 +17,7 @@ func symbolsToStringJoinSep(symbols []model.Symbol) string {
 			parts[i] = string(sym)
 		}
 	}
-	return strings.Join(parts, ",")
+	return strings.Join(parts, "")
 }
 
 // IsAmbiguousRegular 检查一个正则文法是否二义

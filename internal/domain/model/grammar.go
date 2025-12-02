@@ -201,44 +201,12 @@ type ParseResult struct {
 	Message  string      `json:"message"`  // 额外信息
 }
 
-// ToReactFlow 返回格式化后的产生式字符串，用于前端展示
-func (g *Grammar) ToReactFlow() []string {
-	productions := make([]string, 0, len(g.Productions))
-
-	for _, prod := range g.Productions {
-		// 格式化左部
-		left := string(prod.Left[0]) // 通常左部只有一个符号
-
-		// 格式化右部
-		right := ""
-		if len(prod.Right) == 0 || (len(prod.Right) == 1 && prod.Right[0] == Epsilon) {
-			right = string(Epsilon)
-		} else {
-			for i, symbol := range prod.Right {
-				if i > 0 {
-					right += " "
-				}
-				if symbol == Epsilon {
-					right += string(Epsilon)
-				} else {
-					right += string(symbol)
-				}
-			}
-		}
-
-		// 组合成产生式字符串
-		productions = append(productions, left+" -> "+right)
-	}
-
-	return productions
-}
-
 /*
 
 前端传给后端的文法格式：：
 {
   "startSymbol": "S",
-  "terminals": ["a", "b", "ε"],
+  "terminals": ["a", "b"],
   "nonTerminals": ["S", "A", "B"],
   "productions": [
     {

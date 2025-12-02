@@ -22,11 +22,8 @@ func Min(a, b int) int {
 	return b
 }
 
-// []model.Symbol转string，空切片时返回string(model.Epsilon)
+// []model.Symbol转string
 func SymbolsToString(syms []model.Symbol) string {
-	if len(syms) == 0 {
-		return string(model.Epsilon)
-	}
 	var s strings.Builder
 	for _, sym := range syms {
 		s.WriteString(string(sym))
