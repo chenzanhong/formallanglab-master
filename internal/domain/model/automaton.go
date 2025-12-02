@@ -3,6 +3,7 @@ package model
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 /* 自动机 */
@@ -25,6 +26,16 @@ type Transition struct {
 	FromState State   `json:"fromState"` // 起始状态
 	Input     Symbol  `json:"input"`     // 输入符号
 	ToStates  []State `json:"toStates"`  // 目标状态（对于NFA可以有多个，但是目前大部分还是分开来的，不合并相同FromState+Input的产生式）
+}
+
+func (t *Transition) String() string {
+	var s strings.Builder
+	s.WriteString(string(t.FromState))
+	s.WriteString(string(t.Input))
+	for _, to := range t.ToStates {
+		s.WriteString(string(to))
+	}
+	return s.String()
 }
 
 type AutomatonType int

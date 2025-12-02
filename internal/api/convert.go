@@ -118,7 +118,7 @@ func RegexToFA(c *gin.Context) {
 	var req dto.RegexToFARequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.RegexToFAResponse{
-			Msg:    "Invalid request: " + err.Error(),
+			Msg:    "无效请求：" + err.Error(),
 			Result: false,
 		})
 		metrics.IncOperation("convert", "regex_to_nfa", "failure: parameter parsing error")
@@ -128,7 +128,7 @@ func RegexToFA(c *gin.Context) {
 	// 先检验是否为有效的正则表达式
 	if err := re.RegexValidate(req.Pattern); err != nil {
 		c.JSON(http.StatusBadRequest, dto.RegexToFAResponse{
-			Msg:    "invalid regular expression",
+			Msg:    "无效的正则表达式",
 			Result: false,
 		})
 		metrics.IncOperation("convert", "regex_to_nfa", "failure: invalid regex")

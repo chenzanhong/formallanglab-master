@@ -69,6 +69,10 @@ func (p *Production) String() string {
 	return s.String()
 }
 
+func (p *Production) IsEpsilon() bool {
+	return len(p.Right) == 1 && p.Right[0] == Epsilon
+}
+
 // Grammar 表示整个文法
 type Grammar struct {
 	StartSymbol      Symbol           `json:"startSymbol"`                           // 起始符号

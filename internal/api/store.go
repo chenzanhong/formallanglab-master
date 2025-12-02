@@ -64,7 +64,7 @@ func (h *StoreHandler) FindAutomata(c *gin.Context) {
 
 	resp, err := h.storeService.FindAutomata(c, username.(string), lastID, int(limit))
 	if err != nil {
-		c.JSON(500, dto.FindAutomatonResponse{Msg: "server error", Result: false})
+		c.JSON(500, dto.FindAutomatonResponse{Msg: "服务器错误", Result: false})
 		return
 	}
 	// 设置成功响应的Msg和Result字段
@@ -78,14 +78,14 @@ func (h *StoreHandler) CreateGrammar(c *gin.Context) {
 	// 从上下文获取用户名
 	username, exists := c.Get("username")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "用户未认证"})
+		c.JSON(http.StatusUnauthorized, dto.CreateAutomatonResponse{Msg: "用户未认证", Result: false})
 		return
 	}
 
 	// 绑定请求参数
 	var req dto.CreateGrammarRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.CreateGrammarResponse{Msg: "参数错误: " + err.Error(), Result: false})
+		c.JSON(http.StatusBadRequest, dto.CreateGrammarResponse{Msg: "参数错误解析错误，请检查输入", Result: false})
 		return
 	}
 
@@ -116,7 +116,7 @@ func (h *StoreHandler) FindGrammars(c *gin.Context) {
 
 	resp, err := h.storeService.FindGrammars(c, username.(string), lastID, int(limit))
 	if err != nil {
-		c.JSON(500, dto.FAToGrammarResponse{Msg: "server error", Result: false})
+		c.JSON(500, dto.FAToGrammarResponse{Msg: "服务器错误", Result: false})
 		return
 	}
 	// 设置成功响应的Msg和Result字段
@@ -130,14 +130,14 @@ func (h *StoreHandler) CreateRegex(c *gin.Context) {
 	// 从上下文获取用户名
 	username, exists := c.Get("username")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "用户未认证"})
+		c.JSON(http.StatusUnauthorized, dto.CreateRegexResponse{Msg: "用户未认证"})
 		return
 	}
 
 	// 绑定请求参数
 	var req dto.CreateRegexRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.CreateRegexResponse{Msg: "参数错误: " + err.Error(), Result: false})
+		c.JSON(http.StatusBadRequest, dto.CreateRegexResponse{Msg: "参数错误解析失败，请检查输入", Result: false})
 		return
 	}
 
@@ -168,7 +168,7 @@ func (h *StoreHandler) FindRegexes(c *gin.Context) {
 
 	resp, err := h.storeService.FindRegexes(c, username.(string), lastID, int(limit))
 	if err != nil {
-		c.JSON(500, dto.FAToRegexResponse{Msg: "server error", Result: false})
+		c.JSON(500, dto.FAToRegexResponse{Msg: "服务器错误", Result: false})
 		return
 	}
 	// 设置成功响应的Msg和Result字段

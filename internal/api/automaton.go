@@ -14,6 +14,7 @@ import (
 	"backend/internal/domain/dto"
 	"backend/internal/domain/model"
 	"backend/internal/metrics"
+	"fmt"
 	"time"
 
 	"backend/internal/service/automaton_s"
@@ -38,7 +39,7 @@ func AutomatonValidate(c *gin.Context) {
 		metrics.IncOperation("automaton", "validate", "failure: parameter parsing error")
 		return
 	}
-
+	fmt.Printf("%+v", req.Automaton)
 	if err := automaton_s.AutomatonValidate(&req.Automaton); err != nil {
 		c.JSON(http.StatusBadRequest, dto.AutomatonValidateResponse{
 			Msg:    "无效的自动机" + err.Error(),
@@ -227,7 +228,7 @@ func NFADeterminization(c *gin.Context) {
 		metrics.IncOperation("automaton", "nfa_to_dfa", "failure: nfa_to_dfa failed")
 		return
 	}
-	
+
 	metrics.IncOperation("automaton", "nfa_to_dfa", "success")
 	c.JSON(http.StatusOK, dto.NFADeterminizationResponse{
 		Msg:           "NFA转换为DFA成功",

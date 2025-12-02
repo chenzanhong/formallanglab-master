@@ -28,7 +28,7 @@ log:
   log_injection: true
   sampling: true
   fields:
-    app_name: "GDesign"
+    app_name: "FormalLangLab"
     environment: "development"
     version: "1.0.0"
     instance_id: "dev-001"

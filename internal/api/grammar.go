@@ -57,7 +57,7 @@ func GrammarValidate(c *gin.Context) {
 		zlog.Warnw("文法校验失败", "detail", "文法格式无效")
 		c.JSON(http.StatusBadRequest, dto.GrammarValidateResponse{
 			Valid:  false,
-			Msg:    "invalid grammar：" + err.Error(),
+			Msg:    "无效文法：" + err.Error(),
 			Result: false,
 		})
 		return
@@ -67,7 +67,7 @@ func GrammarValidate(c *gin.Context) {
 	zlog.Infow("文法校验成功")
 	c.JSON(http.StatusOK, dto.GrammarValidateResponse{
 		Valid:  true,
-		Msg:    "grammar is valid",
+		Msg:    "文法有效",
 		Type:   req.Grammar.GrammarType,
 		Result: true,
 	})
@@ -359,7 +359,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 		metrics.IncOperation("grammar", "equivalence_check", "failure: invalid grammar1")
 		zlog.Warnw("文法等价性检查失败", "detail", "第一个文法格式无效")
 		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
-			Msg:          "invalid grammar1",
+			Msg:          "无效的文法1",
 			IsEquivalent: false,
 			Result:       false,
 		})
@@ -369,7 +369,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 		metrics.IncOperation("grammar", "equivalence_check", "failure: grammar1 not regular")
 		zlog.Warnw("文法等价性检查失败", "detail", "第一个文法不是正则文法")
 		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
-			Msg:          "grammar1 is not regular grammar",
+			Msg:          "文法1不是正则文法",
 			IsEquivalent: false,
 			Result:       false,
 		})
@@ -379,7 +379,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 		metrics.IncOperation("grammar", "equivalence_check", "failure: invalid grammar2")
 		zlog.Warnw("文法等价性检查失败", "detail", "第二个文法格式无效")
 		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
-			Msg:          "invalid grammar2",
+			Msg:          "无效的文法2",
 			IsEquivalent: false,
 			Result:       false,
 		})
@@ -389,7 +389,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 		metrics.IncOperation("grammar", "equivalence_check", "failure: grammar2 not regular")
 		zlog.Warnw("文法等价性检查失败", "detail", "第二个文法不是正则文法")
 		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
-			Msg:          "grammar2 is not regular grammar",
+			Msg:          "文法2不是正则文法",
 			IsEquivalent: false,
 			Result:       false,
 		})
@@ -403,7 +403,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 		zlog.Infow("文法等价性检查成功", "detail", "两个文法不等价")
 		// fmt.Println("耗时：", time.Since(time1))
 		c.JSON(http.StatusOK, dto.GrammarEquivalenceCheckResponse{
-			Msg:          "这两个文法不是等价的",
+			Msg:          "这两个文法不是等价的：对应的最小DFA不是同构的",
 			IsEquivalent: false,
 			Result:       true,
 		})
