@@ -39,7 +39,7 @@
    ```json
    {
      "id": 123,
-     "title": "编译原理课件",
+     "title": "形式语言与自动机课件",
      "file_key": "materials/cs/compiler_lecture_v3.pdf", // OSS 中的路径
      "size": 4582910, // 可选
      "mime_type": "application/pdf"
