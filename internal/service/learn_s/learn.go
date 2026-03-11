@@ -1,4 +1,3 @@
-// 用于获取学习资源
 package learn_s
 
 import (
@@ -20,10 +19,10 @@ type LearnService interface {
 	ListMaterials(ctx context.Context, category string) ([]*dto.LearnMaterialResponse, error)
 	// GetMaterialByID 根据ID获取学习资源详情
 	GetMaterialByID(ctx context.Context, id int64) (*dto.LearnMaterialDetailResponse, error)
-	// GeneratePresignedURL 生成上传预签名URL
-	GeneratePresignedURL(ctx context.Context, req *dto.PresignedURLRequest) (*dto.PresignedURLResponse, error)
-	// UpdateMaterial 更新学习资源信息
-	UpdateMaterial(ctx context.Context, id int64, req *dto.UpdateMaterialRequest) error
+	// AddMaterial 添加学习资源（管理员直接在 OSS 上传后调用）
+	AddMaterial(ctx context.Context, req *dto.AddMaterialRequest) error
+	// SyncOSSFiles 同步OSS文件到数据库（自动识别新增文件）
+	SyncOSSFiles(ctx context.Context) (*dto.SyncOSSFilesResponse, error)
 	// DeleteMaterial 删除学习资源
 	DeleteMaterial(ctx context.Context, id int64) error
 }
@@ -46,11 +45,11 @@ func NewLearnService(learnRepo repository.LearnRepository, ossClient oss.Client)
 func (s *LearnServiceImpl) ListMaterials(ctx context.Context, category string) ([]*dto.LearnMaterialResponse, error) {
 	// 验证分类参数
 	validCategories := map[string]bool{
-		"grammar":  true,
+		"grammar":   true,
 		"automaton": true,
-		"regex":    true,
-		"general":  true,
-		"":         true, // 空字符串表示获取所有分类
+		"regex":     true,
+		"general":   true,
+		"":          true, // 空字符串表示获取所有分类
 	}
 	if !validCategories[category] {
 		category = "general" // 默认为general分类
@@ -111,68 +110,136 @@ func (s *LearnServiceImpl) GetMaterialByID(ctx context.Context, id int64) (*dto.
 	return response, nil
 }
 
-// GeneratePresignedURL 生成上传预签名URL
-func (s *LearnServiceImpl) GeneratePresignedURL(ctx context.Context, req *dto.PresignedURLRequest) (*dto.PresignedURLResponse, error) {
-	// 生成唯一的file_key
-	ext := filepath.Ext(req.Filename)
-	fileNameWithoutExt := strings.TrimSuffix(req.Filename, ext)
-	fileKey := fmt.Sprintf("materials/%s/%s_%d%s",
-		req.Category,
-		fileNameWithoutExt,
-		time.Now().Unix(),
-		ext)
-
-	// 生成10分钟有效的上传预签名URL
-	uploadURL, err := s.ossClient.GenerateUploadPresignedURL(fileKey, time.Minute*10)
+// AddMaterial 添加学习资源（管理员直接在 OSS 上传后调用）
+func (s *LearnServiceImpl) AddMaterial(ctx context.Context, req *dto.AddMaterialRequest) error {
+	// 验证文件是否在 OSS 中存在
+	exists, err := s.ossClient.CheckObjectExists(req.FileKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate upload URL: %w", err)
+		return fmt.Errorf("failed to check file existence: %w", err)
+	}
+	if !exists {
+		return fmt.Errorf("file does not exist in OSS")
 	}
 
-	// 创建待处理的数据库记录
+	// 创建学习资源记录
 	material := &model.LearnMaterial{
-		Title:     req.Filename,
-		Category:  req.Category,
-		FileKey:   fileKey,
-		FileName:  req.Filename,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		Title:       req.Title,
+		Description: req.Description,
+		Category:    req.Category,
+		FileKey:     req.FileKey,
+		FileName:    req.FileName,
+		MimeType:    req.MimeType,
+		SizeBytes:   req.SizeBytes,
 	}
 
-	materialID, err := s.learnRepo.CreatePendingMaterial(ctx, material)
+	// 保存到数据库
+	_, err = s.learnRepo.CreateMaterial(ctx, material)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create pending material: %w", err)
-	}
-
-	return &dto.PresignedURLResponse{
-		UploadURL:  uploadURL,
-		MaterialID: materialID,
-	}, nil
-}
-
-// UpdateMaterial 更新学习资源信息
-func (s *LearnServiceImpl) UpdateMaterial(ctx context.Context, id int64, req *dto.UpdateMaterialRequest) error {
-	// 获取现有资源
-	material, err := s.learnRepo.GetMaterialByID(ctx, id)
-	if err != nil {
-		return fmt.Errorf("failed to get material: %w", err)
-	}
-	if material == nil {
-		return fmt.Errorf("material not found")
-	}
-
-	// 更新字段
-	material.Title = req.Title
-	material.Description = req.Description
-	material.MimeType = req.MimeType
-	material.SizeBytes = req.SizeBytes
-	material.UpdatedAt = time.Now()
-
-	// 保存更新
-	if err := s.learnRepo.UpdateMaterial(ctx, material); err != nil {
-		return fmt.Errorf("failed to update material: %w", err)
+		return fmt.Errorf("failed to create material: %w", err)
 	}
 
 	return nil
+}
+
+// SyncOSSFiles 同步OSS文件到数据库（自动识别新增文件）
+func (s *LearnServiceImpl) SyncOSSFiles(ctx context.Context) (*dto.SyncOSSFilesResponse, error) {
+	// 定义要扫描的分类目录
+	categories := []string{"grammar", "automaton", "regex", "general"}
+
+	// 获取数据库中已存在的所有文件
+	existingMaterials, err := s.learnRepo.ListMaterials(ctx, "")
+	if err != nil {
+		return nil, fmt.Errorf("failed to list existing materials: %w", err)
+	}
+
+	// 创建已存在文件的映射（file_key -> material）
+	existingFileKeys := make(map[string]bool)
+	for _, material := range existingMaterials {
+		existingFileKeys[material.FileKey] = true
+	}
+
+	response := &dto.SyncOSSFilesResponse{
+		AddedFiles: []string{},
+	}
+
+	// 扫描每个分类目录
+	for _, category := range categories {
+		prefix := fmt.Sprintf("materials/%s/", category)
+
+		// 列出OSS中的文件
+		ossObjects, err := s.ossClient.ListObjects(prefix)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list OSS objects for prefix %s: %w", prefix, err)
+		}
+
+		response.TotalFiles += int64(len(ossObjects))
+
+		// 对比找出新增的文件
+		for _, obj := range ossObjects {
+			if existingFileKeys[obj.Key] {
+				response.ExistingFiles++
+				continue
+			}
+
+			// 新增文件，添加到数据库
+			fileName := extractFileName(obj.Key)
+			mimeType := inferMimeType(fileName)
+
+			material := &model.LearnMaterial{
+				Title:       fileName,
+				Description: "",
+				Category:    category,
+				FileKey:     obj.Key,
+				FileName:    fileName,
+				MimeType:    mimeType,
+				SizeBytes:   obj.Size,
+			}
+
+			_, err := s.learnRepo.CreateMaterial(ctx, material)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create material for %s: %w", obj.Key, err)
+			}
+
+			response.NewFiles++
+			response.AddedFiles = append(response.AddedFiles, obj.Key)
+		}
+	}
+
+	return response, nil
+}
+
+// extractFileName 从 file_key 中提取文件名
+func extractFileName(fileKey string) string {
+	parts := strings.Split(fileKey, "/")
+	if len(parts) > 0 {
+		return parts[len(parts)-1]
+	}
+	return fileKey
+}
+
+// inferMimeType 根据文件扩展名推断 MIME 类型
+func inferMimeType(fileName string) string {
+	ext := strings.ToLower(filepath.Ext(fileName))
+	switch ext {
+	case ".pdf":
+		return "application/pdf"
+	case ".ppt", ".pptx":
+		return "application/vnd.ms-powerpoint"
+	case ".doc", ".docx":
+		return "application/msword"
+	case ".txt":
+		return "text/plain"
+	case ".mp4":
+		return "video/mp4"
+	case ".mp3":
+		return "audio/mpeg"
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".png":
+		return "image/png"
+	default:
+		return "application/octet-stream"
+	}
 }
 
 // DeleteMaterial 删除学习资源

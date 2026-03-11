@@ -39,15 +39,18 @@ func GenerateStrings(terminals []string, maxLen int) []string {
 	// 生成所有可能的字符串（包括空字符串）
 	var result []string
 	queue := []string{""}
+	maxStrings := 1000 // 最大字符串数量限制，避免指数爆炸
 
-	for len(queue) > 0 {
+	for len(queue) > 0 && len(result) < maxStrings {
 		s := queue[0]
 		queue = queue[1:]
 		result = append(result, s)
 
-		if len(s) < maxLen {
+		if len(s) < maxLen && len(result) < maxStrings {
 			for _, c := range terminals {
-				queue = append(queue, s+c)
+				if len(result) < maxStrings {
+					queue = append(queue, s+c)
+				}
 			}
 		}
 	}
@@ -59,7 +62,6 @@ func GenerateStrings(terminals []string, maxLen int) []string {
 		}
 		return result[i] < result[j]
 	})
-	fmt.Println("len:", len(result), " maxlen:", maxLen)
 	return result
 }
 
@@ -179,4 +181,63 @@ func SymbolsToStates(syms []model.Symbol) []model.State {
 		result[i] = model.State(sym)
 	}
 	return result
+}
+
+// QuoteSymbols 将 []model.Symbol 转换为带引号的字符串切片（ε 特殊处理）
+func QuoteSymbols(syms []model.Symbol) []string {
+	res := make([]string, len(syms))
+	for i, s := range syms {
+		if s == model.Epsilon {
+			res[i] = "ε"
+		} else {
+			res[i] = fmt.Sprintf("%q", string(s))
+		}
+	}
+	return res
+}
+
+// PrintGrammar 打印文法的详细信息
+func PrintGrammar(g *model.Grammar) {
+	if g == nil {
+		fmt.Println("Grammar is nil")
+		return
+	}
+
+	fmt.Println("=== Grammar ===")
+
+	// 起始符号
+	start := func() string {
+		if g.StartSymbol == model.Epsilon {
+			return "ε"
+		}
+		return fmt.Sprintf("%q", string(g.StartSymbol))
+	}()
+	fmt.Printf("Start Symbol: %s\n", start)
+
+	// 终结符
+	terminals := QuoteSymbols(g.Terminals)
+	fmt.Printf("Terminals: [%s]\n", strings.Join(terminals, ", "))
+
+	// 非终结符
+	nonTerminals := QuoteSymbols(g.NonTerminals)
+	fmt.Printf("Non-Terminals: [%s]\n", strings.Join(nonTerminals, ", "))
+
+	// 文法类型
+	typeName := model.GrammarTypeNameMap[g.GrammarType]
+	fmt.Printf("Grammar Type: %s\n", typeName)
+
+	// 线性性质（仅对正则文法有意义）
+	if g.GrammarType == model.RegularGrammar {
+		fmt.Printf("Linearity: %s\n", g.GrammarLinearity)
+	}
+
+	// 产生式
+	fmt.Println("Productions:")
+	if len(g.Productions) == 0 {
+		fmt.Println("  (none)")
+	} else {
+		for _, p := range g.Productions {
+			fmt.Println(p.String())
+		}
+	}
 }

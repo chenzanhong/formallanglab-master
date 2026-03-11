@@ -19,7 +19,6 @@ import (
 // 空间复杂度：O(1)
 func GrammarCheckValidity(g *model.Grammar) error {
 	if g == nil {
-		g.GrammarType = model.InvalidGrammar
 		return errors.New("文法对象为nil")
 	}
 

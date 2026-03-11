@@ -6,18 +6,17 @@ import (
 )
 
 // symbolsToStringJoinSep 将符号切片转为字符串，用于 map 的 key
-// 注意：ε
+// 注意：正确处理ε符号，确保[ a ]和[ a, ε ]被正确区分
 func symbolsToStringJoinSep(symbols []model.Symbol) string {
 	parts := make([]string, len(symbols))
-	if len(symbols) == 1 && symbols[0] == model.Epsilon {
-		return string(model.Epsilon)
-	}
 	for i, sym := range symbols {
-		if sym != model.Epsilon {
+		if sym == model.Epsilon {
+			parts[i] = "ε"
+		} else {
 			parts[i] = string(sym)
 		}
 	}
-	return strings.Join(parts, "")
+	return strings.Join(parts, "|")
 }
 
 // IsAmbiguousRegular 检查一个正则文法是否二义
@@ -34,36 +33,39 @@ func symbolsToStringJoinSep(symbols []model.Symbol) string {
 //
 // 假设输入文法已经是 Type3（正则文法）
 func IsAmbiguousRegular(g *model.Grammar) (bool, error) {
-	// 设置搜索深度上限：2 * 非终结符数量
 	maxDepth := 2 * len(g.NonTerminals)
-	if maxDepth > 10 { // 防止爆炸，设个软上限
+	if maxDepth > 10 {
 		maxDepth = 10
 	}
 
-	// 记录每个句子被推导出的次数
 	sentenceCount := make(map[string]int)
+	visited := make(map[string]bool) // 记录已处理的状态，避免重复处理
 
-	// 使用 BFS 生成所有可能推导
 	type state struct {
 		symbols []model.Symbol
+		depth   int // 记录实际推导深度
 	}
 
-	queue := []state{{symbols: []model.Symbol{g.StartSymbol}}}
-	visited := make(map[string]bool) // 防止重复状态
+	queue := []state{{symbols: []model.Symbol{g.StartSymbol}, depth: 0}}
 
 	for len(queue) > 0 {
 		curr := queue[0]
 		queue = queue[1:]
 
-		key := symbolsToStringJoinSep(curr.symbols)
-		if visited[key] {
+		// 深度检查（防止无限）
+		if curr.depth > maxDepth {
 			continue
 		}
-		visited[key] = true
 
-		// 如果全是终结符，得到一个句子
+		// 检查是否为句子（全终结符）
 		if isAllTerminals(curr.symbols, g) {
-			sentence := symbolsToStringJoinSep(curr.symbols)
+			// 对于句子，将ε替换为空字符串，因为ε在句子中表示空
+			sentence := ""
+			for _, sym := range curr.symbols {
+				if sym != model.Epsilon {
+					sentence += string(sym)
+				}
+			}
 			sentenceCount[sentence]++
 			if sentenceCount[sentence] > 1 {
 				return true, nil
@@ -71,22 +73,22 @@ func IsAmbiguousRegular(g *model.Grammar) (bool, error) {
 			continue
 		}
 
-		// 尝试应用每个产生式
+		// 生成当前状态的唯一标识
+		stateKey := symbolsToStringJoinSep(curr.symbols)
+		if visited[stateKey] {
+			continue
+		}
+		visited[stateKey] = true
+
+		// 应用产生式
 		for _, p := range g.Productions {
 			if len(curr.symbols) > 0 && curr.symbols[0] == p.Left[0] {
 				newSymbols := append(p.Right, curr.symbols[1:]...)
-				// 直接使用 flattenSymbols 返回的 int
-				if flattenSymbols(newSymbols) <= maxDepth {
-					queue = append(queue, state{symbols: newSymbols})
-				}
+				queue = append(queue, state{
+					symbols: newSymbols,
+					depth:   curr.depth + 1,
+				})
 			}
-		}
-	}
-
-	// 再次检查（理论上前面已检查，但保险）
-	for _, count := range sentenceCount {
-		if count > 1 {
-			return true, nil
 		}
 	}
 

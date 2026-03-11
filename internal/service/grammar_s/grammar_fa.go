@@ -138,6 +138,7 @@ func rightLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 
 	if hasModelAccept {
 		automaton.States = append(automaton.States, model.UniqueFinalState)
+		automaton.AcceptingStates = append(automaton.AcceptingStates, model.UniqueFinalState)
 	}
 	return &automaton
 }
@@ -340,6 +341,7 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 
 	if hasModelAccept {
 		automaton.States = append(automaton.States, model.UniqueFinalState)
+		automaton.AcceptingStates = append(automaton.AcceptingStates, model.UniqueFinalState)
 	}
 	process.FinalAutomaton = &automaton
 

@@ -10,8 +10,16 @@ func RegexRecognize(pattern model.Regex, str string) (bool, error) {
 	if pattern == model.EmptyLanguageToken {
 		return false, nil // 空集永远不匹配任何字符串，包括空串
 	}
+
+	// 处理 ε 符号
+	regexStr := string(pattern)
+	if regexStr == string(model.Epsilon) {
+		// ε 只匹配空字符串
+		return str == "", nil
+	}
+
 	// 编译正则表达式为完整匹配模式（^...$）
-	re, err := regexp.Compile("^(?:" + string(pattern) + ")$")
+	re, err := regexp.Compile("^(?:" + regexStr + ")$")
 	if err != nil {
 		return false, err
 	}

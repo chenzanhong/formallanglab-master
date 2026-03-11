@@ -23,22 +23,21 @@ type LearnMaterialDetailResponse struct {
 	DownloadURL string `json:"download_url"`
 }
 
-// PresignedURLRequest 生成上传预签名URL请求DTO
-type PresignedURLRequest struct {
-	Filename string `json:"filename" binding:"required"`
-	Category string `json:"category" binding:"required,oneof=grammar automaton regex general"`
-}
-
-// PresignedURLResponse 生成上传预签名URL响应DTO
-type PresignedURLResponse struct {
-	UploadURL  string `json:"upload_url"`
-	MaterialID int64  `json:"material_id"`
-}
-
-// UpdateMaterialRequest 更新学习资源请求DTO
-type UpdateMaterialRequest struct {
+// AddMaterialRequest 添加学习资源请求DTO
+type AddMaterialRequest struct {
 	Title       string `json:"title" binding:"required"`
 	Description string `json:"description"`
+	FileKey     string `json:"file_key" binding:"required"`
+	FileName    string `json:"file_name" binding:"required"`
 	MimeType    string `json:"mime_type"`
 	SizeBytes   int64  `json:"size_bytes"`
+	Category    string `json:"category" binding:"required,oneof=grammar automaton regex general"`
+}
+
+// SyncOSSFilesResponse 同步OSS文件响应DTO
+type SyncOSSFilesResponse struct {
+	TotalFiles    int64    `json:"total_files"`    // OSS中的文件总数
+	NewFiles      int64    `json:"new_files"`      // 新增的文件数
+	ExistingFiles int64    `json:"existing_files"` // 已存在的文件数
+	AddedFiles    []string `json:"added_files"`    // 新增的文件列表
 }

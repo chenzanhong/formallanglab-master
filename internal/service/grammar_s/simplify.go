@@ -3,27 +3,32 @@ package grammar_s
 
 import (
 	"backend/internal/domain/model"
+	"backend/pkg/util"
 )
 
 // Simplify 对文法进行化简：去不可派生、不可达、空产生式、单一产生式
 // 注意：会修改原文法结构，建议传入副本
-func Simplify(grammar *model.Grammar) *model.Grammar{
+func Simplify(grammar *model.Grammar) *model.Grammar {
 	if grammar == nil || len(grammar.Productions) == 0 {
 		return grammar
 	}
 
 	// 步骤1: 去除不可派生的变量（Non-generating variables）
 	RemoveNonGenerating(grammar)
+	util.PrintGrammar(grammar)
 
 	// 步骤2: 去除不可达符号（Unreachable terminals/nonterminals）
 	RemoveUnreachable(grammar)
+	util.PrintGrammar(grammar)
 
 	// 步骤3: 去除空产生式（ε-productions）
 	RemoveEpsilonProductions(grammar)
+	util.PrintGrammar(grammar)
 
 	// 步骤4: 去除单一产生式（Unit productions）
 	RemoveUnitProductions(grammar)
-	
+	util.PrintGrammar(grammar)
+
 	return grammar
 }
 
@@ -134,6 +139,11 @@ func RemoveEpsilonProductions(g *model.Grammar) {
 
 	for _, p := range g.Productions {
 		right := p.Right
+		// 跳过空产生式（ε产生式）
+		if len(right) == 1 && right[0] == model.Epsilon {
+			continue
+		}
+
 		nullableIndices := []int{}
 		for i, sym := range right {
 			if containsSymbol(U, sym) {
@@ -173,7 +183,7 @@ func RemoveEpsilonProductions(g *model.Grammar) {
 	if containsSymbol(U, g.StartSymbol) {
 		hasEpsilon := false
 		for _, p := range newProductions {
-			if p.Left[0] == g.StartSymbol && len(p.Right) == 0 {
+			if p.Left[0] == g.StartSymbol && len(p.Right) == 1 && p.Right[0] == model.Epsilon {
 				hasEpsilon = true
 				break
 			}
@@ -181,7 +191,7 @@ func RemoveEpsilonProductions(g *model.Grammar) {
 		if !hasEpsilon {
 			newProductions = append(newProductions, model.Production{
 				Left:  []model.Symbol{g.StartSymbol},
-				Right: []model.Symbol{},
+				Right: []model.Symbol{model.Epsilon},
 			})
 		}
 	}
@@ -195,7 +205,7 @@ func getNullableVariables(g *model.Grammar) []model.Symbol {
 
 	// A → ε
 	for _, p := range g.Productions {
-		if len(p.Right) == 0 {
+		if len(p.Right) == 1 && p.Right[0] == model.Epsilon {
 			if !containsSymbol(newU, p.Left[0]) {
 				newU = append(newU, p.Left[0])
 			}
@@ -205,7 +215,11 @@ func getNullableVariables(g *model.Grammar) []model.Symbol {
 	for {
 		oldU = copySlice(newU)
 		for _, p := range g.Productions {
-			if len(p.Right) > 0 && allInSet(p.Right, oldU, nil) {
+			// 跳过空产生式
+			if len(p.Right) == 1 && p.Right[0] == model.Epsilon {
+				continue
+			}
+			if allInSet(p.Right, oldU, nil) {
 				if !containsSymbol(newU, p.Left[0]) {
 					newU = append(newU, p.Left[0])
 				}

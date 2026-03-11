@@ -147,7 +147,7 @@ func AutomatonStringRecognize(c *gin.Context) {
 	}()
 	var req dto.AutomatonStringRecognizeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		zlog.Warnf("自动机字符串识别失败", "detail", "参数解析错误")
+		zlog.Warnw("自动机字符串识别失败", "detail", "参数解析错误")
 		metrics.IncOperation("automaton", "string_recognize", "failure: parameter parsing error")
 		c.JSON(http.StatusBadRequest, dto.AutomatonStringRecognizeResponse{
 			Msg:    "参数解析错误" + err.Error(),

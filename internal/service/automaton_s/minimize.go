@@ -135,7 +135,10 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 	}
 
 	var P [][]model.State //
-	P = append(P, reduced.AcceptingStates)
+	// 只添加非空的状态集合
+	if len(reduced.AcceptingStates) > 0 {
+		P = append(P, reduced.AcceptingStates)
+	}
 	nonAccepting := []model.State{}
 	for _, s := range reduced.States {
 		if !acceptingSet[s] {

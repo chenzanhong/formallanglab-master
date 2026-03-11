@@ -90,7 +90,8 @@ func HTTPMiddleware() gin.HandlerFunc {
 		method := c.Request.Method
 		path := c.FullPath()
 		if path == "" {
-			path = c.Request.URL.Path
+			// path = c.Request.URL.Path
+			path = "/unmatched" // 使用固定占位符，避免高基数
 		}
 
 		// 处理请求

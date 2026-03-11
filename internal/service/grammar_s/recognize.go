@@ -1497,9 +1497,10 @@ func BuildLR0Table(grammar *model.Grammar) (*LRTable, error) {
 					for _, terminal := range grammar.Terminals {
 						// 检查冲突
 						if existing, exists := table.Action[i][terminal]; exists {
-							if existing.Type == "shift" {
+							switch existing.Type {
+							case "shift":
 								return nil, fmt.Errorf("移进-归约冲突：状态 %d，符号 %s", i, string(terminal))
-							} else if existing.Type == "reduce" {
+							case "reduce":
 								return nil, fmt.Errorf("归约-归约冲突：状态 %d，符号 %s", i, string(terminal))
 							}
 						}

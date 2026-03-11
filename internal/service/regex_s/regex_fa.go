@@ -100,9 +100,20 @@ func lex(pattern string) ([]token, error) {
 		case ' ', '\t', '\n':
 			// 忽略空白
 		default:
-			// 只允许字母、数字作为字符
+			// 只允许字母、数字作为字符，以及ε和∅
 			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
 				tokens = append(tokens, token{typ: tokChar, value: model.Symbol(string(r))})
+			} else if r == 'ε' {
+				tokens = append(tokens, token{typ: tokChar, value: model.Epsilon})
+			} else if r == '∅' {
+				// 空集符号单独处理
+				if i == 0 && len(runes) == 1 {
+					// 单独的空集符号
+					tokens = append(tokens, token{typ: tokChar, value: model.Symbol("∅")})
+				} else {
+					// 空集符号不能嵌入表达式中
+					return nil, fmt.Errorf("empty set symbol ∅ can only appear alone")
+				}
 			} else {
 				// panic(fmt.Sprintf("invalid character in regex: %c", r))
 				// 不panic，而是返回错误
@@ -367,6 +378,12 @@ func RegexToFA(regex model.Regex) (*model.Automaton, error) {
 		return model.NewEmptyLanguageAutomaton(), nil
 	}
 	pattern := string(regex)
+
+	// 检查是否是单独的空集符号
+	if pattern == string(model.EmptyLanguageToken) {
+		return model.NewEmptyLanguageAutomaton(), nil
+	}
+
 	ast, err := parseRegex(pattern)
 	if err != nil {
 		return nil, err
@@ -416,6 +433,15 @@ func RegexToFAWithSteps(regex model.Regex) (result *model.RegexToFAProcess, err 
 	pattern := string(regex)
 	if strings.TrimSpace(pattern) == "" {
 		return nil, fmt.Errorf("empty pattern")
+	}
+
+	// 检查是否是单独的空集符号
+	if pattern == string(model.EmptyLanguageToken) {
+		return &model.RegexToFAProcess{
+			Regex:          regex,
+			Steps:          []model.RegexToFAStep{},
+			FinalAutomaton: model.NewEmptyLanguageAutomaton(),
+		}, nil
 	}
 
 	ast, err := parseRegex(pattern)

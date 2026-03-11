@@ -16,6 +16,16 @@ type Client interface {
 	GenerateUploadPresignedURL(key string, expire time.Duration) (string, error)
 	// CheckObjectExists 检查对象是否存在
 	CheckObjectExists(key string) (bool, error)
+	// ListObjects 列出指定前缀的所有对象
+	ListObjects(prefix string) ([]OSSObjectInfo, error)
+}
+
+// OSSObjectInfo OSS对象信息
+type OSSObjectInfo struct {
+	Key          string
+	Size         int64
+	LastModified time.Time
+	ETag         string
 }
 
 // MockOSSClient 模拟OSS客户端实现（用于开发测试）
@@ -45,6 +55,12 @@ func (c *MockOSSClient) CheckObjectExists(key string) (bool, error) {
 	// 简单模拟，始终返回存在
 	// 在实际使用中，可以根据需要调整逻辑
 	return true, nil
+}
+
+// ListObjects 模拟列出对象
+func (c *MockOSSClient) ListObjects(prefix string) ([]OSSObjectInfo, error) {
+	// 模拟返回一些测试数据
+	return []OSSObjectInfo{}, nil
 }
 
 // AliyunOSSClient 阿里云OSS客户端实现
@@ -119,4 +135,26 @@ func (c *AliyunOSSClient) CheckObjectExists(key string) (bool, error) {
 		return false, fmt.Errorf("检查对象是否存在失败: %w", err)
 	}
 	return exists, nil
+}
+
+// ListObjects 列出阿里云OSS指定前缀的所有对象
+func (c *AliyunOSSClient) ListObjects(prefix string) ([]OSSObjectInfo, error) {
+	// 调用阿里云SDK列出对象
+	lor, err := c.service.ListObjects(oss.Prefix(prefix))
+	if err != nil {
+		return nil, fmt.Errorf("列出对象失败: %w", err)
+	}
+
+	// 转换为OSSObjectInfo数组
+	objects := make([]OSSObjectInfo, 0, len(lor.Objects))
+	for _, obj := range lor.Objects {
+		objects = append(objects, OSSObjectInfo{
+			Key:          obj.Key,
+			Size:         obj.Size,
+			LastModified: obj.LastModified,
+			ETag:         obj.ETag,
+		})
+	}
+
+	return objects, nil
 }

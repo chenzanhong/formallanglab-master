@@ -97,11 +97,11 @@ func setupAuthRoutes(router *gin.Engine, learnHandler *LearnHandler, storeHandle
 	// 知识学习
 	learn := r.Group("/learn")
 	{
-		learn.GET("/", learnHandler.LearnList)                               // 获取学习资料列表
-		learn.GET("/:id", learnHandler.LearnGetByID)                         // 获取单个资源详情
-		learn.POST("/presigned-url", learnHandler.LearnGeneratePresignedURL) // 生成上传预签名URL
-		learn.PUT("/:id", learnHandler.LearnUpdateMaterial)                  // 更新学习资源
-		learn.DELETE("/:id", learnHandler.LearnDeleteMaterial)               // 删除学习资源
+		learn.GET("/", learnHandler.LearnList)                 // 获取学习资料列表
+		learn.POST("/", learnHandler.LearnAddMaterial)         // 添加学习资源（管理员在OSS上传后调用）
+		learn.POST("/sync", learnHandler.LearnSyncOSSFiles)    // 同步OSS文件到数据库（自动识别新增文件）
+		learn.GET("/:id", learnHandler.LearnGetByID)           // 获取单个资源详情
+		learn.DELETE("/:id", learnHandler.LearnDeleteMaterial) // 删除学习资源
 	}
 
 	// 存储模块接口

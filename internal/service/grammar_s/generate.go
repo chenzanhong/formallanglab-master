@@ -87,6 +87,7 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 
 	queue := []derivationNode{{sententialForm: []model.Symbol{g.StartSymbol}, depth: 0}}
 	seenAccept := make(map[string]bool)
+	seenForms := make(map[string]bool) // 避免重复处理相同的句型
 
 	maxDerivationDepth := len(g.Productions) * 3
 	if maxDerivationDepth < 10 {
@@ -103,14 +104,19 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 		nonTerminalsSet[s] = true
 	}
 
-	times := 0 // 避免左递归导致无限步
-	for len(queue) > 0 && len(accept) < maxExampleNum && times < maxTimes {
+	times := 0           // 避免左递归导致无限步
+	maxQueueSize := 1000 // 限制队列大小，避免内存溢出
+	for len(queue) > 0 && len(accept) < maxExampleNum && times < maxTimes && len(queue) < maxQueueSize {
 		times++
 		node := queue[0]
 		queue = queue[1:]
 		s := util.SymbolsToString(node.sententialForm)
 
-		// fmt.Println(s)
+		// 跳过已处理过的句型
+		if seenForms[s] {
+			continue
+		}
+		seenForms[s] = true
 
 		// 如果是句子（全终结符），加入 accept
 		if isTerminals(node.sententialForm, terminalsSet) {
@@ -145,10 +151,13 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 							newForm = append(newForm, node.sententialForm[i+1:]...)
 						}
 
-						queue = append(queue, derivationNode{
-							sententialForm: newForm,
-							depth:          node.depth + 1,
-						})
+						newFormStr := util.SymbolsToString(newForm)
+						if !seenForms[newFormStr] {
+							queue = append(queue, derivationNode{
+								sententialForm: newForm,
+								depth:          node.depth + 1,
+							})
+						}
 					}
 				}
 				found = true
@@ -177,21 +186,30 @@ func generateRejectExampleString(g *model.Grammar, seenAccept map[string]bool) (
 		}
 	}
 
-	// 生成采样字符串
-	ss := util.GenerateStrings(pureTerminals, min(len(g.Productions)*2, len(g.Productions)+4))
+	// 生成采样字符串，限制最大长度
+	maxLen := min(len(g.Productions)*2, len(g.Productions)+4)
+	if maxLen > 5 { // 限制最大长度，避免生成过长字符串
+		maxLen = 5
+	}
+	ss := util.GenerateStrings(pureTerminals, maxLen)
 	seenReject := make(map[string]bool)
 
-	// 筛选出拒绝字符串
+	// 筛选出拒绝字符串，限制验证次数
+	maxValidation := 100 // 最大验证次数，避免性能问题
+	validationCount := 0
 	for _, s := range ss {
-		if len(reject) >= 2*maxExampleNum {
+		if len(reject) >= maxExampleNum || validationCount >= maxValidation {
 			break
 		}
 		if seenAccept[s] {
 			continue
 		}
-		if !seenReject[s] && !ParseStringWithMode(g, s, AutoMode, false).Accepted {
-			reject = append(reject, s)
-			seenReject[s] = true
+		if !seenReject[s] {
+			validationCount++
+			if !ParseStringWithMode(g, s, AutoMode, false).Accepted {
+				reject = append(reject, s)
+				seenReject[s] = true
+			}
 		}
 	}
 

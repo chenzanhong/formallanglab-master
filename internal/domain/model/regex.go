@@ -5,11 +5,11 @@ import (
 	"regexp"
 )
 
-// 正则表达式支持的符合，包括0~1，a~z，A~Z，|，（，），*，？，·，
-var ValidCSet = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789*+?|()")
+// 正则表达式支持的符合，包括0~1，a~z，A~Z，|，（，），*，？，·，ε，∅
+var ValidCSet = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789*+?|()ε∅")
 
-// 允许：字母、数字、*, +, ?, |, (, )
-const ValidRegex = `^[a-zA-Z0-9*+?|()]+$`
+// 允许：字母、数字、*, +, ?, |, (, ), ε, ∅
+const ValidRegex = `^[a-zA-Z0-9*+?|()ε∅]+$`
 
 type Regex string
 
