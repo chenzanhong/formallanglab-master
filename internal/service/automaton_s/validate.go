@@ -1,8 +1,9 @@
 package automaton_s
 
 import (
-	"backend/internal/domain/model"
 	"errors"
+
+	"backend/internal/domain/model"
 )
 
 // 根据你的项目路径调整

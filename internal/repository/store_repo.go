@@ -1,12 +1,13 @@
 package repository
 
 import (
-	"backend/internal/domain/storage"
 	"context"
 	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"backend/internal/domain/storage"
 )
 
 type StoreRepository interface {
@@ -63,6 +64,7 @@ func (r *StoreRepositoryImpl) FindAutomatonByUsername(ctx context.Context, usern
 	if err := r.db.WithContext(ctx).Where("username = ?", username).Select("id, name, automaton, created_at").Order("created_at DESC").Find(&records).Error; err != nil {
 		return nil, err
 	}
+
 	return records, nil
 }
 
@@ -87,6 +89,7 @@ func (r *StoreRepositoryImpl) FindGrammarByUsername(ctx context.Context, usernam
 	if err := r.db.WithContext(ctx).Where("username = ?", username).Select("id, name, grammar, created_at").Order("created_at DESC").Find(&records).Error; err != nil {
 		return nil, err
 	}
+
 	return records, nil
 }
 
@@ -108,6 +111,7 @@ func (r *StoreRepositoryImpl) FindAutomatonsAfterID(ctx context.Context, usernam
 	if hasMore {
 		records = records[:limit]
 	}
+
 	return records, hasMore, nil
 }
 
@@ -153,6 +157,7 @@ func (r *StoreRepositoryImpl) FindRegexesByUsername(ctx context.Context, usernam
 	if err := r.db.WithContext(ctx).Where("username = ?", username).Select("id, name, pattern, created_at").Order("created_at DESC").Find(&records).Error; err != nil {
 		return nil, err
 	}
+
 	return records, nil
 }
 
@@ -179,6 +184,7 @@ func (r *StoreRepositoryImpl) FindRegexesAfterID(
 	if hasMore {
 		records = records[:limit]
 	}
+
 	return records, hasMore, nil
 }
 

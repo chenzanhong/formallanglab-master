@@ -1,9 +1,10 @@
 package grammar_s
 
 import (
+	"fmt"
+
 	"backend/internal/domain/model"
 	"backend/internal/service/automaton_s"
-	"fmt"
 )
 
 // 采用理论方法：转为最小DFA，判断是否同构。

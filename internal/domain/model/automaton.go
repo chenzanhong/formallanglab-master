@@ -35,6 +35,7 @@ func (t *Transition) String() string {
 	for _, to := range t.ToStates {
 		s.WriteString(string(to))
 	}
+
 	return s.String()
 }
 
@@ -104,6 +105,7 @@ func (a *Automaton) SplitString(s string) ([]Symbol, error) {
 				res = append(res, Symbol(sub))
 				i = j // 跳到匹配结束位置
 				matched = true
+
 				break
 			}
 		}
@@ -200,6 +202,7 @@ func (a *Automaton) Validate() error {
 			transitionMap[key] = t.ToStates[0]
 		}
 	}
+
 	return nil
 }
 
@@ -350,13 +353,9 @@ func (a *Automaton) FindReachableStates() []State {
 	for _, t := range a.Transitions {
 		if t.Input == Epsilon {
 			// 虽然 DFA 不应有 ε，但为健壮性考虑
-			for _, to := range t.ToStates {
-				adj[t.FromState] = append(adj[t.FromState], to)
-			}
+			adj[t.FromState] = append(adj[t.FromState], t.ToStates...)
 		} else {
-			for _, to := range t.ToStates {
-				adj[t.FromState] = append(adj[t.FromState], to)
-			}
+			adj[t.FromState] = append(adj[t.FromState], t.ToStates...)
 		}
 	}
 
@@ -379,6 +378,7 @@ func (a *Automaton) FindReachableStates() []State {
 			reachable = append(reachable, state)
 		}
 	}
+
 	return reachable
 }
 
@@ -441,6 +441,7 @@ func (g *GNFA) ToReactFlow() *ReactFlowAutomaton {
 				if isInitial {
 					return "initial"
 				}
+
 				return "default"
 			}(),
 			Data: struct {
@@ -490,6 +491,7 @@ func (a *Automaton) ToReactFlow() *ReactFlowAutomaton {
 				if isInitial {
 					return "initial"
 				}
+
 				return "default"
 			}(),
 			Data: struct {
@@ -542,7 +544,7 @@ func (r *ReactFlowAutomaton) ToAutomaton() *Automaton {
 		}
 	}
 
-	var symbolMap = make(map[string]bool)
+	symbolMap := make(map[string]bool)
 	//
 	for _, edge := range r.Edges {
 		if !symbolMap[edge.Label] && edge.Label != string(Epsilon) {

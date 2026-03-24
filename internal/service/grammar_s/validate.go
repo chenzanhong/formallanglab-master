@@ -1,9 +1,10 @@
 package grammar_s
 
 import (
-	"backend/internal/domain/model"
 	"errors"
 	"fmt"
+
+	"backend/internal/domain/model"
 )
 
 // GrammarCheckValidity 判断一个 Grammar 是否为有效文法
@@ -43,7 +44,7 @@ func GrammarCheckValidity(g *model.Grammar) error {
 	}
 
 	// 收集符号
-	var symbolMap = make(map[model.Symbol]bool)
+	symbolMap := make(map[model.Symbol]bool)
 	// 将非终结符添加到符号集合
 	for _, sym := range g.NonTerminals {
 		symbolMap[sym] = true

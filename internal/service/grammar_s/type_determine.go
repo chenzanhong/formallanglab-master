@@ -1,8 +1,9 @@
 package grammar_s
 
 import (
-	"backend/internal/domain/model"
 	"fmt"
+
+	"backend/internal/domain/model"
 )
 
 // TypeDetermine 判断文法的Chomsky类型（0、1、2、3型）
@@ -32,6 +33,7 @@ func TypeDetermine(g *model.Grammar) model.GrammarType {
 	if g == nil || GrammarCheckValidity(g) != nil {
 		fmt.Println("无效文法")
 		g.GrammarType = model.InvalidGrammar
+
 		return model.InvalidGrammar
 	}
 
@@ -41,10 +43,12 @@ func TypeDetermine(g *model.Grammar) model.GrammarType {
 		if isRegular, _ := IsRegular(g); isRegular {
 			fmt.Println("三型文法")
 			g.GrammarType = model.RegularGrammar
+
 			return model.RegularGrammar
 		}
 		fmt.Println("二型文法")
 		g.GrammarType = model.ContextFreeGrammar
+
 		return model.ContextFreeGrammar
 	}
 
@@ -52,10 +56,12 @@ func TypeDetermine(g *model.Grammar) model.GrammarType {
 	if isContextSensitive(g) {
 		fmt.Println("一型文法")
 		g.GrammarType = model.ContextSensitiveGrammar
+
 		return model.ContextSensitiveGrammar
 	}
 	fmt.Println("零型文法")
 	g.GrammarType = model.PhraseStructureGrammar
+
 	return model.PhraseStructureGrammar
 }
 
@@ -66,6 +72,7 @@ func isContextFreeForm(g *model.Grammar) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -88,6 +95,7 @@ func IsRegular(g *model.Grammar) (IsRegular bool, linear model.GrammarLinearity)
 		if isRightLinearProduction(right, g) {
 			hasRightLinear = true
 			fmt.Println(2)
+
 			continue
 		}
 
@@ -95,6 +103,7 @@ func IsRegular(g *model.Grammar) (IsRegular bool, linear model.GrammarLinearity)
 		if isLeftLinearProduction(right, g) {
 			hasLeftLinear = true
 			fmt.Println(3)
+
 			continue
 		}
 
@@ -114,6 +123,7 @@ func IsRegular(g *model.Grammar) (IsRegular bool, linear model.GrammarLinearity)
 	} else { // 为右线性，或默认右线性
 		linear = model.RightLinear
 	}
+
 	return true, linear
 }
 
@@ -144,6 +154,7 @@ func isRightLinearProduction(right []model.Symbol, g *model.Grammar) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -174,6 +185,7 @@ func isLeftLinearProduction(right []model.Symbol, g *model.Grammar) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -190,5 +202,6 @@ func isContextSensitive(g *model.Grammar) bool {
 			return false
 		}
 	}
+
 	return true
 }

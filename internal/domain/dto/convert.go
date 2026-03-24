@@ -11,9 +11,9 @@ type GrammarToFARequest struct {
 
 // 文法转FA响应
 type GrammarToFAResponse struct {
-	Msg           string                    `json:"msg"`
-	Result        bool                      `json:"result"`
-	Process       *model.GrammarToFAProcess `json:"process,omitempty"`
+	Msg     string                    `json:"msg"`
+	Result  bool                      `json:"result"`
+	Process *model.GrammarToFAProcess `json:"process,omitempty"`
 }
 
 // 自动机转文法请求
@@ -48,7 +48,7 @@ type RegexToFARequest struct {
 
 // 正则表达式转FA响应
 type RegexToFAResponse struct {
-	Msg           string                    `json:"msg"`
-	Result        bool                      `json:"result"`
-	Process       *model.RegexToFAProcess   `json:"process,omitempty"`
+	Msg     string                  `json:"msg"`
+	Result  bool                    `json:"result"`
+	Process *model.RegexToFAProcess `json:"process,omitempty"`
 }

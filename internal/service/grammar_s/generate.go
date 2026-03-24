@@ -1,10 +1,11 @@
 package grammar_s
 
 import (
+	"math/rand/v2"
+
 	"backend/internal/domain/model"
 	"backend/internal/service/automaton_s"
 	"backend/pkg/util"
-	"math/rand/v2"
 )
 
 const (
@@ -23,6 +24,7 @@ func isTerminals(ss []model.Symbol, set map[model.Symbol]bool) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -48,6 +50,7 @@ func grammarGenerateExampleStringByCompletedDFAAndBFS(g *model.Grammar) (accept,
 	if err := a.CompleteDFA(); err != nil { // 完备化失败
 		return grammarGenerateExampleStringByEnumAndVerify(g)
 	}
+
 	return automaton_s.GenerateExampleStringsFromCompletedDFA(a)
 }
 
@@ -75,6 +78,7 @@ func grammarGenerateExampleStringByEnumAndVerify(g *model.Grammar) (accept, reje
 		}
 	*/
 	reject = generateRejectExampleString(g, seenAccept)
+
 	return accept, reject
 }
 
@@ -124,6 +128,7 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 				accept = append(accept, s)
 				seenAccept[s] = true
 			}
+
 			continue // 句子不能再推导
 		}
 
@@ -161,6 +166,7 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 					}
 				}
 				found = true
+
 				break // 最左推导，只替换第一个非终结符
 			}
 		}
@@ -174,6 +180,7 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 	if len(accept) == 0 {
 		return []string{"(未找到短接受字符串)"}
 	}
+
 	return accept
 }
 
@@ -223,5 +230,6 @@ func generateRejectExampleString(g *model.Grammar, seenAccept map[string]bool) (
 		rand.Shuffle(len(reject), func(i, j int) { reject[i], reject[j] = reject[j], reject[i] })
 		reject = reject[:maxExampleNum]
 	}
+
 	return reject
 }

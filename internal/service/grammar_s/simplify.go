@@ -229,6 +229,7 @@ func getNullableVariables(g *model.Grammar) []model.Symbol {
 			break
 		}
 	}
+
 	return newU
 }
 
@@ -270,7 +271,7 @@ func RemoveUnitProductions(g *model.Grammar) {
 			for _, p := range g.Productions {
 				if p.Left[0] == B {
 					// 非单一产生式：右部长度 ≠ 1 或不是非终结符
-					if !(len(p.Right) == 1 && g.CheckIsNonTerminal(p.Right[0])) {
+					if len(p.Right) != 1 || !g.CheckIsNonTerminal(p.Right[0]) {
 						newProductions = append(newProductions, model.Production{
 							Left:  []model.Symbol{A},
 							Right: p.Right,
@@ -290,12 +291,14 @@ func containsSymbol(slice []model.Symbol, item model.Symbol) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
 func copySlice(slice []model.Symbol) []model.Symbol {
 	cpy := make([]model.Symbol, len(slice))
 	copy(cpy, slice)
+
 	return cpy
 }
 
@@ -308,6 +311,7 @@ func slicesEqual(a, b []model.Symbol) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -317,6 +321,7 @@ func isAllTerminal(symbols []model.Symbol, g *model.Grammar) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -330,6 +335,7 @@ func canDeriveUsingSet(symbols []model.Symbol, vars []model.Symbol, g *model.Gra
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -348,7 +354,9 @@ func allInSet(symbols []model.Symbol, vars []model.Symbol, terms []model.Symbol)
 		if containsSymbol(vars, s) {
 			continue
 		}
+
 		return false
 	}
+
 	return true
 }

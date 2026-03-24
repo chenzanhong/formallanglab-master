@@ -1,11 +1,12 @@
 package grammar_s
 
 import (
-	"backend/internal/domain/model"
-	"backend/pkg/util"
 	"fmt"
 
 	"github.com/chenzanhong/zlog"
+
+	"backend/internal/domain/model"
+	"backend/pkg/util"
 )
 
 // 正则文法转自动机，需要区分左线性和右线性
@@ -22,6 +23,7 @@ func RegularGrammarToFA(g *model.Grammar) (*model.Automaton, error) {
 	case model.LeftLinear:
 		return leftLinearGrammarToFA(g), nil
 	}
+
 	return nil, fmt.Errorf("非线性文法，暂不支持转为有限自动机")
 }
 
@@ -36,6 +38,7 @@ func RegularGrammarToFAWithProcess(g *model.Grammar, grammarLinearity model.Gram
 	case model.LeftLinear:
 		return leftLinearGrammarToFAWithProcess(g)
 	}
+
 	return nil
 }
 
@@ -74,7 +77,7 @@ func rightLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 
 	// 状态转移
 	automaton.Transitions = make([]model.Transition, 0)
-	var hasModelAccept bool = false
+	hasModelAccept := false
 	for _, production := range g.Productions {
 		// fmt.Printf("产生式：%v", production)
 		var transition model.Transition
@@ -140,6 +143,7 @@ func rightLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 		automaton.States = append(automaton.States, model.UniqueFinalState)
 		automaton.AcceptingStates = append(automaton.AcceptingStates, model.UniqueFinalState)
 	}
+
 	return &automaton
 }
 
@@ -177,8 +181,8 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 		return model.State(fmt.Sprintf("%s_%d", from, intermediateStateIndex))
 	}
 
-	var hasModelAccept bool = false
-	var newStateFmt string = fmt.Sprintf("，新增加接受状态：%s", model.UniqueFinalState)
+	hasModelAccept := false
+	newStateFmt := fmt.Sprintf("，新增加接受状态：%s", model.UniqueFinalState)
 	// 遍历所有产生式
 	for _, prod := range g.Productions {
 		step := model.GrammarToFAStep{
@@ -760,6 +764,7 @@ func leftLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProces
 	}
 
 	process.FinalAutomaton = &automaton
+
 	return process
 }
 

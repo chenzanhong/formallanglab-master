@@ -13,16 +13,17 @@ GrammarGenerateExampleString // 生成文法可推导和不可推导的字符串
 package api
 
 import (
-	"backend/internal/domain/dto"
-	"backend/internal/domain/model"
-	"backend/internal/metrics"
-	"backend/internal/service/grammar_s"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/chenzanhong/zlog"
 	"github.com/gin-gonic/gin"
+
+	"backend/internal/domain/dto"
+	"backend/internal/domain/model"
+	"backend/internal/metrics"
+	"backend/internal/service/grammar_s"
 )
 
 // 文法校验——是否有效
@@ -42,6 +43,7 @@ func GrammarValidate(c *gin.Context) {
 			// Error:  err.Error(),
 			Result: false,
 		})
+
 		return
 	}
 
@@ -60,6 +62,7 @@ func GrammarValidate(c *gin.Context) {
 			Msg:    "无效文法：" + err.Error(),
 			Result: false,
 		})
+
 		return
 	}
 
@@ -89,6 +92,7 @@ func GrammarAmbiguityCheck(c *gin.Context) {
 			// Error:  err.Error(),
 			Result: false,
 		})
+
 		return
 	}
 
@@ -105,6 +109,7 @@ func GrammarAmbiguityCheck(c *gin.Context) {
 			Msg:  "无效文法：" + err.Error(),
 			Type: model.InvalidGrammar,
 		})
+
 		return
 	}
 
@@ -119,6 +124,7 @@ func GrammarAmbiguityCheck(c *gin.Context) {
 			Type:        grammarType,
 			IsAmbiguous: nil, // 无法判断
 		})
+
 		return
 	}
 
@@ -133,6 +139,7 @@ func GrammarAmbiguityCheck(c *gin.Context) {
 			// Error:  err.Error(),
 			Result: false,
 		})
+
 		return
 	}
 
@@ -170,6 +177,7 @@ func GrammarStringRecognize(c *gin.Context) {
 			// Error:  err.Error(),
 			Result: false,
 		})
+
 		return
 	}
 
@@ -187,6 +195,7 @@ func GrammarStringRecognize(c *gin.Context) {
 			Msg:      "无效文法: " + err.Error(),
 			Result:   false,
 		})
+
 		return
 	}
 
@@ -245,6 +254,7 @@ func GrammarTypeDetermine(c *gin.Context) {
 			Result: false,
 			Msg:    "参数解析失败",
 		})
+
 		return
 	}
 
@@ -262,6 +272,7 @@ func GrammarTypeDetermine(c *gin.Context) {
 			TypeName: "无效文法：" + err.Error(),
 			Result:   false,
 		})
+
 		return
 	}
 
@@ -294,6 +305,7 @@ func GrammarSimplify(c *gin.Context) {
 			// Error:  err.Error(),
 			Result: false,
 		})
+
 		return
 	}
 
@@ -310,6 +322,7 @@ func GrammarSimplify(c *gin.Context) {
 			Msg:    "无效文法：" + err.Error(),
 			Result: false,
 		})
+
 		return
 	}
 
@@ -341,6 +354,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 			IsEquivalent: false,
 			Result:       false,
 		})
+
 		return
 	}
 	// fmt.Printf("%+v\n", req.Grammar1)
@@ -363,6 +377,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 			IsEquivalent: false,
 			Result:       false,
 		})
+
 		return
 	}
 	if grammar_s.TypeDetermine(&req.Grammar1) != model.RegularGrammar { // 非正则文法
@@ -373,6 +388,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 			IsEquivalent: false,
 			Result:       false,
 		})
+
 		return
 	}
 	if grammar_s.GrammarCheckValidity(&req.Grammar2) != nil {
@@ -383,6 +399,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 			IsEquivalent: false,
 			Result:       false,
 		})
+
 		return
 	}
 	if grammar_s.TypeDetermine(&req.Grammar2) != model.RegularGrammar { // 非正则文法
@@ -393,6 +410,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 			IsEquivalent: false,
 			Result:       false,
 		})
+
 		return
 	}
 
@@ -407,6 +425,7 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 			IsEquivalent: false,
 			Result:       true,
 		})
+
 		return
 	}
 	// fmt.Println("耗时：", time.Since(time1))
@@ -434,6 +453,7 @@ func GrammarFirstSet(c *gin.Context) {
 			Msg:    "参数解析失败",
 			Result: false,
 		})
+
 		return
 	}
 
@@ -448,6 +468,7 @@ func GrammarFirstSet(c *gin.Context) {
 			Msg:    "无效文法：" + err.Error(),
 			Result: false,
 		})
+
 		return
 	}
 
@@ -481,6 +502,7 @@ func GrammarFollowSet(c *gin.Context) {
 			Msg:    "参数解析失败",
 			Result: false,
 		})
+
 		return
 	}
 
@@ -495,6 +517,7 @@ func GrammarFollowSet(c *gin.Context) {
 			Msg:    "无效文法：" + err.Error(),
 			Result: false,
 		})
+
 		return
 	}
 
@@ -531,6 +554,7 @@ func GrammarGenerateExampleString(c *gin.Context) {
 			// Error:  err.Error(),
 			Result: false,
 		})
+
 		return
 	}
 
@@ -547,6 +571,7 @@ func GrammarGenerateExampleString(c *gin.Context) {
 			Msg:    "无效文法：" + err.Error(),
 			Result: false,
 		})
+
 		return
 	}
 
@@ -559,6 +584,7 @@ func GrammarGenerateExampleString(c *gin.Context) {
 			Msg:    "不是二型/三型文法，暂不支持",
 			Result: false,
 		})
+
 		return
 	}
 	accept, reject := grammar_s.GrammarGenerateExampleString(&req.Grammar)
@@ -612,5 +638,6 @@ func convertMapToStringSlice(original map[model.Symbol]map[model.Symbol]struct{}
 		}
 		result[string(symbol)] = symbols
 	}
+
 	return result
 }

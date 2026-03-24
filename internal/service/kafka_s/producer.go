@@ -27,6 +27,7 @@ func NewKafkaProducerService(producer *kafka.Writer) *KafkaServiceImpl {
 func NewDefaultKafkaProducerService() *KafkaServiceImpl {
 	topic := os.Getenv("KAFKA_TOPIC")
 	brokers := strings.Split(strings.TrimSpace(os.Getenv("KAFKA_BROKERSS")), ",")
+
 	return &KafkaServiceImpl{
 		producer: &kafka.Writer{
 			Addr:         kafka.TCP(brokers...),

@@ -1,10 +1,11 @@
 package automaton_s
 
 import (
-	"backend/internal/domain/model"
 	"errors"
 	"fmt"
 	"strings"
+
+	"backend/internal/domain/model"
 )
 
 // concatRegex 拼接两个正则表达式，注意空字符串和 ε 的处理
@@ -29,8 +30,10 @@ func concatRegex(r1, r2 model.Regex) model.Regex {
 		if str[0] != '(' && needWrap(str) {
 			return "(" + str + ")"
 		}
+
 		return str
 	}
+
 	return model.Regex(wrap(r1) + wrap(r2))
 }
 
@@ -76,6 +79,7 @@ func unionRegex(r1, r2 model.Regex) model.Regex {
 	if (r1 == "ε" && r2 == "") || (r2 == "ε" && r1 == "") {
 		return "ε"
 	}
+
 	return model.Regex(string(r1) + "|" + string(r2))
 }
 
@@ -89,6 +93,7 @@ func starRegex(alphabet []model.Symbol, r model.Regex) model.Regex {
 	if containSymbol(alphabet, model.Symbol(r)) || (strings.HasPrefix(str, "(") && strings.HasSuffix(str, ")")) {
 		return model.Regex(str + "*")
 	}
+
 	return model.Regex("(" + str + ")*")
 }
 
@@ -99,6 +104,7 @@ func containSymbol(alphabet []model.Symbol, sym model.Symbol) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -164,7 +170,7 @@ func FAToRegex(a *model.Automaton) model.Regex {
 		}
 	}
 	// 记录被消除的状态
-	var eliminatedStates map[model.State]bool = make(map[model.State]bool)
+	eliminatedStates := make(map[model.State]bool)
 
 	// Step 4: 逐个消除状态
 	for _, r := range statesToEliminate {
@@ -212,6 +218,7 @@ func FAToRegex(a *model.Automaton) model.Regex {
 
 	// Step 5: 结果在 initial -> accept 之间
 	result := regexMap[a.InitialState][finalState]
+
 	return result
 }
 

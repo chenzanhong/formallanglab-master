@@ -1,8 +1,9 @@
 package automaton_s
 
 import (
-	"backend/internal/domain/model"
 	"fmt"
+
+	"backend/internal/domain/model"
 )
 
 // Recognize 判断自动机是否接受输入字符串 str
@@ -75,6 +76,7 @@ func recognizeDFA(automaton *model.Automaton, str string) (*model.RecognitionRes
 					NextState: "",
 				})
 			}
+
 			return &model.RecognitionResult{
 				IsAccepted: false,
 				Steps:      steps,
@@ -116,6 +118,7 @@ func recognizeNFA(automaton *model.Automaton, str string) (*model.RecognitionRes
 		if ContainsState(automaton.AcceptingStates, automaton.InitialState) {
 			return &model.RecognitionResult{IsAccepted: true}, nil
 		}
+
 		return &model.RecognitionResult{IsAccepted: false}, fmt.Errorf("该自动机无法识别空字符串")
 	}
 
@@ -166,7 +169,6 @@ func dfsForNFA(
 	visited map[string]bool,
 	deepest *[]model.RecognitionStep,
 ) (bool, []model.RecognitionStep) {
-
 	// 更新最深路径
 	if len(steps) > len(*deepest) {
 		*deepest = append([]model.RecognitionStep(nil), steps...)
@@ -184,6 +186,7 @@ func dfsForNFA(
 		if ContainsState(automaton.AcceptingStates, currentState) {
 			return true, steps
 		}
+
 		return false, steps
 	}
 
@@ -219,11 +222,12 @@ func recognizeEpsilonNFA(automaton *model.Automaton, str string) (*model.Recogni
 		if steps, found := findEpsilonPathToAccept(automaton, automaton.InitialState, []model.RecognitionStep{}, visited); found {
 			return &model.RecognitionResult{IsAccepted: true, Steps: steps}, nil // 此时的 steps 包含了 ε-转移
 		}
+
 		return &model.RecognitionResult{IsAccepted: false, Steps: []model.RecognitionStep{}}, fmt.Errorf("该自动机无法识别空字符串")
 	}
 
 	// 记录是否确定一定会识别失败
-	var mustFailed bool = false
+	mustFailed := false
 
 	// 分词（可能部分成功，即部分识别）
 	symbols, err := automaton.SplitString(str)
@@ -302,7 +306,6 @@ func dfsWithEpsilon(
 	visited map[string]bool,
 	deepest *[]model.RecognitionStep, // 记录最深路径，用于返回识别失败时的识别路径
 ) (bool, []model.RecognitionStep) {
-
 	// 更新最新路径
 	if len(steps) > len(*deepest) {
 		*deepest = append([]model.RecognitionStep(nil), steps...)
@@ -321,6 +324,7 @@ func dfsWithEpsilon(
 		if acceptSteps, found := findEpsilonPathToAccept(automaton, currentState, steps, visitedEps); found {
 			return true, acceptSteps
 		}
+
 		return false, steps
 	}
 
@@ -407,6 +411,7 @@ func isAcceptedForEpsilonNFA(automaton *model.Automaton, symbols []model.Symbol)
 			return true
 		}
 	}
+
 	return false
 }
 

@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"backend/internal/domain/model"
-
 	"gorm.io/gorm"
+
+	"backend/internal/domain/model"
 )
 
 // LearnRepository 学习资源仓库接口
@@ -56,8 +56,10 @@ func (r *LearnRepositoryImpl) GetMaterialByID(ctx context.Context, id int64) (*m
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil // 返回nil表示资源不存在
 		}
+
 		return nil, err
 	}
+
 	return &material, nil
 }
 
@@ -66,6 +68,7 @@ func (r *LearnRepositoryImpl) CreateMaterial(ctx context.Context, material *mode
 	if err := r.DB.WithContext(ctx).Create(material).Error; err != nil {
 		return 0, err
 	}
+
 	return material.ID, nil
 }
 

@@ -31,6 +31,7 @@ func Cleanup(automaton *model.Automaton) {
 				}
 			}
 		}
+
 		return closure
 	}
 

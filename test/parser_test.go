@@ -2,10 +2,11 @@
 package test
 
 import (
-	"backend/internal/domain/model"
-	"backend/internal/service/grammar_s"
 	"fmt"
 	"testing"
+
+	"backend/internal/domain/model"
+	"backend/internal/service/grammar_s"
 )
 
 // TestRecursiveDescentParser 测试递归下降分析器

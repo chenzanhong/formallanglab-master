@@ -1,8 +1,9 @@
 package automaton_s
 
 import (
-	"backend/internal/domain/model"
 	"fmt"
+
+	"backend/internal/domain/model"
 )
 
 // ComplementDFA 返回原 DFA 语言的补集 DFA

@@ -18,6 +18,7 @@ func NewAuthenticatedRequest(method, url, body, token string) *http.Request {
 	req := httptest.NewRequest(method, url, strings.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
+
 	return req
 }
 

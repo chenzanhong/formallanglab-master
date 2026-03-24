@@ -10,12 +10,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/chenzanhong/zlog"
+	"github.com/gin-gonic/gin"
+
 	"backend/internal/domain/dto"
 	"backend/internal/metrics"
 	re "backend/internal/service/regex_s"
-
-	"github.com/chenzanhong/zlog"
-	"github.com/gin-gonic/gin"
 )
 
 // 使用dto包中的结构体替代本地定义
@@ -37,6 +37,7 @@ func RegexValidate(c *gin.Context) {
 			Valid:  false,
 			Result: false,
 		})
+
 		return
 	}
 
@@ -48,6 +49,7 @@ func RegexValidate(c *gin.Context) {
 			Valid:  false,
 			Result: false,
 		})
+
 		return
 	}
 
@@ -76,6 +78,7 @@ func RegexRecognize(c *gin.Context) {
 			Matched: false,
 			Result:  false,
 		})
+
 		return
 	}
 
@@ -87,6 +90,7 @@ func RegexRecognize(c *gin.Context) {
 			Matched: false,
 			Result:  false,
 		})
+
 		return
 	}
 
@@ -99,6 +103,7 @@ func RegexRecognize(c *gin.Context) {
 			Matched: false,
 			Result:  false,
 		})
+
 		return
 	}
 
@@ -111,6 +116,7 @@ func RegexRecognize(c *gin.Context) {
 			Matched: false,
 			Result:  false,
 		})
+
 		return
 	}
 	metrics.IncOperation("regex", "recognize", "success")
@@ -136,6 +142,7 @@ func RegexEquivalenceCheck(c *gin.Context) {
 			Msg:    "无效的请求格式：" + err.Error(),
 			Result: false,
 		})
+
 		return
 	}
 
@@ -146,6 +153,7 @@ func RegexEquivalenceCheck(c *gin.Context) {
 			Msg:    "无效的正则表达式",
 			Result: false,
 		})
+
 		return
 	}
 
@@ -156,6 +164,7 @@ func RegexEquivalenceCheck(c *gin.Context) {
 			Msg:    "无效的正则表达式",
 			Result: false,
 		})
+
 		return
 	}
 
@@ -168,6 +177,7 @@ func RegexEquivalenceCheck(c *gin.Context) {
 			Result:       true,
 			IsEquivalent: false,
 		})
+
 		return
 	}
 	metrics.IncOperation("regex", "equivalence_check", "success")
@@ -194,6 +204,7 @@ func RegexGenerateExampleString(c *gin.Context) {
 			Msg:    "无效的请求格式：" + err.Error(),
 			Result: false,
 		})
+
 		return
 	}
 
@@ -204,6 +215,7 @@ func RegexGenerateExampleString(c *gin.Context) {
 			Msg:    "无效的正则表达式",
 			Result: false,
 		})
+
 		return
 	}
 

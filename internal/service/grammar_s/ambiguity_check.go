@@ -1,8 +1,9 @@
 package grammar_s
 
 import (
-	"backend/internal/domain/model"
 	"strings"
+
+	"backend/internal/domain/model"
 )
 
 // symbolsToStringJoinSep 将符号切片转为字符串，用于 map 的 key
@@ -16,6 +17,7 @@ func symbolsToStringJoinSep(symbols []model.Symbol) string {
 			parts[i] = string(sym)
 		}
 	}
+
 	return strings.Join(parts, "|")
 }
 
@@ -70,6 +72,7 @@ func IsAmbiguousRegular(g *model.Grammar) (bool, error) {
 			if sentenceCount[sentence] > 1 {
 				return true, nil
 			}
+
 			continue
 		}
 
@@ -106,6 +109,7 @@ func isAllTerminals(symbols []model.Symbol, g *model.Grammar) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -117,5 +121,6 @@ func flattenSymbols(symbols []model.Symbol) int {
 			count++
 		}
 	}
+
 	return count
 }

@@ -27,8 +27,8 @@ type GrammarToFAProcess struct {
 
 // ========== FA 转 Regex ===========
 type PathUpdate struct {
-	From     State  `json:"from"`
-	To       State  `json:"to"`
+	From     State `json:"from"`
+	To       State `json:"to"`
 	OldRegex Regex `json:"oldRegex"`
 	NewPart  Regex `json:"newPart"`
 	NewRegex Regex `json:"newRegex"`

@@ -1,8 +1,9 @@
 package regex_s
 
 import (
-	"backend/internal/domain/model"
 	"regexp"
+
+	"backend/internal/domain/model"
 )
 
 func RegexRecognize(pattern model.Regex, str string) (bool, error) {
@@ -27,5 +28,6 @@ func RegexRecognize(pattern model.Regex, str string) (bool, error) {
 	if !match {
 		return match, nil
 	}
+
 	return match, nil
 }

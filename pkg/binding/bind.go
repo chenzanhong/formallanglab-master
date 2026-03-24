@@ -34,6 +34,7 @@ func PageValid(fl validator.FieldLevel) bool {
 	if fl.Field().Kind() != reflect.String {
 		return false
 	}
+
 	return validPages[fl.Field().String()]
 }
 

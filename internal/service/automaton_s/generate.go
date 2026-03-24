@@ -1,9 +1,10 @@
 package automaton_s
 
 import (
+	"fmt"
+
 	"backend/internal/domain/model"
 	"backend/pkg/util"
-	"fmt"
 )
 
 const maxExampleNum = 6
@@ -21,11 +22,12 @@ func automatonGenerateExampleStringByDFAAndBFS(a *model.Automaton) (accept, reje
 		a = NFAToDFA(a)
 	}
 	if err := a.CompleteDFA(); err != nil { // 完备化失败
-
 		fmt.Println("BFSShortestAcceptedStringsForDFA")
 		util.PrintAutomaton(a)
+
 		return automatonGenerateExampleStringByEnumAndVerify(a)
 	}
+
 	return GenerateExampleStringsFromCompletedDFA(a)
 }
 

@@ -34,6 +34,7 @@ func TestAuthFlow(t *testing.T) {
 				"name":   "testuser",
 			}
 			json.NewEncoder(w).Encode(resp)
+
 			return
 
 		case "/api/user/login":
@@ -52,6 +53,7 @@ func TestAuthFlow(t *testing.T) {
 				"id":     uint(1),
 			}
 			json.NewEncoder(w).Encode(resp)
+
 			return
 
 		case "/api/automaton/list":
@@ -70,6 +72,7 @@ func TestAuthFlow(t *testing.T) {
 					"msg":    "未授权访问",
 				}
 				json.NewEncoder(w).Encode(resp)
+
 				return
 			}
 
@@ -84,6 +87,7 @@ func TestAuthFlow(t *testing.T) {
 				},
 			}
 			json.NewEncoder(w).Encode(resp)
+
 			return
 
 		default:
@@ -192,6 +196,7 @@ func TestMockServerTest(t *testing.T) {
 				"id":     1,
 			}
 			json.NewEncoder(w).Encode(resp)
+
 			return
 		}
 
@@ -212,6 +217,7 @@ func TestMockServerTest(t *testing.T) {
 				},
 			}
 			json.NewEncoder(w).Encode(resp)
+
 			return
 		}
 

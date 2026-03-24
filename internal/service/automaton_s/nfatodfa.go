@@ -1,10 +1,11 @@
 package automaton_s
 
 import (
-	"backend/internal/domain/model"
 	"fmt"
 	"sort"
 	"strings"
+
+	"backend/internal/domain/model"
 )
 
 // NFAToDFA 将 NFA 转换为等价的 DFA， 子集构造法
@@ -32,6 +33,7 @@ func NFAToDFA(nfa *model.Automaton) *model.Automaton {
 			sorted[i] = string(s)
 		}
 		sort.Strings(sorted)
+
 		return model.State("{" + strings.Join(sorted, ",") + "}")
 	}
 
@@ -139,6 +141,7 @@ func NFAToDFAWithProcess(nfa *model.Automaton) *model.NFADeterminizationProcess 
 			sorted[i] = string(s)
 		}
 		sort.Strings(sorted)
+
 		return model.State("{" + strings.Join(sorted, ",") + "}")
 	}
 
@@ -172,6 +175,7 @@ func NFAToDFAWithProcess(nfa *model.Automaton) *model.NFADeterminizationProcess 
 					return []model.State{initialState}
 				}
 			}
+
 			return nil
 		}(),
 		Type: model.DFA,
@@ -250,6 +254,7 @@ func NFAToDFAWithProcess(nfa *model.Automaton) *model.NFADeterminizationProcess 
 				if !ContainsState(dfaAccepting, currentName) {
 					dfaAccepting = append(dfaAccepting, currentName)
 				}
+
 				break
 			}
 		}

@@ -40,6 +40,7 @@ func HasAmbiguityOptimized(g *model.Grammar, maxLen int) (bool, []model.Symbol) 
 			}
 		}
 	}
+
 	return false, nil
 }
 
@@ -62,6 +63,7 @@ func generateStringsOfLength(g *model.Grammar, length int) [][]model.Symbol {
 			}
 		}
 	}
+
 	return result
 }
 
@@ -170,6 +172,7 @@ func generateLanguage(g *model.Grammar, maxDepth int) map[string]bool {
 						})
 					}
 				}
+
 				break // 只替换第一个非终结符
 			}
 		}

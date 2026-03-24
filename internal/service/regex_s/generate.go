@@ -1,12 +1,13 @@
 package regex_s
 
 import (
-	"backend/internal/domain/model"
-	"backend/internal/service/automaton_s"
-	"backend/pkg/util"
 	"fmt"
 	"regexp"
 	"slices"
+
+	"backend/internal/domain/model"
+	"backend/internal/service/automaton_s"
+	"backend/pkg/util"
 )
 
 const (
@@ -21,7 +22,6 @@ func RegexGenerateExampleString(regex model.Regex) (accept, reject []string) {
 	// 转DFA+补集
 	return regexGenerateExampleStringByCompletedDFAAndBFS(regex)
 	// 枚举+验证
-	return regexGenerateExampleStringByEnumAndVerify(regex)
 }
 
 // 转DFA+补集
@@ -38,6 +38,7 @@ func regexGenerateExampleStringByCompletedDFAAndBFS(regex model.Regex) (accept, 
 		fmt.Printf("完备化失败：%v", err)
 		return regexGenerateExampleStringByEnumAndVerify(regex)
 	}
+
 	return automaton_s.GenerateExampleStringsFromCompletedDFA(a)
 }
 
@@ -108,5 +109,6 @@ func extractAlphabet(pattern string) []string {
 		}
 	}
 	slices.Sort(alphabet)
+
 	return alphabet
 }

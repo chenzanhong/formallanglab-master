@@ -1,11 +1,12 @@
 package main
 
 import (
+	"fmt"
+
 	"backend/internal/domain/model"
 	"backend/internal/service/automaton_s"
 	"backend/internal/service/grammar_s"
 	"backend/internal/service/regex_s"
-	"fmt"
 )
 
 var grammar = &model.Grammar{ // a+|ba*
@@ -13,11 +14,11 @@ var grammar = &model.Grammar{ // a+|ba*
 	NonTerminals: []model.Symbol{"S", "A", "B"},
 	Terminals:    []model.Symbol{"a", "b"},
 	Productions: []model.Production{
-		{[]model.Symbol{"S"}, []model.Symbol{"a", "A"}},
-		{[]model.Symbol{"S"}, []model.Symbol{"b", "B"}},
-		{[]model.Symbol{"A"}, []model.Symbol{"B"}},
+		{Left: []model.Symbol{"S"}, Right: []model.Symbol{"a", "A"}},
+		{Left: []model.Symbol{"S"}, Right: []model.Symbol{"b", "B"}},
+		{Left: []model.Symbol{"A"}, Right: []model.Symbol{"B"}},
 		{Left: []model.Symbol{"B"}, Right: []model.Symbol{"a", "A"}},
-		{[]model.Symbol{"B"}, []model.Symbol{model.Epsilon}},
+		{Left: []model.Symbol{"B"}, Right: []model.Symbol{model.Epsilon}},
 	},
 	GrammarType: model.RegularGrammar,
 }

@@ -69,10 +69,11 @@ package grammar_s
 */
 
 import (
-	"backend/internal/domain/model"
 	"fmt"
 	"strings"
 	"sync"
+
+	"backend/internal/domain/model"
 )
 
 // ===================================================================================
@@ -102,6 +103,7 @@ func grammarCacheKey(grammar *model.Grammar) string {
 		}
 		key.WriteRune(';')
 	}
+
 	return key.String()
 }
 
@@ -112,6 +114,7 @@ func copySymbols(src []model.Symbol) []model.Symbol {
 	}
 	dst := make([]model.Symbol, len(src))
 	copy(dst, src)
+
 	return dst
 }
 
@@ -130,6 +133,7 @@ func symbolsToStringJoinSepFast(symbols []model.Symbol) string {
 		}
 		builder.WriteString(string(sym))
 	}
+
 	return builder.String()
 }
 
@@ -335,6 +339,7 @@ func symbolsEqual(a, b []model.Symbol) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -343,6 +348,7 @@ func canDeriveEpsilon(grammar *model.Grammar) bool {
 	firstSet := CalculateFirst(grammar)
 	start := grammar.StartSymbol
 	_, can := firstSet[start][model.Epsilon]
+
 	return can
 }
 
@@ -361,8 +367,10 @@ func RecognizeString(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth 
 					return true, []string{fmt.Sprintf("%s → ε", string(g.StartSymbol))}, nil
 				}
 			}
+
 			return true, []string{fmt.Sprintf("%s → ε", string(g.StartSymbol))}, nil
 		}
+
 		return false, nil, nil
 	}
 
@@ -408,7 +416,7 @@ func RecognizeString(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth 
 				if curr.symbols[i] == leftSymbol {
 					// 替换第 i 个符号（若产生式为 ε，则不添加任何符号）
 					newSymbols := append([]model.Symbol{}, curr.symbols[:i]...)
-					if !(len(prod.Right) == 0 || prod.Right[0] == model.Epsilon) {
+					if len(prod.Right) != 0 && prod.Right[0] != model.Epsilon {
 						for _, r := range prod.Right {
 							if r != model.Epsilon {
 								newSymbols = append(newSymbols, r)
@@ -465,10 +473,12 @@ func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth
 				Input:       []model.Symbol{},
 				Action:      "接受空输入",
 			}}
+
 			return result
 		}
 		result.Accepted = false
 		result.Error = "文法不能推导出空字符串"
+
 		return result
 	}
 
@@ -535,6 +545,7 @@ func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth
 			result.Steps = steps
 			result.Accepted = true
 			result.Message = fmt.Sprintf("输入串通过 %d 步推导被接受", len(curr.path))
+
 			return result
 		}
 
@@ -595,6 +606,7 @@ func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth
 
 	result.Accepted = false
 	result.Error = fmt.Sprintf("在 %d 步内未找到匹配的推导路径", maxSteps)
+
 	return result
 }
 
@@ -809,6 +821,7 @@ func LL1ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 	if isLL1, msg := IsLL1(grammar); !isLL1 {
 		result.Accepted = false
 		result.Error = fmt.Sprintf("文法不是 LL(1) 文法: %s", msg)
+
 		return result
 	}
 
@@ -839,6 +852,7 @@ func LL1ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 				if _, exists := table[left][t]; exists {
 					result.Accepted = false
 					result.Error = fmt.Sprintf("LL(1) 冲突: %s → ... 和另一产生式在 %s", string(left), string(t))
+
 					return result
 				}
 				table[left][t] = i
@@ -850,6 +864,7 @@ func LL1ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 				if _, exists := table[left][t]; exists {
 					result.Accepted = false
 					result.Error = fmt.Sprintf("LL(1) FOLLOW 冲突: %s → ... 和另一产生式在 %s", string(left), string(t))
+
 					return result
 				}
 				table[left][t] = i
@@ -876,6 +891,7 @@ func LL1ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 		if ip >= len(inputWithEnd) {
 			result.Accepted = false
 			result.Error = "输入串太短"
+
 			return result
 		}
 
@@ -898,6 +914,7 @@ func LL1ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 			step.Action = fmt.Sprintf("出栈 %s，移动输入指针", string(top))
 
 			result.Steps = append(result.Steps, step)
+
 			continue
 		}
 
@@ -910,6 +927,7 @@ func LL1ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 
 			result.Accepted = false
 			result.Error = step.Description
+
 			return result
 		}
 
@@ -941,6 +959,7 @@ func LL1ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 
 			result.Accepted = false
 			result.Error = step.Description
+
 			return result
 		}
 	}
@@ -994,6 +1013,7 @@ func LL1ParseWithRecovery(grammar *model.Grammar, input []model.Symbol) *model.P
 	if isLL1, msg := IsLL1(grammar); !isLL1 {
 		result.Accepted = false
 		result.Error = fmt.Sprintf("文法不是 LL(1) 文法: %s", msg)
+
 		return result
 	}
 
@@ -1024,6 +1044,7 @@ func LL1ParseWithRecovery(grammar *model.Grammar, input []model.Symbol) *model.P
 				if _, exists := table[left][t]; exists {
 					result.Accepted = false
 					result.Error = fmt.Sprintf("LL(1) 冲突: %s → ... 和另一产生式在 %s", string(left), string(t))
+
 					return result
 				}
 				table[left][t] = i
@@ -1035,6 +1056,7 @@ func LL1ParseWithRecovery(grammar *model.Grammar, input []model.Symbol) *model.P
 				if _, exists := table[left][t]; exists {
 					result.Accepted = false
 					result.Error = fmt.Sprintf("LL(1) FOLLOW 冲突: %s → ... 和另一产生式在 %s", string(left), string(t))
+
 					return result
 				}
 				table[left][t] = i
@@ -1063,6 +1085,7 @@ func LL1ParseWithRecovery(grammar *model.Grammar, input []model.Symbol) *model.P
 		if ip >= len(inputWithEnd) {
 			result.Accepted = false
 			result.Error = "输入串太短"
+
 			return result
 		}
 
@@ -1085,6 +1108,7 @@ func LL1ParseWithRecovery(grammar *model.Grammar, input []model.Symbol) *model.P
 			step.Action = fmt.Sprintf("出栈 %s，移动输入指针", string(top))
 
 			result.Steps = append(result.Steps, step)
+
 			continue
 		}
 
@@ -1098,6 +1122,7 @@ func LL1ParseWithRecovery(grammar *model.Grammar, input []model.Symbol) *model.P
 
 			ip++ // 跳过错误的输入符号
 			errorCount++
+
 			continue
 		}
 
@@ -1214,6 +1239,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode Mode, showSt
 		if !showSteps {
 			result.Steps = nil
 		}
+
 		return result
 
 	// 教学用
@@ -1231,6 +1257,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode Mode, showSt
 		if !showSteps {
 			result.Steps = nil
 		}
+
 		return result
 
 	case RecursiveDescentMode:
@@ -1247,6 +1274,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode Mode, showSt
 		if !showSteps {
 			result.Steps = nil
 		}
+
 		return result
 
 	case LR0Mode:
@@ -1263,6 +1291,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode Mode, showSt
 		if !showSteps {
 			result.Steps = nil
 		}
+
 		return result
 
 	// 暂未实现
@@ -1280,6 +1309,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode Mode, showSt
 		if !showSteps {
 			result.Steps = nil
 		}
+
 		return result
 
 	case BFSMode:
@@ -1287,6 +1317,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode Mode, showSt
 		if !showSteps {
 			result.Steps = nil
 		}
+
 		return result
 
 	case AutoMode:
@@ -1301,6 +1332,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode Mode, showSt
 			if !showSteps {
 				result.Steps = nil
 			}
+
 			return result
 		}
 
@@ -1341,6 +1373,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode Mode, showSt
 		} else if rdResult.Error == "" {
 			return rdResult
 		}
+
 		return bfsResult
 	}
 }
@@ -1693,6 +1726,7 @@ func itemSetToString(items []LR0Item) string {
 	for _, item := range items {
 		strs = append(strs, itemToString(item))
 	}
+
 	return strings.Join(strs, "|")
 }
 
@@ -1722,6 +1756,7 @@ func findProductionIndex(grammar *model.Grammar, target *model.Production) int {
 			return i
 		}
 	}
+
 	return -1
 }
 
@@ -1764,6 +1799,7 @@ func BuildLR1Table(grammar *model.Grammar) (*LRTable, error) {
 	// 2. 构造ACTION和GOTO表（包含向前看符号）
 	return nil, fmt.Errorf("LR(1)分析表构造尚未实现")
 }
+
 func LR0ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.ParseResult {
 	result := &model.ParseResult{
 		Method: "LR(0) 分析",
@@ -1774,6 +1810,7 @@ func LR0ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 	if isLR0, msg := IsLR0Grammar(grammar); !isLR0 {
 		result.Accepted = false
 		result.Error = fmt.Sprintf("文法不是LR(0)文法: %s", msg)
+
 		return result
 	}
 
@@ -1783,6 +1820,7 @@ func LR0ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 	if err != nil {
 		result.Accepted = false
 		result.Error = fmt.Sprintf("构造LR(0)分析表失败: %s", err.Error())
+
 		return result
 	}
 
@@ -1806,6 +1844,7 @@ func LR0ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 		if ip >= len(inputWithEnd) {
 			result.Accepted = false
 			result.Error = "输入串意外结束"
+
 			return result
 		}
 
@@ -1828,6 +1867,7 @@ func LR0ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 
 			result.Accepted = false
 			result.Error = step.Description
+
 			return result
 		}
 
@@ -1874,6 +1914,7 @@ func LR0ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 
 				result.Accepted = false
 				result.Error = step.Description
+
 				return result
 			}
 
@@ -1894,6 +1935,7 @@ func LR0ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 
 			result.Accepted = true
 			result.Message = "输入串被LR(0)分析器接受"
+
 			return result
 
 		default:
@@ -1904,6 +1946,7 @@ func LR0ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 
 			result.Accepted = false
 			result.Error = step.Description
+
 			return result
 		}
 	}
@@ -1920,6 +1963,7 @@ func LR1ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 	if isLR1, msg := IsLR1Grammar(grammar); !isLR1 {
 		result.Accepted = false
 		result.Error = fmt.Sprintf("文法不是LR(1)文法: %s", msg)
+
 		return result
 	}
 
@@ -1929,6 +1973,7 @@ func LR1ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 	// 3. 记录详细步骤
 	result.Accepted = false
 	result.Error = "LR(1)分析器尚未实现"
+
 	return result
 }
 
@@ -2137,9 +2182,7 @@ func eliminateLeftRecursion(grammar *model.Grammar) *model.Grammar {
 			})
 		} else {
 			// 无左递归，直接复制
-			for _, prod := range nonLeftRecursive {
-				newGrammar.Productions = append(newGrammar.Productions, prod)
-			}
+			newGrammar.Productions = append(newGrammar.Productions, nonLeftRecursive...)
 		}
 	}
 
@@ -2172,9 +2215,8 @@ func leftFactor(grammar *model.Grammar) *model.Grammar {
 		prods := productionMap[nt]
 		if len(prods) <= 1 {
 			// 只有一个或零个产生式，无需处理
-			for _, prod := range prods {
-				newGrammar.Productions = append(newGrammar.Productions, prod)
-			}
+			newGrammar.Productions = append(newGrammar.Productions, prods...)
+
 			continue
 		}
 
@@ -2285,6 +2327,7 @@ func RecursiveDescentParse(grammar *model.Grammar, input []model.Symbol) *model.
 	if !canUseRecursiveDescent(processedGrammar) {
 		result.Accepted = false
 		result.Error = "文法处理后仍不适用于递归下降分析"
+
 		return result
 	}
 
@@ -2340,6 +2383,7 @@ func RecursiveDescentParse(grammar *model.Grammar, input []model.Symbol) *model.
 	}
 
 	result.Steps = parser.Steps
+
 	return result
 }
 
@@ -2353,6 +2397,7 @@ func (p *RecursiveDescentParser) getCurrentSymbol() model.Symbol {
 	if p.Pos >= len(p.Input) {
 		return "#" // 输入结束
 	}
+
 	return p.Input[p.Pos]
 }
 
@@ -2378,8 +2423,10 @@ func (p *RecursiveDescentParser) consume(expected model.Symbol) bool {
 			InputPos:    p.Pos,
 			Action:      fmt.Sprintf("消费符号 %s", string(expected)),
 		})
+
 		return true
 	}
+
 	return false
 }
 
@@ -2437,6 +2484,7 @@ func (p *RecursiveDescentParser) parseNonTerminal(nt model.Symbol) bool {
 			InputPos:    p.Pos,
 			Action:      "解析失败",
 		})
+
 		return false
 	}
 
@@ -2450,6 +2498,7 @@ func (p *RecursiveDescentParser) parseNonTerminal(nt model.Symbol) bool {
 			if _, ok := followSet[nt][current]; ok {
 				fmt.Println(2)
 				selectedProd = &prod
+
 				break
 			}
 		} else {
@@ -2506,6 +2555,7 @@ func (p *RecursiveDescentParser) parseNonTerminal(nt model.Symbol) bool {
 			InputPos:    p.Pos,
 			Action:      "解析失败",
 		})
+
 		return false
 	}
 
@@ -2580,6 +2630,7 @@ func (p *RecursiveDescentParser) canDerive(symbols []model.Symbol, target model.
 			return false
 		}
 	}
+
 	return false
 }
 
@@ -2608,5 +2659,6 @@ func (p *RecursiveDescentParser) calculateFirstOfSequence(seq []model.Symbol, fi
 
 	// 所有符号都能推出 ε
 	result[model.Epsilon] = struct{}{}
+
 	return result
 }

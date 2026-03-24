@@ -1,8 +1,9 @@
 package automaton_s
 
 import (
-	"backend/internal/domain/model"
 	"fmt"
+
+	"backend/internal/domain/model"
 )
 
 // AutomatonEquivalenceCheck 自动机等价检查
@@ -13,6 +14,7 @@ func AutomatonEquivalenceCheck(a1, a2 *model.Automaton) (minDFA1, minDFA2 *model
 		if a1 == nil && a2 == nil {
 			return nil, nil, true
 		}
+
 		return a1, a2, false
 	}
 	if a1.Type != model.DFA {
@@ -24,6 +26,7 @@ func AutomatonEquivalenceCheck(a1, a2 *model.Automaton) (minDFA1, minDFA2 *model
 		a2 = NFAToDFA(a2)
 	}
 	minDFA2 = DFAMinimize(a2)
+
 	return minDFA1, minDFA2, AreDFAsIsomorphic(minDFA1, minDFA2)
 }
 
@@ -80,6 +83,7 @@ func canonicalize(dfa *model.Automaton) *model.Automaton {
 			newStateName = model.State(fmt.Sprintf("q%d", len(stateMap)))
 		}
 	}
+
 	return canonicalDFA
 }
 
@@ -106,6 +110,7 @@ func compareStates(s1, s2 []model.State) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -119,6 +124,7 @@ func compareAcceptingStates(a1, a2 []model.State) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -134,6 +140,7 @@ func compareTransitions(t1, t2 []model.Transition) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -144,5 +151,6 @@ func contains(arr []model.State, str model.State) bool {
 			return true
 		}
 	}
+
 	return false
 }

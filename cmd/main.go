@@ -1,16 +1,6 @@
 package main
 
 import (
-	"backend/configs"
-	cf "backend/configs"
-	"backend/internal/api"
-	"backend/internal/middleware"
-	rep "backend/internal/repository"
-	kafka_s "backend/internal/service/kafka_s"
-	learnSvc "backend/internal/service/learn_s"
-	storeSvc "backend/internal/service/store_s"
-	"backend/pkg/binding"
-	"backend/pkg/oss"
 	"context"
 	"fmt"
 	"log"
@@ -22,10 +12,20 @@ import (
 	"syscall"
 	"time"
 
-	mtr "backend/internal/metrics"
-
 	"github.com/chenzanhong/goutil/jwtx"
 	"github.com/chenzanhong/zlog"
+
+	"backend/configs"
+	cf "backend/configs"
+	"backend/internal/api"
+	mtr "backend/internal/metrics"
+	"backend/internal/middleware"
+	rep "backend/internal/repository"
+	kafka_s "backend/internal/service/kafka_s"
+	learnSvc "backend/internal/service/learn_s"
+	storeSvc "backend/internal/service/store_s"
+	"backend/pkg/binding"
+	"backend/pkg/oss"
 )
 
 func init() {

@@ -1,10 +1,11 @@
 package regex_s
 
 import (
-	"backend/internal/domain/model"
-	"backend/pkg/util"
 	"fmt"
 	"regexp"
+
+	"backend/internal/domain/model"
+	"backend/pkg/util"
 )
 
 /*
@@ -70,5 +71,6 @@ func RegexEquivalenceCheck(pattern1 model.Regex, pattern2 model.Regex) (bool, er
 			return false, fmt.Errorf("找到反例: %s。%s匹配结果为%v，但是%s匹配结果为%v", candidate, pattern1, m1, pattern2, m2)
 		}
 	}
+
 	return true, nil
 }

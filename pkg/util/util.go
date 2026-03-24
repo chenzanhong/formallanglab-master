@@ -1,17 +1,19 @@
 package util
 
 import (
-	"backend/internal/domain/model"
 	"fmt"
 	"math/rand/v2"
 	"sort"
 	"strings"
+
+	"backend/internal/domain/model"
 )
 
 func Max(a, b int) int {
 	if a > b {
 		return a
 	}
+
 	return b
 }
 
@@ -19,6 +21,7 @@ func Min(a, b int) int {
 	if a < b {
 		return a
 	}
+
 	return b
 }
 
@@ -28,6 +31,7 @@ func SymbolsToString(syms []model.Symbol) string {
 	for _, sym := range syms {
 		s.WriteString(string(sym))
 	}
+
 	return s.String()
 }
 
@@ -60,8 +64,10 @@ func GenerateStrings(terminals []string, maxLen int) []string {
 		if len(result[i]) != len(result[j]) {
 			return len(result[i]) < len(result[j])
 		}
+
 		return result[i] < result[j]
 	})
+
 	return result
 }
 
@@ -107,6 +113,7 @@ func SamplingExampleStrings(ss []string, maxExampleNum int) []string {
 			break
 		}
 	}
+
 	return sampling
 }
 
@@ -157,6 +164,7 @@ func PrintAutomaton(a *model.Automaton) {
 				if t.Input == model.Epsilon {
 					return "ε"
 				}
+
 				return fmt.Sprintf("%q", string(t.Input))
 			}()
 			toStrs := QuoteStates(t.ToStates)
@@ -171,6 +179,7 @@ func QuoteStates(states []model.State) []string {
 	for i, s := range states {
 		result[i] = fmt.Sprintf("%q", s)
 	}
+
 	return result
 }
 
@@ -180,6 +189,7 @@ func SymbolsToStates(syms []model.Symbol) []model.State {
 	for i, sym := range syms {
 		result[i] = model.State(sym)
 	}
+
 	return result
 }
 
@@ -193,6 +203,7 @@ func QuoteSymbols(syms []model.Symbol) []string {
 			res[i] = fmt.Sprintf("%q", string(s))
 		}
 	}
+
 	return res
 }
 
@@ -210,6 +221,7 @@ func PrintGrammar(g *model.Grammar) {
 		if g.StartSymbol == model.Epsilon {
 			return "ε"
 		}
+
 		return fmt.Sprintf("%q", string(g.StartSymbol))
 	}()
 	fmt.Printf("Start Symbol: %s\n", start)

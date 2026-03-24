@@ -1,8 +1,9 @@
 package storage
 
 import (
-	"backend/internal/domain/model"
 	"time"
+
+	"backend/internal/domain/model"
 )
 
 type AutomatonRecord struct {

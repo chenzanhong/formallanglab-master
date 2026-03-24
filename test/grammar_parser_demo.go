@@ -2,10 +2,11 @@
 package test
 
 import (
-	"backend/internal/domain/model"
-	"backend/internal/service/grammar_s"
 	"fmt"
 	"strings"
+
+	"backend/internal/domain/model"
+	"backend/internal/service/grammar_s"
 )
 
 // DemoLL1Parser 演示LL(1)分析器的使用
@@ -223,10 +224,10 @@ func testErrorHandling() {
 
 	// 测试错误输入
 	errorInputs := []string{
-		"a",           // 输入不完整
-		"ba",          // 顺序错误
-		"abc",         // 多余字符
-		"c",           // 无效字符
+		"a",   // 输入不完整
+		"ba",  // 顺序错误
+		"abc", // 多余字符
+		"c",   // 无效字符
 	}
 
 	errorDescriptions := []string{
@@ -265,6 +266,7 @@ func symbolsToStringJoinSep(symbols []model.Symbol) string {
 			result += string(sym)
 		}
 	}
+
 	return result
 }
 
@@ -272,5 +274,6 @@ func getResultString(accepted bool) string {
 	if accepted {
 		return "接受"
 	}
+
 	return "拒绝"
 }

@@ -1,15 +1,16 @@
 package api
 
 import (
-	"backend/internal/domain/dto"
-	"backend/internal/metrics"
-	"backend/internal/service/learn_s"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/chenzanhong/zlog"
 	"github.com/gin-gonic/gin"
+
+	"backend/internal/domain/dto"
+	"backend/internal/metrics"
+	"backend/internal/service/learn_s"
 )
 
 // LearnHandler 学习资源处理器
@@ -45,6 +46,7 @@ func (h *LearnHandler) LearnList(c *gin.Context) {
 		metrics.IncOperation("learn", "list", "error")
 		zlog.Errorw("获取学习资源列表失败", "error", err, "category", category)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取学习资源列表失败"})
+
 		return
 	}
 
@@ -72,6 +74,7 @@ func (h *LearnHandler) LearnGetByID(c *gin.Context) {
 		metrics.IncOperation("learn", "get_by_id", "error")
 		zlog.Errorw("无效的资源ID", "error", err, "id", idStr)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的资源ID"})
+
 		return
 	}
 
@@ -81,6 +84,7 @@ func (h *LearnHandler) LearnGetByID(c *gin.Context) {
 		metrics.IncOperation("learn", "get_by_id", "error")
 		zlog.Errorw("获取学习资源详情失败", "error", err, "id", id)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取学习资源详情失败"})
+
 		return
 	}
 
@@ -88,6 +92,7 @@ func (h *LearnHandler) LearnGetByID(c *gin.Context) {
 		metrics.IncOperation("learn", "get_by_id", "error")
 		zlog.Warnw("学习资源不存在", "id", id)
 		c.JSON(http.StatusNotFound, gin.H{"error": "学习资源不存在"})
+
 		return
 	}
 
@@ -123,6 +128,7 @@ func (h *LearnHandler) LearnAddMaterial(c *gin.Context) {
 		metrics.IncOperation("learn", "add", "error")
 		zlog.Errorw("无效的请求参数", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
 		return
 	}
 
@@ -131,6 +137,7 @@ func (h *LearnHandler) LearnAddMaterial(c *gin.Context) {
 		metrics.IncOperation("learn", "add", "error")
 		zlog.Errorw("添加学习资源失败", "error", err, "title", req.Title)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "添加学习资源失败"})
+
 		return
 	}
 
@@ -158,6 +165,7 @@ func (h *LearnHandler) LearnDeleteMaterial(c *gin.Context) {
 		metrics.IncOperation("learn", "delete", "error")
 		zlog.Errorw("无效的资源ID", "error", err, "id", idStr)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的资源ID"})
+
 		return
 	}
 
@@ -166,6 +174,7 @@ func (h *LearnHandler) LearnDeleteMaterial(c *gin.Context) {
 		metrics.IncOperation("learn", "delete", "error")
 		zlog.Errorw("删除学习资源失败", "error", err, "id", id)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "删除学习资源失败"})
+
 		return
 	}
 
@@ -191,6 +200,7 @@ func (h *LearnHandler) LearnSyncOSSFiles(c *gin.Context) {
 		metrics.IncOperation("learn", "sync", "error")
 		zlog.Errorw("同步OSS文件失败", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "同步OSS文件失败"})
+
 		return
 	}
 

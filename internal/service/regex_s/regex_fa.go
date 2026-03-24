@@ -2,13 +2,14 @@
 package regex_s
 
 import (
-	"backend/internal/domain/model"
 	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/chenzanhong/zlog"
 	"go.uber.org/zap"
+
+	"backend/internal/domain/model"
 )
 
 // Token 类型
@@ -49,10 +50,12 @@ func (node *astNode) String() string {
 		if node.val == model.Epsilon {
 			return string(model.Epsilon)
 		}
+
 		return string(node.val)
 	case "union":
 		left := node.left.String()
 		right := node.right.String()
+
 		return fmt.Sprintf("(%s|%s)", left, right)
 	case "concat":
 		left := node.left.String()
@@ -70,11 +73,11 @@ func (node *astNode) String() string {
 		if node.child.typ == "char" || node.child.typ == "union" {
 			return "(" + childStr + ")*"
 		}
+
 		return childStr + "*"
 	default:
 		return "?"
 	}
-
 }
 
 // ===== 1. 词法分析器（支持 + ?）=====
@@ -123,6 +126,7 @@ func lex(pattern string) ([]token, error) {
 		i++
 	}
 	tokens = append(tokens, token{typ: tokEOF})
+
 	return tokens, nil
 }
 
@@ -136,12 +140,14 @@ func (p *parser) peek() token {
 	if p.pos < len(p.tokens) {
 		return p.tokens[p.pos]
 	}
+
 	return token{typ: tokEOF}
 }
 
 func (p *parser) consume() token {
 	t := p.peek()
 	p.pos++
+
 	return t
 }
 
@@ -152,6 +158,7 @@ func (p *parser) parseUnion() *astNode {
 		right := p.parseConcat()
 		left = &astNode{typ: "union", left: left, right: right}
 	}
+
 	return left
 }
 
@@ -174,6 +181,7 @@ func (p *parser) parseConcat() *astNode {
 	for i := 1; i < len(nodes); i++ {
 		result = &astNode{typ: "concat", left: result, right: nodes[i]}
 	}
+
 	return result
 }
 
@@ -227,22 +235,25 @@ func parseRegex(pattern string) (*astNode, error) {
 		return nil, err
 	}
 	p := &parser{tokens: tokens, pos: 0}
+
 	return p.parseUnion(), nil
 }
 
 // ===== 3. Thompson 构造器 =====
 // 记录每一步的中间自动机
-type BuildStep = model.RegexToFAStep
-type thompsonBuilder struct {
-	states   []model.State
-	trans    []model.Transition
-	nextID   int
-	alphabet map[model.Symbol]bool
+type (
+	BuildStep       = model.RegexToFAStep
+	thompsonBuilder struct {
+		states   []model.State
+		trans    []model.Transition
+		nextID   int
+		alphabet map[model.Symbol]bool
 
-	steps              []BuildStep
-	uniqueInitialState model.State
-	uniqueAcceptState  model.State
-}
+		steps              []BuildStep
+		uniqueInitialState model.State
+		uniqueAcceptState  model.State
+	}
+)
 
 func newThompsonBuilder() *thompsonBuilder {
 	return &thompsonBuilder{
@@ -260,6 +271,7 @@ func (tb *thompsonBuilder) newState() model.State {
 	id := fmt.Sprintf("q%d", tb.nextID)
 	tb.nextID++
 	tb.states = append(tb.states, model.State(id))
+
 	return model.State(id)
 }
 
@@ -280,6 +292,7 @@ func (tb *thompsonBuilder) build(node *astNode) (model.State, model.State) {
 		a := tb.newState()
 		tb.addTransition(s, a, model.Epsilon)
 		tb.recordStep(node, s, a)
+
 		return s, a
 	}
 
@@ -331,6 +344,7 @@ func (tb *thompsonBuilder) build(node *astNode) (model.State, model.State) {
 	}
 
 	tb.recordStep(node, start, end)
+
 	return start, end
 }
 

@@ -107,6 +107,7 @@ func main() {
 			case "done":
 				fmt.Println("\n----------------------------------------")
 				fmt.Println("响应完成")
+
 				return
 			default:
 				fmt.Printf("未知消息类型: %s\n", wsMsg.Type)
@@ -120,6 +121,7 @@ func main() {
 			fmt.Println("\n\n正在关闭连接...")
 			conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			time.Sleep(500 * time.Millisecond)
+
 			return
 		}
 	}

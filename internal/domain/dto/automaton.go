@@ -40,10 +40,10 @@ type DFAMinimizeRequest struct {
 
 // DFAMinimizeResponse DFA最小化响应结构
 type DFAMinimizeResponse struct {
-	Msg           string                    `json:"msg"`
-	Result        bool                      `json:"result"`
-	Automaton     *model.Automaton          `json:"automaton,omitempty"`
-	AutomatonFlow *model.ReactFlowAutomaton `json:"automatonFlow,omitempty"`
+	Msg           string                     `json:"msg"`
+	Result        bool                       `json:"result"`
+	Automaton     *model.Automaton           `json:"automaton,omitempty"`
+	AutomatonFlow *model.ReactFlowAutomaton  `json:"automatonFlow,omitempty"`
 	Process       *model.MinimizationProcess `json:"process,omitempty"`
 	// Error         string                    `json:"error,omitempty"`
 }
@@ -69,10 +69,10 @@ type NFADeterminizationRequest struct {
 
 // NFADeterminizationResponse NFA确定化响应结构
 type NFADeterminizationResponse struct {
-	Msg           string                    `json:"msg"`
-	Result        bool                      `json:"result"`
-	Automaton     *model.Automaton          `json:"automaton,omitempty"`
-	AutomatonFlow *model.ReactFlowAutomaton `json:"automatonFlow,omitempty"`
+	Msg           string                           `json:"msg"`
+	Result        bool                             `json:"result"`
+	Automaton     *model.Automaton                 `json:"automaton,omitempty"`
+	AutomatonFlow *model.ReactFlowAutomaton        `json:"automatonFlow,omitempty"`
 	Process       *model.NFADeterminizationProcess `json:"process,omitempty"`
 }
 
@@ -83,9 +83,9 @@ type AutomatonEquivalenceCheckRequest struct {
 }
 
 type AutomatonEquivalenceCheckResponse struct {
-	Msg    string `json:"msg"`
-	Result bool   `json:"result"`
-	IsEquivalent bool   `json:"isEquivalent"`
+	Msg           string           `json:"msg"`
+	Result        bool             `json:"result"`
+	IsEquivalent  bool             `json:"isEquivalent"`
 	MinimizedDFA1 *model.Automaton `json:"minimizedDFA1,omitempty"`
 	MinimizedDFA2 *model.Automaton `json:"minimizedDFA2,omitempty"`
 }

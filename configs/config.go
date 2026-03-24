@@ -164,6 +164,7 @@ func ApplyEnvToConfig(cfg *Config) {
 		if v := os.Getenv(key); v != "" {
 			return v
 		}
+
 		return fallback
 	}
 	getEnvInt := func(key string, fallback int) int {
@@ -172,6 +173,7 @@ func ApplyEnvToConfig(cfg *Config) {
 				return i
 			}
 		}
+
 		return fallback
 	}
 	getEnvBool := func(key string, fallback bool) bool {
@@ -180,6 +182,7 @@ func ApplyEnvToConfig(cfg *Config) {
 				return b
 			}
 		}
+
 		return fallback
 	}
 
@@ -236,7 +239,6 @@ func ApplyEnvToConfig(cfg *Config) {
 	cfg.Log.MaxAge = getEnvInt("LOG_MAX_AGE", cfg.Log.MaxAge)
 	cfg.Log.Compress = getEnvBool("LOG_COMPRESS", cfg.Log.Compress)
 	cfg.Log.Sampling = getEnvBool("LOG_SAMPLING", cfg.Log.Sampling)
-
 }
 
 func parseLogFieldsFromEnv() map[string]string {
@@ -249,6 +251,7 @@ func parseLogFieldsFromEnv() map[string]string {
 		log.Printf("Invalid LOG_FIELDS, ignoring: %v", err)
 		return nil
 	}
+
 	return fields
 }
 

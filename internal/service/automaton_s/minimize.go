@@ -1,10 +1,11 @@
 package automaton_s
 
 import (
-	"backend/internal/domain/model"
 	"fmt"
 	"sort"
 	"strings"
+
+	"backend/internal/domain/model"
 )
 
 // DFAMinimize 是 DFA 最小化的统一入口（默认使用 Hopcroft 算法）
@@ -121,6 +122,7 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 			Actions:       []string{"状态数量 <= 1，无需进一步最小化"},
 			AutomatonFlow: automaton.ToReactFlow(),
 		})
+
 		return reduced, process
 	}
 
@@ -235,6 +237,7 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 							W = append(W, YInX)
 							W = append(W, YNotInX)
 							found = true
+
 							break
 						}
 					}
@@ -330,6 +333,7 @@ func filterStates(states []model.State, reachable map[model.State]bool) []model.
 			res = append(res, s)
 		}
 	}
+
 	return res
 }
 
@@ -340,6 +344,7 @@ func filterTransitions(trans []model.Transition, reachable map[model.State]bool)
 			res = append(res, t)
 		}
 	}
+
 	return res
 }
 
@@ -349,6 +354,7 @@ func getDFANextState(automaton *model.Automaton, from model.State, input model.S
 			return t.ToStates[0] // DFA only has one next state
 		}
 	}
+
 	return "" // No transition (should not happen in complete DFA)
 }
 
@@ -386,6 +392,7 @@ func markDistinguishablePairs(automaton *model.Automaton, acceptingSet map[model
 						distinguishable[p][q] = true
 						distinguishable[q][p] = true
 						changed = true
+
 						break
 					}
 					if nextP == "" && nextQ == "" {
@@ -396,12 +403,14 @@ func markDistinguishablePairs(automaton *model.Automaton, acceptingSet map[model
 						distinguishable[p][q] = true
 						distinguishable[q][p] = true
 						changed = true
+
 						break
 					}
 				}
 			}
 		}
 	}
+
 	return distinguishable
 }
 
@@ -414,6 +423,7 @@ func buildReverseTransitions(automaton *model.Automaton) map[model.State]map[mod
 		}
 		rev[to][t.Input] = append(rev[to][t.Input], t.FromState)
 	}
+
 	return rev
 }
 
@@ -431,6 +441,7 @@ func equalSet(a, b []model.State) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -503,6 +514,7 @@ func joinStates(states []model.State) string {
 	for i, s := range states {
 		strs[i] = string(s)
 	}
+
 	return strings.Join(strs, ",")
 }
 
@@ -539,6 +551,7 @@ func findEquivalenceClasses(states []model.State, distinguishable map[model.Stat
 		if parent[x] != x {
 			parent[x] = find(parent[x])
 		}
+
 		return parent[x]
 	}
 

@@ -8,7 +8,7 @@ func UnCompleteDFA(a *model.Automaton, sink model.State) *model.Automaton {
 		sink = model.SinkState
 	}
 	// 判断是否有经过CompleteDFA添加的陷阱状态
-	var hasSinkState bool = false
+	hasSinkState := false
 	newStates := make([]model.State, 0, len(a.States)-1)
 	for _, s := range a.States {
 		if s == sink {
@@ -30,5 +30,6 @@ func UnCompleteDFA(a *model.Automaton, sink model.State) *model.Automaton {
 	}
 	a.Transitions = newTransitions
 	a.States = newStates
+
 	return a
 }

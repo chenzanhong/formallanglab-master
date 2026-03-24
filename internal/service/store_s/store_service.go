@@ -1,14 +1,15 @@
 package store_s
 
 import (
-	"backend/internal/domain/dto"
-	"backend/internal/domain/model"
-	"backend/internal/domain/storage"
-	"backend/internal/repository"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+
+	"backend/internal/domain/dto"
+	"backend/internal/domain/model"
+	"backend/internal/domain/storage"
+	"backend/internal/repository"
 )
 
 type StoreService interface {
@@ -46,6 +47,7 @@ func (s *StoreServiceImpl) CreateAutomaton(ctx context.Context, a *storage.Autom
 	}
 	sum := sha256.Sum256(data)
 	a.AutomatonHash = hex.EncodeToString(sum[:])
+
 	return s.storeRepo.CreateAutomaton(ctx, a)
 }
 
@@ -74,6 +76,7 @@ func (s *StoreServiceImpl) CreateGrammar(ctx context.Context, g *storage.Grammar
 	}
 	sum := sha256.Sum256(data)
 	g.GrammarHash = hex.EncodeToString(sum[:])
+
 	return s.storeRepo.CreateGrammar(ctx, g)
 }
 

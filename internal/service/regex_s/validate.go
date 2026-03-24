@@ -1,9 +1,10 @@
 package regex_s
 
 import (
-	"backend/internal/domain/model"
 	"fmt"
 	"regexp"
+
+	"backend/internal/domain/model"
 )
 
 func RegexValidate(regex model.Regex) error {
@@ -22,5 +23,6 @@ func RegexValidString(str string) (bool, error) {
 	if !alphaNumRegexp.MatchString(str) {
 		return false, fmt.Errorf("字符串只能包含字母和数字")
 	}
+
 	return true, nil
 }

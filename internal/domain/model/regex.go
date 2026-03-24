@@ -35,5 +35,6 @@ func (r Regex) IsValid() error {
 	if _, err := regexp.Compile(string(r)); err != nil {
 		return fmt.Errorf("Invalid regular expression: " + err.Error())
 	}
+
 	return nil
 }

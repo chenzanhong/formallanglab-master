@@ -8,6 +8,12 @@
 package api
 
 import (
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
+
 	"backend/internal/domain/dto"
 	"backend/internal/domain/model"
 	"backend/internal/metrics"
@@ -15,11 +21,6 @@ import (
 	"backend/internal/service/grammar_s"
 	"backend/internal/service/regex_s"
 	re "backend/internal/service/regex_s"
-	"fmt"
-	"net/http"
-	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 func GrammarToFA(c *gin.Context) {
@@ -35,6 +36,7 @@ func GrammarToFA(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("convert", "grammar_to_nfa", "failure: parameter parsing error")
+
 		return
 	}
 
@@ -45,6 +47,7 @@ func GrammarToFA(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("convert", "grammar_to_nfa", "failure: invalid grammar")
+
 		return
 	}
 
@@ -56,6 +59,7 @@ func GrammarToFA(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("convert", "grammar_to_nfa", "failure: not regular grammar")
+
 		return
 	}
 	fmt.Printf("文法转自动机，文法：%v", req.Grammar)
@@ -84,6 +88,7 @@ func FAToGrammar(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("convert", "fa_to_grammar", "failure: parameter parsing error")
+
 		return
 	}
 	// 2.判断是否为有效自动机
@@ -93,6 +98,7 @@ func FAToGrammar(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("convert", "fa_to_grammar", "failure: invalid automaton")
+
 		return
 	}
 	fmt.Printf("自动机转文法：%v", req.Automaton)
@@ -122,6 +128,7 @@ func RegexToFA(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("convert", "regex_to_nfa", "failure: parameter parsing error")
+
 		return
 	}
 
@@ -132,6 +139,7 @@ func RegexToFA(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("convert", "regex_to_nfa", "failure: invalid regex")
+
 		return
 	}
 
@@ -143,6 +151,7 @@ func RegexToFA(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("convert", "regex_to_nfa", "failure: conversion failed")
+
 		return
 	}
 	metrics.IncOperation("convert", "regex_to_nfa", "success")
@@ -202,6 +211,7 @@ func FAToRegex(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("convert", "fa_to_regex", "failure: parameter parsing error")
+
 		return
 	}
 
@@ -212,6 +222,7 @@ func FAToRegex(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("convert", "fa_to_regex", "failure: invalid automaton")
+
 		return
 	}
 
@@ -225,6 +236,7 @@ func FAToRegex(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("convert", "fa_to_regex", "failure: conversion failed")
+
 		return
 	}
 

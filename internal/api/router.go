@@ -1,18 +1,14 @@
 package api
 
 import (
-	"backend/internal/middleware"
-
-	// aiSvc "backend/internal/service/ai"
-
-	mtr "backend/internal/metrics"
-
 	"github.com/chenzanhong/goutil/jwtx"
 	"github.com/gin-gonic/gin"
+
+	mtr "backend/internal/metrics"
+	"backend/internal/middleware"
 )
 
 func SetupRouter(storeHandler *StoreHandler, learnHandler *LearnHandler) *gin.Engine {
-
 	router := gin.Default()
 	// 1. 恢复中间件 - 最先使用，捕获所有panic
 	// router.Use(gin.Recovery())
@@ -43,6 +39,7 @@ func SetupRouter(storeHandler *StoreHandler, learnHandler *LearnHandler) *gin.En
 	})
 
 	setupAuthRoutes(router, learnHandler, storeHandler) // 注册需要认证的路由
+
 	return router
 }
 

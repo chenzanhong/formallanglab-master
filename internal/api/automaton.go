@@ -11,17 +11,17 @@ AutomatonGenerateExampleString					// 生成字符串示例，含可识别和不
 package api
 
 import (
-	"backend/internal/domain/dto"
-	"backend/internal/domain/model"
-	"backend/internal/metrics"
 	"fmt"
-	"time"
-
-	"backend/internal/service/automaton_s"
 	"net/http"
+	"time"
 
 	"github.com/chenzanhong/zlog"
 	"github.com/gin-gonic/gin"
+
+	"backend/internal/domain/dto"
+	"backend/internal/domain/model"
+	"backend/internal/metrics"
+	"backend/internal/service/automaton_s"
 )
 
 // 是否有效
@@ -37,6 +37,7 @@ func AutomatonValidate(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "validate", "failure: parameter parsing error")
+
 		return
 	}
 	fmt.Printf("%+v", req.Automaton)
@@ -46,6 +47,7 @@ func AutomatonValidate(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "validate", "failure: invalid Automaton")
+
 		return
 	}
 
@@ -71,6 +73,7 @@ func AutomatonCleanup(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "cleanup", "failure: parameter parsing error")
+
 		return
 	}
 	// fmt.Printf("%+v\n", req.Automaton)
@@ -81,6 +84,7 @@ func AutomatonCleanup(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "minimize", "failure: invalid Automaton")
+
 		return
 	}
 
@@ -107,6 +111,7 @@ func DFAMinimize(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "minimize", "failure: parameter parsing error")
+
 		return
 	}
 	// fmt.Printf("要最小化的Automaton：%+v", req.Automaton)
@@ -117,6 +122,7 @@ func DFAMinimize(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "minimize", "failure: invalid Automaton")
+
 		return
 	}
 	if req.Automaton.Type != model.DFA {
@@ -125,6 +131,7 @@ func DFAMinimize(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "minimize", "failure: not dfa")
+
 		return
 	}
 	// 使用带有过程记录的最小化方法
@@ -153,6 +160,7 @@ func AutomatonStringRecognize(c *gin.Context) {
 			Msg:    "参数解析错误" + err.Error(),
 			Result: false,
 		})
+
 		return
 	}
 	err := automaton_s.AutomatonValidate(&req.Automaton) // 包含了DFA还是NFA的判断
@@ -162,6 +170,7 @@ func AutomatonStringRecognize(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "minimize", "failure: invalid Automaton")
+
 		return
 	}
 	result, err := automaton_s.Recognize(&req.Automaton, req.Str) // 先对Str分词，再模拟状态转移
@@ -172,6 +181,7 @@ func AutomatonStringRecognize(c *gin.Context) {
 			Result:            true,
 		})
 		metrics.IncOperation("automaton", "string_recognize", "failure: recognition failed")
+
 		return
 	}
 	metrics.IncOperation("automaton", "string_recognize", "success")
@@ -195,6 +205,7 @@ func NFADeterminization(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "nfa_to_dfa", "failure: parameter parsing error")
+
 		return
 	}
 	err := automaton_s.AutomatonValidate(&req.Automaton) // 包含了DFA还是NFA的判断
@@ -204,6 +215,7 @@ func NFADeterminization(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "nfa_to_dfa", "failure: invalid Automaton")
+
 		return
 	}
 	if req.Automaton.Type == model.DFA {
@@ -214,6 +226,7 @@ func NFADeterminization(c *gin.Context) {
 			AutomatonFlow: req.Automaton.ToReactFlow(),
 		})
 		metrics.IncOperation("automaton", "nfa_to_dfa", "success")
+
 		return
 	}
 
@@ -226,6 +239,7 @@ func NFADeterminization(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "nfa_to_dfa", "failure: nfa_to_dfa failed")
+
 		return
 	}
 
@@ -252,6 +266,7 @@ func AutomatonEquivalenceCheck(c *gin.Context) {
 			Msg:    "参数解析错误",
 			Result: false,
 		})
+
 		return
 	}
 	err := automaton_s.AutomatonValidate(&req.Automaton1) // 包含了DFA还是NFA的判断
@@ -261,6 +276,7 @@ func AutomatonEquivalenceCheck(c *gin.Context) {
 			Msg:    "无效的自动机1：" + err.Error(),
 			Result: false,
 		})
+
 		return
 	}
 	err = automaton_s.AutomatonValidate(&req.Automaton2) // 包含了DFA还是NFA的判断
@@ -270,6 +286,7 @@ func AutomatonEquivalenceCheck(c *gin.Context) {
 			Msg:    "无效的自动机2：" + err.Error(),
 			Result: false,
 		})
+
 		return
 	}
 	dfa1, dfa2, isEquivalent := automaton_s.AutomatonEquivalenceCheck(&req.Automaton1, &req.Automaton2)
@@ -300,6 +317,7 @@ func AutomatonGenerateExampleString(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "generate_example", "failure: parameter parsing error")
+
 		return
 	}
 	err := automaton_s.AutomatonValidate(&req.Automaton) // 包含了DFA还是NFA的判断
@@ -309,6 +327,7 @@ func AutomatonGenerateExampleString(c *gin.Context) {
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "generate_example", "failure: invalid Automaton")
+
 		return
 	}
 

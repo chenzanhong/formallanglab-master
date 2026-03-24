@@ -1,8 +1,9 @@
 package dto
 
 import (
-	"backend/internal/domain/model"
 	"time"
+
+	"backend/internal/domain/model"
 )
 
 // ———————— Item DTOs（用于列表响应，含完整数据） ————————

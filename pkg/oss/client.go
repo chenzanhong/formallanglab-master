@@ -114,6 +114,7 @@ func (c *AliyunOSSClient) GeneratePresignedURL(key string, expire time.Duration)
 	if err != nil {
 		return "", fmt.Errorf("生成下载预签名URL失败: %w", err)
 	}
+
 	return u, nil
 }
 
@@ -124,6 +125,7 @@ func (c *AliyunOSSClient) GenerateUploadPresignedURL(key string, expire time.Dur
 	if err != nil {
 		return "", fmt.Errorf("生成上传预签名URL失败: %w", err)
 	}
+
 	return u, nil
 }
 
@@ -134,6 +136,7 @@ func (c *AliyunOSSClient) CheckObjectExists(key string) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("检查对象是否存在失败: %w", err)
 	}
+
 	return exists, nil
 }
 

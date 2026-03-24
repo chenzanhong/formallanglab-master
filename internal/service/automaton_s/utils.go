@@ -11,6 +11,7 @@ func getDFANextStateFromMap(automaton *model.Automaton, from model.State, input 
 			return targets[0] //
 		}
 	}
+
 	return ""
 }
 
@@ -22,6 +23,7 @@ func getNFANextStatesFromMap(automaton *model.Automaton, from model.State, input
 			return targets
 		}
 	}
+
 	return nil
 }
 
@@ -51,6 +53,7 @@ func ContainsState(states []model.State, s model.State) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -124,7 +127,6 @@ func computeEpsilonClosureWithMap(nfa *model.Automaton, states []model.State) []
 	return closure
 }
 
-
 // GetNonAcceptingStates 返回所有非接受状态
 func GetNonAcceptingStates(a *model.Automaton) []model.State {
 	acceptSet := make(map[model.State]bool)
@@ -137,5 +139,6 @@ func GetNonAcceptingStates(a *model.Automaton) []model.State {
 			nonAccept = append(nonAccept, s)
 		}
 	}
+
 	return nonAccept
 }

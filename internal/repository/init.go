@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-
 	// "strconv"
 	"time"
 
@@ -20,12 +19,13 @@ type Repository struct {
 func Init() (*Repository, error) {
 	db, err := ConnectDB()
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %v", err)
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 	err = InitPGData(db, context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("failed to init pg data: %v", err)
+		return nil, fmt.Errorf("failed to init pg data: %w", err)
 	}
+
 	return &Repository{
 		DB: db,
 		// Redis: rdb,
@@ -41,12 +41,12 @@ func InitPGData(db *gorm.DB, ctx context.Context) error {
 	var err error
 	files, err := os.ReadDir(migrationsDir)
 	if err != nil {
-		return fmt.Errorf("failed to read migrations directory: %v", err)
+		return fmt.Errorf("failed to read migrations directory: %w", err)
 	}
 
 	tx := db.Begin()
 	if tx.Error != nil {
-		return fmt.Errorf("failed to begin transaction: %v", err)
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
 	defer func() {
@@ -63,20 +63,21 @@ func InitPGData(db *gorm.DB, ctx context.Context) error {
 			content, err := os.ReadFile(filePath)
 			if err != nil {
 				tx.Rollback()
-				return fmt.Errorf("读取文件失败 %s: %v", filePath, err)
+				return fmt.Errorf("读取文件失败 %s: %w", filePath, err)
 			}
 
 			if err = tx.WithContext(ctx).Exec(string(content)).Error; err != nil {
 				tx.Rollback()
-				return fmt.Errorf("执行 SQL 失败 %s: %v", filePath, err)
+				return fmt.Errorf("执行 SQL 失败 %s: %w", filePath, err)
 			}
 		}
 	}
 
 	if err := tx.WithContext(ctx).Commit().Error; err != nil {
-		return fmt.Errorf("failed to commit transaction: %v", err)
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 	fmt.Println("Migration completed successfully.")
+
 	return nil
 }
 
@@ -90,12 +91,12 @@ func ConnectDB() (*gorm.DB, error) {
 		os.Getenv("DB_NAME"))
 	db, err := gorm.Open(postgres.Open(dsn))
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to PostgreSQL: %v", err)
+		return nil, fmt.Errorf("failed to connect to PostgreSQL: %w", err)
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get SQL DB: %v", err)
+		return nil, fmt.Errorf("failed to get SQL DB: %w", err)
 	}
 
 	// 设置连接池参数

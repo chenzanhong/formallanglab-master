@@ -66,6 +66,7 @@ func (p *Production) String() string {
 	for _, sym := range p.Right {
 		s.WriteString(string(sym))
 	}
+
 	return s.String()
 }
 
@@ -152,6 +153,7 @@ func (g *Grammar) StringToSymbols(s string) ([]Symbol, error) {
 				symbols = append(symbols, Symbol(term))
 				i += len(term)
 				matched = true
+
 				break
 			}
 		}
@@ -160,6 +162,7 @@ func (g *Grammar) StringToSymbols(s string) ([]Symbol, error) {
 			return symbols, fmt.Errorf("no terminal matches substring starting at position %d in input %q", i, s)
 		}
 	}
+
 	return symbols, nil
 }
 
@@ -169,6 +172,7 @@ func (g *Grammar) CheckIsTerminal(s Symbol) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -178,6 +182,7 @@ func (g *Grammar) CheckIsNonTerminal(s Symbol) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
