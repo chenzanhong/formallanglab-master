@@ -9,7 +9,7 @@ type LearnMaterial struct {
 	ID          int64     `json:"id" gorm:"primaryKey;autoIncrement"`
 	Title       string    `json:"title" gorm:"type:varchar(255);not null"`
 	Description string    `json:"description" gorm:"type:text"`
-	Category    string    `json:"category" gorm:"type:varchar(50);not null"` // grammar/automaton/regex/general
+	Category    string    `json:"category" gorm:"type:varchar(50);not null;default:general"` // 暂时不使用分类，统一为 "general"
 	FileKey     string    `json:"file_key" gorm:"type:varchar(512);not null;unique"`
 	FileName    string    `json:"file_name" gorm:"type:varchar(255);not null"`
 	MimeType    string    `json:"mime_type" gorm:"type:varchar(100)"`

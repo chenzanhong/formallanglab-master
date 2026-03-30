@@ -27,7 +27,7 @@ func NewLearnHandler(learnService learn_s.LearnService) *LearnHandler {
 // LearnList 获取学习资料列表
 // @Summary 获取学习资料列表
 // @Tags learn
-// @Param category query string false "分类: grammar/automaton/regex/general"
+// @Param category query string false "分类参数（暂时不使用，返回所有文件）"
 // @Success 200 {array} dto.LearnMaterialResponse
 // @Router /learn [get]
 func (h *LearnHandler) LearnList(c *gin.Context) {

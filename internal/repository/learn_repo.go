@@ -35,10 +35,10 @@ func (r *LearnRepositoryImpl) ListMaterials(ctx context.Context, category string
 	var materials []*model.LearnMaterial
 	query := r.DB.WithContext(ctx)
 
-	// 如果指定了分类，则按分类筛选
-	if category != "" {
-		query = query.Where("category = ?", category)
-	}
+	// 注意：category 参数暂时不使用，返回所有文件
+	// if category != "" {
+	// 	query = query.Where("category = ?", category)
+	// }
 
 	// 按创建时间倒序排列
 	if err := query.Order("created_at DESC").Find(&materials).Error; err != nil {

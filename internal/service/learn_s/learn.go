@@ -143,8 +143,7 @@ func (s *LearnServiceImpl) AddMaterial(ctx context.Context, req *dto.AddMaterial
 
 // SyncOSSFiles 同步OSS文件到数据库（自动识别新增文件）
 func (s *LearnServiceImpl) SyncOSSFiles(ctx context.Context) (*dto.SyncOSSFilesResponse, error) {
-	// 定义要扫描的分类目录
-	categories := []string{"grammar", "automaton", "regex", "general"}
+	// 扫描根目录下的所有文件（支持直接放在根目录）
 
 	// 获取数据库中已存在的所有文件
 	existingMaterials, err := s.learnRepo.ListMaterials(ctx, "")
@@ -162,47 +161,54 @@ func (s *LearnServiceImpl) SyncOSSFiles(ctx context.Context) (*dto.SyncOSSFilesR
 		AddedFiles: []string{},
 	}
 
-	// 扫描每个分类目录
-	for _, category := range categories {
-		prefix := fmt.Sprintf("materials/%s/", category)
+	// 列出OSS中的所有文件（根目录）
+	ossObjects, err := s.ossClient.ListObjects("")
+	if err != nil {
+		return nil, fmt.Errorf("failed to list OSS objects: %w", err)
+	}
 
-		// 列出OSS中的文件
-		ossObjects, err := s.ossClient.ListObjects(prefix)
+	// 过滤出学习资料文件
+	var validObjects []oss.OSSObjectInfo
+	for _, obj := range ossObjects {
+		// 跳过目录（以 / 结尾的）
+		if strings.HasSuffix(obj.Key, "/") {
+			continue
+		}
+		// 不限制文件类型，所有文件都同步
+		validObjects = append(validObjects, obj)
+	}
+
+	response.TotalFiles += int64(len(validObjects))
+
+	// 处理所有文件
+	for _, obj := range validObjects {
+		if existingFileKeys[obj.Key] {
+			response.ExistingFiles++
+			continue
+		}
+
+		// 新增文件，添加到数据库
+		fileName := extractFileName(obj.Key)
+		mimeType := inferMimeType(fileName)
+
+		// 注意：category 字段暂时不使用，统一设置为 "general"
+		material := &model.LearnMaterial{
+			Title:       fileName,
+			Description: "",
+			Category:    "general", // 暂时不使用分类
+			FileKey:     obj.Key,
+			FileName:    fileName,
+			MimeType:    mimeType,
+			SizeBytes:   obj.Size,
+		}
+
+		_, err := s.learnRepo.CreateMaterial(ctx, material)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list OSS objects for prefix %s: %w", prefix, err)
+			return nil, fmt.Errorf("failed to create material for %s: %w", obj.Key, err)
 		}
 
-		response.TotalFiles += int64(len(ossObjects))
-
-		// 对比找出新增的文件
-		for _, obj := range ossObjects {
-			if existingFileKeys[obj.Key] {
-				response.ExistingFiles++
-				continue
-			}
-
-			// 新增文件，添加到数据库
-			fileName := extractFileName(obj.Key)
-			mimeType := inferMimeType(fileName)
-
-			material := &model.LearnMaterial{
-				Title:       fileName,
-				Description: "",
-				Category:    category,
-				FileKey:     obj.Key,
-				FileName:    fileName,
-				MimeType:    mimeType,
-				SizeBytes:   obj.Size,
-			}
-
-			_, err := s.learnRepo.CreateMaterial(ctx, material)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create material for %s: %w", obj.Key, err)
-			}
-
-			response.NewFiles++
-			response.AddedFiles = append(response.AddedFiles, obj.Key)
-		}
+		response.NewFiles++
+		response.AddedFiles = append(response.AddedFiles, obj.Key)
 	}
 
 	return response, nil
@@ -230,6 +236,8 @@ func inferMimeType(fileName string) string {
 		return "application/msword"
 	case ".txt":
 		return "text/plain"
+	case ".zip":
+		return "application/zip"
 	case ".mp4":
 		return "video/mp4"
 	case ".mp3":

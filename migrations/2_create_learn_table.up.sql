@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS learn_materials (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    category VARCHAR(50) NOT NULL,  -- grammar/automaton/regex/general
+    category VARCHAR(50) NOT NULL DEFAULT 'general',  -- 暂时不使用分类，统一设置为 'general'
     file_key VARCHAR(512) NOT NULL UNIQUE,  -- OSS中的文件路径
     file_name VARCHAR(255) NOT NULL,  -- 原始文件名
     mime_type VARCHAR(100),  -- 文件MIME类型
