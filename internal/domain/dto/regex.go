@@ -1,6 +1,6 @@
 package dto
 
-import "backend/internal/domain/model"
+import "github.com/chenzanhong/formallanglab-master/internal/domain/model"
 
 // 正则表达式验证请求
 type RegexValidateRequest struct {

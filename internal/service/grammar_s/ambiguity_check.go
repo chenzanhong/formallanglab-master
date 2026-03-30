@@ -3,7 +3,7 @@ package grammar_s
 import (
 	"strings"
 
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 // symbolsToStringJoinSep 将符号切片转为字符串，用于 map 的 key

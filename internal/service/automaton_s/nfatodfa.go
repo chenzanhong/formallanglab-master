@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 // NFAToDFA 将 NFA 转换为等价的 DFA， 子集构造法

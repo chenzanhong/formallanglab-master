@@ -1,11 +1,11 @@
 package generate
 
 // import (
-// 	"backend/internal/domain/model"
-// 	"backend/internal/service/automaton_s"
-// 	"backend/internal/service/grammar_s"
-// 	"backend/internal/service/regex_s"
-// 	"backend/pkg/util"
+// 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
+// 	"github.com/chenzanhong/formallanglab-master/internal/service/automaton_s"
+// 	"github.com/chenzanhong/formallanglab-master/internal/service/grammar_s"
+// 	"github.com/chenzanhong/formallanglab-master/internal/service/regex_s"
+// 	"github.com/chenzanhong/formallanglab-master/pkg/util"
 // 	"fmt"
 // )
 

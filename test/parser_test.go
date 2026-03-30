@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"backend/internal/domain/model"
-	"backend/internal/service/grammar_s"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/service/grammar_s"
 )
 
 // TestRecursiveDescentParser 测试递归下降分析器

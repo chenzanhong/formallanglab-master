@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 func Max(a, b int) int {

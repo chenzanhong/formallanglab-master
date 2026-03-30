@@ -73,7 +73,7 @@ import (
 	"strings"
 	"sync"
 
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 // ===================================================================================

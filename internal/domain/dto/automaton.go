@@ -1,6 +1,6 @@
 package dto
 
-import "backend/internal/domain/model"
+import "github.com/chenzanhong/formallanglab-master/internal/domain/model"
 
 // Automaton相关请求响应结构
 // 不使用 Error 字段，具体错误在 Msg 字段说明

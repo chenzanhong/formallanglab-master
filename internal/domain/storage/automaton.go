@@ -3,7 +3,7 @@ package storage
 import (
 	"time"
 
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 type AutomatonRecord struct {

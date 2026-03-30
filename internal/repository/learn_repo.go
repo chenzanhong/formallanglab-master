@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 	"gorm.io/gorm"
-
-	"backend/internal/domain/model"
 )
 
 // LearnRepository 学习资源仓库接口

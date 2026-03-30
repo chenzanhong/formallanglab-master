@@ -6,10 +6,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 
-	"backend/internal/domain/dto"
-	"backend/internal/domain/model"
-	"backend/internal/domain/storage"
-	"backend/internal/repository"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/dto"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/storage"
+	"github.com/chenzanhong/formallanglab-master/internal/repository"
 )
 
 type StoreService interface {

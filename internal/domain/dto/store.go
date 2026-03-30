@@ -3,7 +3,7 @@ package dto
 import (
 	"time"
 
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 // ———————— Item DTOs（用于列表响应，含完整数据） ————————

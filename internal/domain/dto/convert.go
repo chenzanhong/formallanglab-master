@@ -1,6 +1,6 @@
 package dto
 
-import "backend/internal/domain/model"
+import "github.com/chenzanhong/formallanglab-master/internal/domain/model"
 
 // 文法/正则表达式转自动机的响应要带上
 

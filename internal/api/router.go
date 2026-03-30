@@ -1,11 +1,10 @@
 package api
 
 import (
+	mtr "github.com/chenzanhong/formallanglab-master/internal/metrics"
+	"github.com/chenzanhong/formallanglab-master/internal/middleware"
 	"github.com/chenzanhong/goutil/jwtx"
 	"github.com/gin-gonic/gin"
-
-	mtr "backend/internal/metrics"
-	"backend/internal/middleware"
 )
 
 func SetupRouter(storeHandler *StoreHandler, learnHandler *LearnHandler) *gin.Engine {

@@ -1,7 +1,7 @@
 package automaton_s
 
 import (
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 // 自动机转正则文法，默认自动机有效，且转为右线性文法
@@ -18,6 +18,9 @@ import (
 // 方法一：先消除 ε 转移，再转文法（将 ε-NFA → NFA（无 ε）→ 正则文法）得到干净、标准的正则文法
 // 方法二：直接转文法，再消除单位产生式（ε 转移 → 单位产生式 → 后处理消除）
 func FAToGrammar(automaton *model.Automaton) *model.Grammar {
+	if automaton == nil {
+		return &model.Grammar{}
+	}
 	var g model.Grammar
 	// 非终结符集合 V = Q（每个状态是一个非终结符）
 	g.NonTerminals = make([]model.Symbol, len(automaton.States))

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 // GrammarCheckValidity 判断一个 Grammar 是否为有效文法
@@ -105,10 +105,4 @@ func GrammarCheckValidity(g *model.Grammar) error {
 
 	// 全部通过
 	return nil
-}
-
-// 工具函数：判断符号是否在集合中
-func isInSet(set map[model.Symbol]struct{}, sym model.Symbol) bool {
-	_, exists := set[sym]
-	return exists
 }

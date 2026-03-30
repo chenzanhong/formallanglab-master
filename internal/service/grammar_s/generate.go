@@ -3,9 +3,9 @@ package grammar_s
 import (
 	"math/rand/v2"
 
-	"backend/internal/domain/model"
-	"backend/internal/service/automaton_s"
-	"backend/pkg/util"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/service/automaton_s"
+	"github.com/chenzanhong/formallanglab-master/pkg/util"
 )
 
 const (

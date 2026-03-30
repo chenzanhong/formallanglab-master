@@ -12,20 +12,19 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/chenzanhong/formallanglab-master/configs"
+	cf "github.com/chenzanhong/formallanglab-master/configs"
+	"github.com/chenzanhong/formallanglab-master/internal/api"
+	mtr "github.com/chenzanhong/formallanglab-master/internal/metrics"
+	"github.com/chenzanhong/formallanglab-master/internal/middleware"
+	rep "github.com/chenzanhong/formallanglab-master/internal/repository"
+	kafka_s "github.com/chenzanhong/formallanglab-master/internal/service/kafka_s"
+	learnSvc "github.com/chenzanhong/formallanglab-master/internal/service/learn_s"
+	storeSvc "github.com/chenzanhong/formallanglab-master/internal/service/store_s"
+	"github.com/chenzanhong/formallanglab-master/pkg/binding"
+	"github.com/chenzanhong/formallanglab-master/pkg/oss"
 	"github.com/chenzanhong/goutil/jwtx"
 	"github.com/chenzanhong/zlog"
-
-	"backend/configs"
-	cf "backend/configs"
-	"backend/internal/api"
-	mtr "backend/internal/metrics"
-	"backend/internal/middleware"
-	rep "backend/internal/repository"
-	kafka_s "backend/internal/service/kafka_s"
-	learnSvc "backend/internal/service/learn_s"
-	storeSvc "backend/internal/service/store_s"
-	"backend/pkg/binding"
-	"backend/pkg/oss"
 )
 
 func init() {

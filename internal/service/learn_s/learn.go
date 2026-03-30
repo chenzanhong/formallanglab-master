@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"backend/internal/domain/dto"
-	"backend/internal/domain/model"
-	"backend/internal/repository"
-	"backend/pkg/oss"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/dto"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/repository"
+	"github.com/chenzanhong/formallanglab-master/pkg/oss"
 )
 
 // LearnService 学习资源服务接口

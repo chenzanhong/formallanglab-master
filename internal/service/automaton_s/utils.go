@@ -1,7 +1,7 @@
 package automaton_s
 
 import (
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 func getDFANextStateFromMap(automaton *model.Automaton, from model.State, input model.Symbol) model.State {

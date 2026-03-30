@@ -3,8 +3,8 @@ package grammar_s
 import (
 	"fmt"
 
-	"backend/internal/domain/model"
-	"backend/internal/service/automaton_s"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/service/automaton_s"
 )
 
 // 采用理论方法：转为最小DFA，判断是否同构。

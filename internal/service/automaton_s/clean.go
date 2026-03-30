@@ -1,7 +1,7 @@
 package automaton_s
 
 import (
-	"backend/internal/domain/model" // 请根据你的项目路径调整
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 // Cleanup 清理自动机：移除不可达状态和未使用的符号（正确支持 ε-NFA）

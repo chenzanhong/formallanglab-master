@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 func RegexValidate(regex model.Regex) error {

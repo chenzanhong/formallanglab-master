@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 // concatRegex 拼接两个正则表达式，注意空字符串和 ε 的处理

@@ -3,7 +3,7 @@ package regex_s
 import (
 	"regexp"
 
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 func RegexRecognize(pattern model.Regex, str string) (bool, error) {

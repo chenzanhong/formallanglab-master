@@ -3,7 +3,7 @@ package grammar_s
 import (
 	"fmt"
 
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 // TypeDetermine 判断文法的Chomsky类型（0、1、2、3型）

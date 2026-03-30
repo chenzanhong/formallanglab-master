@@ -1,7 +1,7 @@
 package grammar_s
 
 import (
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 // IsEquivalent 判断两个正则文法是否等价

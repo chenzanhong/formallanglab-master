@@ -3,7 +3,7 @@ package automaton_s
 import (
 	"fmt"
 
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 // AutomatonEquivalenceCheck 自动机等价检查

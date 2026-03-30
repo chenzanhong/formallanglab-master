@@ -10,12 +10,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/chenzanhong/formallanglab-master/internal/domain/dto"
+	"github.com/chenzanhong/formallanglab-master/internal/metrics"
+	re "github.com/chenzanhong/formallanglab-master/internal/service/regex_s"
 	"github.com/chenzanhong/zlog"
 	"github.com/gin-gonic/gin"
-
-	"backend/internal/domain/dto"
-	"backend/internal/metrics"
-	re "backend/internal/service/regex_s"
 )
 
 // 使用dto包中的结构体替代本地定义

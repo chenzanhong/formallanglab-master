@@ -5,25 +5,36 @@ import (
 	"sort"
 	"strings"
 
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 // DFAMinimize 是 DFA 最小化的统一入口（默认使用 Hopcroft 算法）
 // 备选算法为表格填充算法
 func DFAMinimize(automaton *model.Automaton) *model.Automaton {
+	if automaton == nil {
+		return nil
+	}
 	// 可选：未来可加 algo := config.GetMinimizationAlgo()
 	minimized, _ := minimizeByHopcroft(automaton)
+
 	return minimized
 	// return minimizeByTableFilling(automaton)
 }
 
 // DFAMinimizeWithProcess 执行DFA最小化并返回最小化过程记录
 func DFAMinimizeWithProcess(automaton *model.Automaton) (*model.Automaton, *model.MinimizationProcess) {
+	if automaton == nil {
+		return nil, nil
+	}
+
 	return minimizeByHopcroft(automaton)
 }
 
 // minimizeByTableFilling 使用表格填充法（Table-Filling Method）对 DFA 进行最小化
 func minimizeByTableFilling(automaton *model.Automaton) *model.Automaton {
+	if automaton == nil {
+		return nil
+	}
 	// 步骤 1: 去除不可达状态
 	reachable := getReachableStates(automaton)
 	var states []model.State
@@ -74,6 +85,9 @@ func minimizeByTableFilling(automaton *model.Automaton) *model.Automaton {
 // minimizeByHopcroft 使用 Hopcroft 算法对 DFA 进行最小化
 // 修改minimizeByHopcroft函数，添加过程记录功能
 func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.MinimizationProcess) {
+	if automaton == nil {
+		return nil, nil
+	}
 	// 先确保automaton为完备的，但是可能添加陷阱状态"dead_state"，用户体验不好，这里先不采用完备化
 	// if err := automaton.CompleteDFA(); err != nil { // 一般不会err，handler层确保了是有效DFA。
 	// 	return automaton, nil
@@ -359,6 +373,9 @@ func getDFANextState(automaton *model.Automaton, from model.State, input model.S
 }
 
 func markDistinguishablePairs(automaton *model.Automaton, acceptingSet map[model.State]bool) map[model.State]map[model.State]bool {
+	if automaton == nil {
+		return nil
+	}
 	states := automaton.States
 	distinguishable := make(map[model.State]map[model.State]bool)
 	for _, s := range states {
@@ -415,6 +432,9 @@ func markDistinguishablePairs(automaton *model.Automaton, acceptingSet map[model
 }
 
 func buildReverseTransitions(automaton *model.Automaton) map[model.State]map[model.Symbol][]model.State {
+	if automaton == nil {
+		return nil
+	}
 	rev := make(map[model.State]map[model.Symbol][]model.State)
 	for _, t := range automaton.Transitions {
 		to := t.ToStates[0]
@@ -519,6 +539,9 @@ func joinStates(states []model.State) string {
 }
 
 func getReachableStates(automaton *model.Automaton) map[model.State]bool {
+	if automaton == nil {
+		return nil
+	}
 	reachable := make(map[model.State]bool)
 	queue := []model.State{automaton.InitialState}
 	reachable[automaton.InitialState] = true

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"backend/internal/domain/model"
-	"backend/internal/service/grammar_s"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/service/grammar_s"
 )
 
 // DemoLL1Parser 演示LL(1)分析器的使用

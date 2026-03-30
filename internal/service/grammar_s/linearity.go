@@ -1,7 +1,7 @@
 package grammar_s
 
 import (
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 // DetermineLinearity 判断一个正则文法是右线性还是左线性。

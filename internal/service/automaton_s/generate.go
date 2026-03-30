@@ -3,8 +3,8 @@ package automaton_s
 import (
 	"fmt"
 
-	"backend/internal/domain/model"
-	"backend/pkg/util"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/pkg/util"
 )
 
 const maxExampleNum = 6

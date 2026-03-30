@@ -5,12 +5,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/chenzanhong/formallanglab-master/internal/domain/dto"
+	"github.com/chenzanhong/formallanglab-master/internal/metrics"
+	"github.com/chenzanhong/formallanglab-master/internal/service/learn_s"
 	"github.com/chenzanhong/zlog"
 	"github.com/gin-gonic/gin"
-
-	"backend/internal/domain/dto"
-	"backend/internal/metrics"
-	"backend/internal/service/learn_s"
 )
 
 // LearnHandler 学习资源处理器

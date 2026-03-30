@@ -3,7 +3,7 @@ package automaton_s
 import (
 	"errors"
 
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 // 根据你的项目路径调整

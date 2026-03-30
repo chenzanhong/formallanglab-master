@@ -6,10 +6,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 	"github.com/chenzanhong/zlog"
 	"go.uber.org/zap"
-
-	"backend/internal/domain/model"
 )
 
 // Token 类型

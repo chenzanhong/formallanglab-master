@@ -15,13 +15,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/chenzanhong/formallanglab-master/internal/domain/dto"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/metrics"
+	"github.com/chenzanhong/formallanglab-master/internal/service/automaton_s"
 	"github.com/chenzanhong/zlog"
 	"github.com/gin-gonic/gin"
-
-	"backend/internal/domain/dto"
-	"backend/internal/domain/model"
-	"backend/internal/metrics"
-	"backend/internal/service/automaton_s"
 )
 
 // 是否有效

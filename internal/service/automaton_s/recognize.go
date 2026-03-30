@@ -3,7 +3,7 @@ package automaton_s
 import (
 	"fmt"
 
-	"backend/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
 // Recognize 判断自动机是否接受输入字符串 str

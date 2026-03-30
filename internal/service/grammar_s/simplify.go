@@ -2,8 +2,8 @@
 package grammar_s
 
 import (
-	"backend/internal/domain/model"
-	"backend/pkg/util"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/pkg/util"
 )
 
 // Simplify 对文法进行化简：去不可派生、不可达、空产生式、单一产生式

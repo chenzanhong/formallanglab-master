@@ -3,11 +3,10 @@ package api
 import (
 	"net/http"
 
+	"github.com/chenzanhong/formallanglab-master/internal/domain/dto"
+	"github.com/chenzanhong/formallanglab-master/internal/domain/storage"
+	storeSvc "github.com/chenzanhong/formallanglab-master/internal/service/store_s"
 	"github.com/gin-gonic/gin"
-
-	"backend/internal/domain/dto"
-	"backend/internal/domain/storage"
-	storeSvc "backend/internal/service/store_s"
 )
 
 // StoreHandler 存储模块处理器

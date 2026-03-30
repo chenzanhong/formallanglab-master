@@ -1,6 +1,6 @@
 package dto
 
-import "backend/internal/domain/model"
+import "github.com/chenzanhong/formallanglab-master/internal/domain/model"
 
 // 文法验证请求
 type GrammarValidateRequest struct {
