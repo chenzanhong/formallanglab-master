@@ -10,7 +10,7 @@ func TestRecognizeDFA(t *testing.T) {
 	dfa := &model.Automaton{
 		States:          []model.State{"q0", "q1", "q2"},
 		Alphabet:        []model.Symbol{"a", "b"},
-		Transitions:     []model.Transition{{FromState: "q0", Input: "a", ToStates: []model.State{"q1"}}, {FromState: "q1", Input: "b", ToStates: []model.State{"q2"}}},
+		Transitions:     []model.Transition{{FromState: "q0", Input: "a", ToStates: []model.State{"q1"}}, {FromState: "q0", Input: "b", ToStates: []model.State{"q0"}}, {FromState: "q1", Input: "b", ToStates: []model.State{"q2"}}, {FromState: "q1", Input: "a", ToStates: []model.State{"q1"}}, {FromState: "q2", Input: "a", ToStates: []model.State{"q2"}}, {FromState: "q2", Input: "b", ToStates: []model.State{"q2"}}},
 		InitialState:    "q0",
 		AcceptingStates: []model.State{"q2"},
 		Type:            model.DFA,

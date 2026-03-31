@@ -78,7 +78,7 @@ func TestDFAMinimizeWithProcess(t *testing.T) {
 	dfa := &model.Automaton{
 		States:          []model.State{"q0", "q1", "q2"},
 		Alphabet:        []model.Symbol{"a", "b"},
-		Transitions:     []model.Transition{{FromState: "q0", Input: "a", ToStates: []model.State{"q1"}}},
+		Transitions:     []model.Transition{{FromState: "q0", Input: "a", ToStates: []model.State{"q1"}}, {FromState: "q0", Input: "b", ToStates: []model.State{"q0"}}, {FromState: "q1", Input: "a", ToStates: []model.State{"q2"}}, {FromState: "q1", Input: "b", ToStates: []model.State{"q1"}}, {FromState: "q2", Input: "a", ToStates: []model.State{"q2"}}, {FromState: "q2", Input: "b", ToStates: []model.State{"q2"}}},
 		InitialState:    "q0",
 		AcceptingStates: []model.State{"q1"},
 		Type:            model.DFA,
@@ -144,7 +144,7 @@ func TestDFAMinimizeEquivalence(t *testing.T) {
 	dfa := &model.Automaton{
 		States:          []model.State{"q0", "q1", "q2", "q3"},
 		Alphabet:        []model.Symbol{"a", "b"},
-		Transitions:     []model.Transition{{FromState: "q0", Input: "a", ToStates: []model.State{"q1"}}, {FromState: "q1", Input: "b", ToStates: []model.State{"q2"}}, {FromState: "q2", Input: "a", ToStates: []model.State{"q3"}}, {FromState: "q3", Input: "b", ToStates: []model.State{"q3"}}},
+		Transitions:     []model.Transition{{FromState: "q0", Input: "a", ToStates: []model.State{"q1"}}, {FromState: "q0", Input: "b", ToStates: []model.State{"q0"}}, {FromState: "q1", Input: "b", ToStates: []model.State{"q2"}}, {FromState: "q1", Input: "a", ToStates: []model.State{"q1"}}, {FromState: "q2", Input: "a", ToStates: []model.State{"q3"}}, {FromState: "q2", Input: "b", ToStates: []model.State{"q2"}}, {FromState: "q3", Input: "b", ToStates: []model.State{"q3"}}, {FromState: "q3", Input: "a", ToStates: []model.State{"q3"}}},
 		InitialState:    "q0",
 		AcceptingStates: []model.State{"q3"},
 		Type:            model.DFA,

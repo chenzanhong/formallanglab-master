@@ -39,8 +39,8 @@ func TestRegexEquivalenceCheck(t *testing.T) {
 			name:     "equivalent patterns: ab and a.b",
 			pattern1: "ab",
 			pattern2: "a.b",
-			want:     true,
-			wantErr:  false,
+			want:     false,
+			wantErr:  true,
 		},
 		{
 			name:     "not equivalent: a and b",

@@ -39,10 +39,10 @@ func AutomatonValidate(c *gin.Context) {
 
 		return
 	}
-	fmt.Printf("%+v", req.Automaton)
 	if err := automaton_s.AutomatonValidate(&req.Automaton); err != nil {
+		zlog.Warnw("Automaton validation failed", "error", err.Error())
 		c.JSON(http.StatusBadRequest, dto.AutomatonValidateResponse{
-			Msg:    "无效的自动机" + err.Error(),
+			Msg:    fmt.Sprintf("无效的自动机: %v", err),
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "validate", "failure: invalid Automaton")
@@ -76,13 +76,14 @@ func AutomatonCleanup(c *gin.Context) {
 		return
 	}
 	// fmt.Printf("%+v\n", req.Automaton)
-	err := automaton_s.AutomatonValidate(&req.Automaton) // 包含了DFA还是NFA的判断
+	err := automaton_s.AutomatonValidate(&req.Automaton)
 	if err != nil {
+		zlog.Warnw("Automaton cleanup failed", "error", err.Error())
 		c.JSON(http.StatusBadRequest, dto.AutomatonCleanupResponse{
-			Msg:    "无效的自动机" + err.Error(),
+			Msg:    fmt.Sprintf("无效的自动机: %v", err),
 			Result: false,
 		})
-		metrics.IncOperation("automaton", "minimize", "failure: invalid Automaton")
+		metrics.IncOperation("automaton", "cleanup", "failure: invalid Automaton")
 
 		return
 	}
@@ -114,10 +115,11 @@ func DFAMinimize(c *gin.Context) {
 		return
 	}
 	// fmt.Printf("要最小化的Automaton：%+v", req.Automaton)
-	err := automaton_s.AutomatonValidate(&req.Automaton) // 包含了DFA还是NFA的判断
+	err := automaton_s.AutomatonValidate(&req.Automaton)
 	if err != nil {
+		zlog.Warnw("DFA minimization failed", "error", err.Error())
 		c.JSON(http.StatusBadRequest, dto.DFAMinimizeResponse{
-			Msg:    "无效的自动机" + err.Error(),
+			Msg:    fmt.Sprintf("无效的自动机: %v", err),
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "minimize", "failure: invalid Automaton")
@@ -162,13 +164,14 @@ func AutomatonStringRecognize(c *gin.Context) {
 
 		return
 	}
-	err := automaton_s.AutomatonValidate(&req.Automaton) // 包含了DFA还是NFA的判断
+	err := automaton_s.AutomatonValidate(&req.Automaton)
 	if err != nil {
+		zlog.Warnw("Automaton string recognition failed", "error", err.Error())
 		c.JSON(http.StatusBadRequest, dto.AutomatonStringRecognizeResponse{
-			Msg:    "自动机验证失败" + err.Error(),
+			Msg:    fmt.Sprintf("自动机验证失败: %v", err),
 			Result: false,
 		})
-		metrics.IncOperation("automaton", "minimize", "failure: invalid Automaton")
+		metrics.IncOperation("automaton", "string_recognize", "failure: invalid Automaton")
 
 		return
 	}
@@ -207,10 +210,11 @@ func NFADeterminization(c *gin.Context) {
 
 		return
 	}
-	err := automaton_s.AutomatonValidate(&req.Automaton) // 包含了DFA还是NFA的判断
+	err := automaton_s.AutomatonValidate(&req.Automaton)
 	if err != nil {
+		zlog.Warnw("NFA determinization failed", "error", err.Error())
 		c.JSON(http.StatusBadRequest, dto.NFADeterminizationResponse{
-			Msg:    "无效的自动机：" + err.Error(),
+			Msg:    fmt.Sprintf("无效的自动机: %v", err),
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "nfa_to_dfa", "failure: invalid Automaton")
@@ -268,21 +272,21 @@ func AutomatonEquivalenceCheck(c *gin.Context) {
 
 		return
 	}
-	err := automaton_s.AutomatonValidate(&req.Automaton1) // 包含了DFA还是NFA的判断
+	err := automaton_s.AutomatonValidate(&req.Automaton1)
 	if err != nil {
-		metrics.IncOperation("automaton", "equivalence_check", "failure: invalid Automaton1")
+		zlog.Warnw("Automaton equivalence check failed", "automaton", "1", "error", err.Error())
 		c.JSON(http.StatusBadRequest, dto.AutomatonEquivalenceCheckResponse{
-			Msg:    "无效的自动机1：" + err.Error(),
+			Msg:    fmt.Sprintf("无效的自动机1: %v", err),
 			Result: false,
 		})
 
 		return
 	}
-	err = automaton_s.AutomatonValidate(&req.Automaton2) // 包含了DFA还是NFA的判断
+	err = automaton_s.AutomatonValidate(&req.Automaton2)
 	if err != nil {
-		metrics.IncOperation("automaton", "equivalence_check", "failure: invalid Automaton2")
+		zlog.Warnw("Automaton equivalence check failed", "automaton", "2", "error", err.Error())
 		c.JSON(http.StatusBadRequest, dto.AutomatonEquivalenceCheckResponse{
-			Msg:    "无效的自动机2：" + err.Error(),
+			Msg:    fmt.Sprintf("无效的自动机2: %v", err),
 			Result: false,
 		})
 
@@ -319,10 +323,11 @@ func AutomatonGenerateExampleString(c *gin.Context) {
 
 		return
 	}
-	err := automaton_s.AutomatonValidate(&req.Automaton) // 包含了DFA还是NFA的判断
+	err := automaton_s.AutomatonValidate(&req.Automaton)
 	if err != nil {
+		zlog.Warnw("Automaton example generation failed", "error", err.Error())
 		c.JSON(http.StatusBadRequest, dto.AutomatonGenerateExampleStringResponse{
-			Msg:    "无效的自动机：" + err.Error(),
+			Msg:    fmt.Sprintf("无效的自动机: %v", err),
 			Result: false,
 		})
 		metrics.IncOperation("automaton", "generate_example", "failure: invalid Automaton")

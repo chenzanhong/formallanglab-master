@@ -74,18 +74,11 @@ func TestCleanup(t *testing.T) {
 			},
 		},
 		{
-			name: "nil automaton",
-			automaton: &model.Automaton{
-				States:          []model.State{},
-				Alphabet:        []model.Symbol{},
-				Transitions:     []model.Transition{},
-				InitialState:    "",
-				AcceptingStates: []model.State{},
-				Type:            model.DFA,
-			},
+			name:      "nil automaton",
+			automaton: nil,
 			checkFunc: func(a *model.Automaton) error {
-				if len(a.States) != 0 {
-					return fmt.Errorf("Cleanup() should handle empty automaton, got %d states", len(a.States))
+				if a != nil {
+					return fmt.Errorf("Cleanup() should return nil for nil input")
 				}
 
 				return nil
@@ -95,15 +88,23 @@ func TestCleanup(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			automaton := tt.automaton.Clone()
-			Cleanup(automaton)
+			var automaton *model.Automaton
+			if tt.automaton != nil {
+				automaton = tt.automaton.Clone()
+				Cleanup(automaton)
+			} else {
+				Cleanup(nil)
+				automaton = nil
+			}
 
 			if err := tt.checkFunc(automaton); err != nil {
 				t.Errorf("Cleanup() failed: %v", err)
 			}
 
-			if err := automaton.Validate(); err != nil {
-				t.Errorf("Cleanup() result validation failed: %v", err)
+			if automaton != nil {
+				if err := automaton.Validate(); err != nil {
+					t.Errorf("Cleanup() result validation failed: %v", err)
+				}
 			}
 		})
 	}

@@ -18,6 +18,7 @@ import (
 	"github.com/chenzanhong/formallanglab-master/internal/service/automaton_s"
 	"github.com/chenzanhong/formallanglab-master/internal/service/grammar_s"
 	"github.com/chenzanhong/formallanglab-master/internal/service/regex_s"
+	"github.com/chenzanhong/zlog"
 	"github.com/gin-gonic/gin"
 )
 
@@ -132,8 +133,9 @@ func RegexToFA(c *gin.Context) {
 
 	// 先检验是否为有效的正则表达式
 	if err := regex_s.RegexValidate(req.Pattern); err != nil {
+		zlog.Warnw("Regex to FA conversion failed", "error", err.Error())
 		c.JSON(http.StatusBadRequest, dto.RegexToFAResponse{
-			Msg:    "无效的正则表达式",
+			Msg:    fmt.Sprintf("无效的正则表达式: %v", err),
 			Result: false,
 		})
 		metrics.IncOperation("convert", "regex_to_nfa", "failure: invalid regex")
@@ -144,8 +146,9 @@ func RegexToFA(c *gin.Context) {
 	// nfa, err := regex_s.RegexToFA(req.Pattern)
 	process, err := regex_s.RegexToFAWithSteps(req.Pattern)
 	if err != nil {
+		zlog.Errorw("Regex to FA conversion failed", "error", err.Error())
 		c.JSON(http.StatusBadRequest, dto.RegexToFAResponse{
-			Msg:    "转换失败：" + err.Error(),
+			Msg:    fmt.Sprintf("转换失败: %v", err),
 			Result: false,
 		})
 		metrics.IncOperation("convert", "regex_to_nfa", "failure: conversion failed")

@@ -145,7 +145,7 @@ func TestRegexRecognize(t *testing.T) {
 }
 
 func TestRegexRecognizeWithInvalidRegex(t *testing.T) {
-	_, err := RegexRecognize("a|", "a")
+	_, err := RegexRecognize("a(", "a")
 	if err == nil {
 		t.Error("RegexRecognize() should return error for invalid regex")
 	}

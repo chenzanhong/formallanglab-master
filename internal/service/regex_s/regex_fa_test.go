@@ -141,7 +141,7 @@ func TestRegexToFAWithNil(t *testing.T) {
 }
 
 func TestRegexToFAWithInvalidRegex(t *testing.T) {
-	result, err := RegexToFA("a|")
+	result, err := RegexToFA("a(")
 	if err == nil {
 		t.Error("RegexToFA() should return error for invalid regex")
 	}

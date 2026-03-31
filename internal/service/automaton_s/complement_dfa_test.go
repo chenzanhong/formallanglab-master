@@ -82,7 +82,7 @@ func TestComplementDFACorrectness(t *testing.T) {
 	dfa := &model.Automaton{
 		States:          []model.State{"q0", "q1"},
 		Alphabet:        []model.Symbol{"a"},
-		Transitions:     []model.Transition{{FromState: "q0", Input: "a", ToStates: []model.State{"q1"}}},
+		Transitions:     []model.Transition{{FromState: "q0", Input: "a", ToStates: []model.State{"q1"}}, {FromState: "q1", Input: "a", ToStates: []model.State{"q1"}}},
 		InitialState:    "q0",
 		AcceptingStates: []model.State{"q1"},
 		Type:            model.DFA,
@@ -99,7 +99,7 @@ func TestComplementDFACorrectness(t *testing.T) {
 	}{
 		{"", true},
 		{"a", false},
-		{"aa", true},
+		{"aa", false},
 	}
 
 	for _, tc := range testCases {

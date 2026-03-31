@@ -235,6 +235,13 @@ func parseRegex(pattern string) (*astNode, error) {
 	}
 	p := &parser{tokens: tokens, pos: 0}
 
+	defer func() {
+		if r := recover(); r != nil {
+			panicErr := fmt.Errorf("parse error: %v", r)
+			err = panicErr
+		}
+	}()
+
 	return p.parseUnion(), nil
 }
 
