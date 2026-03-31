@@ -69,13 +69,13 @@ func main() {
 	// 5. 注册路由
 	r := api.SetupRouter(storeHandler, learnHandler)
 
-	// 5. 创建 HTTP 服务实例
+	// 6. 创建 HTTP 服务实例
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", os.Getenv("SERVER_PORT")),
 		Handler: r,
 	}
 
-	// 6. 创建 context 监听系统信号
+	// 7. 创建 context 监听系统信号
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -98,7 +98,19 @@ func main() {
 		}
 	}()
 
-	// 7. 启动 HTTP 服务
+	// 9. 启动 HTTP 服务
+	// 启动前自动同步 OSS 文件
+	go func() {
+		zlog.Info("开始同步 OSS 文件...")
+		ctx := context.Background()
+		_, err := learnService.SyncOSSFiles(ctx)
+		if err != nil {
+			zlog.Errorf("同步 OSS 文件失败: %v", err)
+		} else {
+			zlog.Info("OSS 文件同步完成")
+		}
+	}()
+
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			zlog.Fatalf("HTTP server ListenAndServe error: %v", err)
@@ -108,23 +120,23 @@ func main() {
 
 	zlog.Info("Server started on :8081")
 
-	// 8. 等待中断信号
+	// 10. 等待中断信号
 	<-ctx.Done()
 
 	zlog.Info("Shutting down server...")
 
-	// 9. 创建一个超时 context 控制优雅关闭时间
+	// 11. 创建一个超时 context 控制优雅关闭时间
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// 10. 停止 HTTP 服务
+	// 12. 停止 HTTP 服务
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		zlog.Errorf("HTTP server Shutdown error: %v", err)
 	} else {
 		zlog.Info("HTTP server gracefully stopped")
 	}
 
-	// 11. 关闭 pg 数据库连接 *gorm.DB
+	// 13. 关闭 pg 数据库连接 *gorm.DB
 	sqlDB, gormErr := repo.DB.DB()
 	if gormErr == nil {
 		if err := sqlDB.Close(); err != nil {
@@ -136,7 +148,7 @@ func main() {
 		zlog.Error("Failed to get underlying SQL DB from GORM")
 	}
 
-	// 13. 关闭Kafka生产者
+	// 14. 关闭Kafka生产者
 	kafkaProducer.Close()
 
 	zlog.Info("Server exited")

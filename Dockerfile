@@ -52,46 +52,8 @@ COPY configs/config.yaml /app/configs/
 # 复制迁移文件
 COPY migrations/ /app/migrations/
 
-# 复制知识文件
-COPY knowledge/ /app/knowledge/
-
 # 暴露服务端口
 EXPOSE 8081 4001 6061
 
 # 运行应用
 CMD ["/app/master-server"]
-
-# ======================= 使用说明 =======================
-# 1. 构建镜像：
-#    docker build -t gdesign-master .
-#
-# 2. 准备环境：
-#    - 创建.env文件（从.env.example复制并填写实际密钥）
-#    - 确保PostgreSQL、Redis和Kafka服务正在运行
-#
-# 3. 运行容器（方式1：使用环境变量传递敏感信息）：
-#    docker run -d \
-#      --name gdesign-master \
-#      -p 8081:8081 \
-#      -e DB_HOST=host.docker.internal \
-#      -e DB_PASSWORD=your_db_password \
-#      -e JWT_KEY=your_jwt_key \
-#      -e REDIS_HOST=host.docker.internal \
-#      -e OSS_ACCESS_KEY_ID=your_access_key_id \
-#      -e OSS_ACCESS_KEY_SECRET=your_access_key_secret \
-#      -e KAFKA_BROKERS=host.docker.internal:9092 \
-#      gdesign-master
-#
-# 4. 运行容器（方式2：使用卷挂载配置文件）：
-#    docker run -d \
-#      --name gdesign-master \
-#      -p 8081:8081 \
-#      -v $(pwd)/.env:/app/.env \
-#      -v $(pwd)/configs:/app/configs \
-#      -v $(pwd)/logs:/app/logs \
-#      -v $(pwd)/migrations:/app/migrations \
-#      -v $(pwd)/knowledge:/app/knowledge \
-#      gdesign-master
-
-# docker build -t crpi-tcnuencv1iecgx03.cn-hangzhou.personal.cr.aliyuncs.com/chenzh2004/formallanglab-master .
-# docker push crpi-tcnuencv1iecgx03.cn-hangzhou.personal.cr.aliyuncs.com/chenzh2004/formallanglab-master
