@@ -3,7 +3,6 @@ package grammar_s
 
 import (
 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
-	"github.com/chenzanhong/formallanglab-master/pkg/util"
 )
 
 // Simplify 对文法进行化简：去不可派生、不可达、空产生式、单一产生式
@@ -15,19 +14,15 @@ func Simplify(grammar *model.Grammar) *model.Grammar {
 
 	// 步骤1: 去除不可派生的变量（Non-generating variables）
 	RemoveNonGenerating(grammar)
-	util.PrintGrammar(grammar)
 
 	// 步骤2: 去除不可达符号（Unreachable terminals/nonterminals）
 	RemoveUnreachable(grammar)
-	util.PrintGrammar(grammar)
 
 	// 步骤3: 去除空产生式（ε-productions）
 	RemoveEpsilonProductions(grammar)
-	util.PrintGrammar(grammar)
 
 	// 步骤4: 去除单一产生式（Unit productions）
 	RemoveUnitProductions(grammar)
-	util.PrintGrammar(grammar)
 
 	return grammar
 }

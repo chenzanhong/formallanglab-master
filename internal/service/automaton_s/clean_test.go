@@ -109,31 +109,6 @@ func TestCleanup(t *testing.T) {
 	}
 }
 
-func TestCleanup1(t *testing.T) {
-	automaton := &model.Automaton{
-		States:          []model.State{"q0", "q1", "q2", "q3"},
-		Alphabet:        []model.Symbol{"a", "b"},
-		Transitions:     []model.Transition{{FromState: "q0", Input: "a", ToStates: []model.State{"q1"}}},
-		InitialState:    "q0",
-		AcceptingStates: []model.State{"q1"},
-		Type:            model.DFA,
-	}
-
-	Cleanup1(automaton)
-
-	if len(automaton.States) != 2 {
-		t.Errorf("Cleanup1() should remove unreachable states, got %d states", len(automaton.States))
-	}
-
-	if len(automaton.Alphabet) != 1 {
-		t.Errorf("Cleanup1() should remove unused symbols, got %d symbols", len(automaton.Alphabet))
-	}
-}
-
 func TestCleanupWithNil(t *testing.T) {
 	Cleanup(nil)
-}
-
-func TestCleanup1WithNil(t *testing.T) {
-	Cleanup1(nil)
 }

@@ -23,8 +23,6 @@ func automatonGenerateExampleStringByDFAAndBFS(a *model.Automaton) (accept, reje
 	}
 	if err := a.CompleteDFA(); err != nil { // 完备化失败
 		fmt.Println("BFSShortestAcceptedStringsForDFA")
-		util.PrintAutomaton(a)
-
 		return automatonGenerateExampleStringByEnumAndVerify(a)
 	}
 
@@ -83,7 +81,6 @@ func BFSShortestAcceptedStringsForDFA(dfa *model.Automaton, k int) []string {
 		return nil
 	}
 	fmt.Println("BFSShortestAcceptedStringsForDFA")
-	util.PrintAutomaton(dfa)
 	dfa.InitTransMap()
 
 	acceptingSet := make(map[model.State]bool)
@@ -120,7 +117,7 @@ func BFSShortestAcceptedStringsForDFA(dfa *model.Automaton, k int) []string {
 	}
 
 	// 限制最大长度：避免无限循环，同时覆盖足够多短字符串
-	maxLen := min(len(dfa.States)*2, 12) // 经验值：不超过 12 位
+	maxLen := max(len(dfa.States), min(len(dfa.States)*2, 12)) // 经验值：不超过 12 位
 
 	for len(queue) > 0 && len(results) < k {
 		node := queue[0]
@@ -168,8 +165,6 @@ func automatonGenerateExampleStringByEnumAndVerify(a *model.Automaton) (accept, 
 		return []string{"(no accepting states)"}, []string{"(any string is rejected)"}
 	}
 
-	fmt.Println("automatonGenerateExampleStringByEnumAndVerify")
-	util.PrintAutomaton(a)
 	a.InitTransMap()
 
 	// 1. 提取纯终结符字母表（排除 ε）

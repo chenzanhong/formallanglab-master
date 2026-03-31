@@ -18,7 +18,6 @@ import (
 	"github.com/chenzanhong/formallanglab-master/internal/service/automaton_s"
 	"github.com/chenzanhong/formallanglab-master/internal/service/grammar_s"
 	"github.com/chenzanhong/formallanglab-master/internal/service/regex_s"
-	re "github.com/chenzanhong/formallanglab-master/internal/service/regex_s"
 	"github.com/gin-gonic/gin"
 )
 
@@ -132,7 +131,7 @@ func RegexToFA(c *gin.Context) {
 	}
 
 	// 先检验是否为有效的正则表达式
-	if err := re.RegexValidate(req.Pattern); err != nil {
+	if err := regex_s.RegexValidate(req.Pattern); err != nil {
 		c.JSON(http.StatusBadRequest, dto.RegexToFAResponse{
 			Msg:    "无效的正则表达式",
 			Result: false,
