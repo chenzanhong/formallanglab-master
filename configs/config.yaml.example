@@ -2,27 +2,27 @@ pg:
   host: localhost
   port: 5432
   user: postgres
-  password:
+  password: "your-postgres-password"
   name: gdesign
   max_conn: 10
   max_idle_conn: 5
 
 # AI Service Configuration
 ai:
-  dashscope_api_key: "your-dashscope-api-key"
-  dashscope_base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"  # Optional
-  dashscope_model: "qwen-max"  # Optional
+  dashscope_api_key: "sk-1234567890abcdef"
+  dashscope_base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  dashscope_model: "qwen-max"
   chroma_url: "http://localhost:8000"
   chroma_collection: "automata_knowledge"
 
 # Log Configuration
 log:
-  level: "info"  # debug, info, warn, error
-  format: "json"  # json, console
+  level: "info"
+  format: "json"
   file_path: "./logs/app.log"
-  max_size: 50  # MB
+  max_size: 50
   max_backups: 10
-  max_age: 30  # days
+  max_age: 30
   compress: true
   console: true
   log_injection: true
@@ -41,3 +41,13 @@ oss:
   bucket_name: "your-bucket-name"
   region: "oss-cn-hangzhou"
   base_url: "https://your-bucket-name.oss-cn-hangzhou.aliyuncs.com"
+
+# 速率限制配置
+rate:
+  user_rate: 100
+  user_burst: 200
+
+# Kafka 配置
+kafka:
+  brokers: localhost:9092
+  topic: master-logs

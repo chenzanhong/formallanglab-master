@@ -18,7 +18,6 @@ import (
 	mtr "github.com/chenzanhong/formallanglab-master/internal/metrics"
 	"github.com/chenzanhong/formallanglab-master/internal/middleware"
 	rep "github.com/chenzanhong/formallanglab-master/internal/repository"
-	kafka_s "github.com/chenzanhong/formallanglab-master/internal/service/kafka_s"
 	learnSvc "github.com/chenzanhong/formallanglab-master/internal/service/learn_s"
 	storeSvc "github.com/chenzanhong/formallanglab-master/internal/service/store_s"
 	"github.com/chenzanhong/formallanglab-master/pkg/binding"
@@ -62,7 +61,6 @@ func main() {
 	// 7. 组装服务
 	storeRepo := rep.NewStoreRepository(repo.DB)
 	learnRepo := rep.NewLearnRepository(repo.DB)
-	kafkaProducer := kafka_s.NewDefaultKafkaProducerService()
 	storeService := storeSvc.NewStoreService(storeRepo)
 	learnService := learnSvc.NewLearnService(learnRepo, ossClient)
 
@@ -94,11 +92,11 @@ func main() {
 		}
 	}()
 
-	// 12. 启动pprof http服务（通过 PPROF_PORT 环境变量控制，默认为 6060）
+	// 12. 启动 pprof http 服务（通过 PPROF_PORT 环境变量控制，默认为 6060）
 	go func() {
 		if pprofPort := os.Getenv("PPROF_PORT"); pprofPort != "0" && pprofPort != "" {
-			zlog.Infow("Starting pprof on localhost:", pprofPort)
-			http.ListenAndServe(fmt.Sprintf("localhost:%d", pprofPort), nil)
+			zlog.Infow("Starting pprof on localhost:" + pprofPort)
+			http.ListenAndServe(fmt.Sprintf("localhost:%s", pprofPort), nil)
 		}
 	}()
 
@@ -107,7 +105,7 @@ func main() {
 		if metricsPort := os.Getenv("METRICS_PORT"); metricsPort != "0" && metricsPort != "" {
 			r := gin.New()
 			r.Use(gin.Recovery())
-			zlog.Infow("Starting metrics on localhost:", metricsPort)
+			zlog.Infow("Starting metrics on localhost:" + metricsPort)
 			r.GET("/gdesign/master/metrics", mtr.MetricsHandler())
 			r.Run(fmt.Sprintf(":%s", metricsPort))
 		}
@@ -162,9 +160,6 @@ func main() {
 	} else {
 		zlog.Error("Failed to get underlying SQL DB from GORM")
 	}
-
-	// 17. 关闭 Kafka 生产者
-	kafkaProducer.Close()
 
 	zlog.Info("Server exited")
 }
