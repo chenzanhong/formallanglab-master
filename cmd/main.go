@@ -25,6 +25,7 @@ import (
 	"github.com/chenzanhong/formallanglab-master/pkg/oss"
 	"github.com/chenzanhong/goutil/jwtx"
 	"github.com/chenzanhong/zlog"
+	"github.com/gin-gonic/gin"
 )
 
 func init() {
@@ -33,53 +34,56 @@ func init() {
 }
 
 func main() {
+	// 1. 加载配置
 	config, err := configs.LoadConfig()
 	if err != nil {
 		log.Fatalf("加载配置失败：%v", err.Error())
 	}
-	cf.SyncConfigToEnv(*config) // 环境变量设置
+	// 2. 设置环境变量
+	cf.SyncConfigToEnv(*config)
+	// 3. 初始化JWT
 	jwtx.InitWithHS256(config.JWT.Key, &middleware.Claims{}, jwtx.WithAutoInject(true))
 
-	// 日志
+	// 4. 初始化日志
 	zlog.InitLogger(config.Log)
 
-	// 1. 初始化数据库
+	// 5. 初始化数据库
 	repo, err := rep.Init()
 	if err != nil {
 		zlog.Fatalf("Failed to initialize database: %v", err)
 	}
 
-	// 2. 初始化OSS客户端
+	// 6. 初始化OSS客户端
 	ossClient, err := oss.NewAliyunOSSClient()
 	if err != nil {
 		zlog.Errorf("初始化阿里云OSS客户端失败: %v", err)
 	}
 
-	// 3. 组装服务
+	// 7. 组装服务
 	storeRepo := rep.NewStoreRepository(repo.DB)
 	learnRepo := rep.NewLearnRepository(repo.DB)
 	kafkaProducer := kafka_s.NewDefaultKafkaProducerService()
 	storeService := storeSvc.NewStoreService(storeRepo)
 	learnService := learnSvc.NewLearnService(learnRepo, ossClient)
 
-	// 4. 初始化处理器
+	// 8. 初始化处理器
 	storeHandler := api.NewStoreHandler(storeService)
 	learnHandler := api.NewLearnHandler(learnService)
 
-	// 5. 注册路由
+	// 9. 注册路由
 	r := api.SetupRouter(storeHandler, learnHandler)
 
-	// 6. 创建 HTTP 服务实例
+	// 10. 创建 HTTP 服务实例
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", os.Getenv("SERVER_PORT")),
 		Handler: r,
 	}
 
-	// 7. 创建 context 监听系统信号
+	// 11. 创建 context 监听系统信号
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// 应用 trace
+	// 应用 trace（通过 ENABLE_TRACE 环境变量控制）
 	go func() {
 		if v, ok := os.LookupEnv("ENABLE_TRACE"); ok && v == "true" {
 			f, _ := os.Create("server.trace")
@@ -90,15 +94,26 @@ func main() {
 		}
 	}()
 
-	// 启动pprof http服务
+	// 12. 启动pprof http服务（通过 PPROF_PORT 环境变量控制，默认为 6060）
 	go func() {
-		if os.Getenv("PPROF_PORT") != "0" {
-			zlog.Infow("Starting pprof on localhost:", config.Server.PprofPort)
-			http.ListenAndServe(fmt.Sprintf("localhost:%d", config.Server.PprofPort), nil)
+		if pprofPort := os.Getenv("PPROF_PORT"); pprofPort != "0" && pprofPort != "" {
+			zlog.Infow("Starting pprof on localhost:", pprofPort)
+			http.ListenAndServe(fmt.Sprintf("localhost:%d", pprofPort), nil)
 		}
 	}()
 
-	// 9. 启动 HTTP 服务
+	// 13. 启动独立的 metrics 服务（通过 METRICS_PORT 环境变量控制）
+	go func() {
+		if metricsPort := os.Getenv("METRICS_PORT"); metricsPort != "0" && metricsPort != "" {
+			r := gin.New()
+			r.Use(gin.Recovery())
+			zlog.Infow("Starting metrics on localhost:", metricsPort)
+			r.GET("/gdesign/master/metrics", mtr.MetricsHandler())
+			r.Run(fmt.Sprintf(":%s", metricsPort))
+		}
+	}()
+
+	// 14. 启动主 HTTP 服务
 	// 启动前自动同步 OSS 文件
 	go func() {
 		zlog.Info("开始同步 OSS 文件...")
@@ -111,6 +126,7 @@ func main() {
 		}
 	}()
 
+	// 启动主 HTTP 服务（通过 SERVER_PORT 环境变量控制，默认为 8081）
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			zlog.Fatalf("HTTP server ListenAndServe error: %v", err)
@@ -120,23 +136,22 @@ func main() {
 
 	zlog.Info("Server started on :8081")
 
-	// 10. 等待中断信号
+	// 等待中断信号（SIGINT, SIGTERM）
 	<-ctx.Done()
 
 	zlog.Info("Shutting down server...")
 
-	// 11. 创建一个超时 context 控制优雅关闭时间
+	// 15. 优雅关闭 HTTP 服务
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// 12. 停止 HTTP 服务
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		zlog.Errorf("HTTP server Shutdown error: %v", err)
 	} else {
 		zlog.Info("HTTP server gracefully stopped")
 	}
 
-	// 13. 关闭 pg 数据库连接 *gorm.DB
+	// 16. 关闭 PostgreSQL 数据库连接
 	sqlDB, gormErr := repo.DB.DB()
 	if gormErr == nil {
 		if err := sqlDB.Close(); err != nil {
@@ -148,7 +163,7 @@ func main() {
 		zlog.Error("Failed to get underlying SQL DB from GORM")
 	}
 
-	// 14. 关闭Kafka生产者
+	// 17. 关闭 Kafka 生产者
 	kafkaProducer.Close()
 
 	zlog.Info("Server exited")

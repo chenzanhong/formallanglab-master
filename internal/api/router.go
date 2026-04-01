@@ -25,7 +25,6 @@ func SetupRouter(storeHandler *StoreHandler, learnHandler *LearnHandler) *gin.En
 	// 6. 指标收集 - 收集所有处理过程的指标
 	router.Use(mtr.HTTPMiddleware())
 
-	router.GET("/gdesign/master/metrics", mtr.MetricsHandler())
 	router.GET("/gdesign/master/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status": "ok",
