@@ -4,7 +4,7 @@ RegexRecognize		// 查看是否正则表达式是否匹配字符串
 RegexEquivalenceCheck // 检查两个正则表达式是否等价
 RegexGenerateExampleString // 生成正则表达式可匹配的字符串示例
 */
-package api
+package handler
 
 import (
 	"net/http"

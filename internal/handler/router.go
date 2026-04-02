@@ -1,4 +1,4 @@
-package api
+package handler
 
 import (
 	mtr "github.com/chenzanhong/formallanglab-master/internal/metrics"

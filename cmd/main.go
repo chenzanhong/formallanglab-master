@@ -14,7 +14,7 @@ import (
 
 	"github.com/chenzanhong/formallanglab-master/configs"
 	cf "github.com/chenzanhong/formallanglab-master/configs"
-	"github.com/chenzanhong/formallanglab-master/internal/api"
+	"github.com/chenzanhong/formallanglab-master/internal/handler"
 	mtr "github.com/chenzanhong/formallanglab-master/internal/metrics"
 	"github.com/chenzanhong/formallanglab-master/internal/middleware"
 	rep "github.com/chenzanhong/formallanglab-master/internal/repository"
@@ -65,11 +65,11 @@ func main() {
 	learnService := learnSvc.NewLearnService(learnRepo, ossClient)
 
 	// 8. 初始化处理器
-	storeHandler := api.NewStoreHandler(storeService)
-	learnHandler := api.NewLearnHandler(learnService)
+	storeHandler := handler.NewStoreHandler(storeService)
+	learnHandler := handler.NewLearnHandler(learnService)
 
 	// 9. 注册路由
-	r := api.SetupRouter(storeHandler, learnHandler)
+	r := handler.SetupRouter(storeHandler, learnHandler)
 
 	// 10. 创建 HTTP 服务实例
 	srv := &http.Server{

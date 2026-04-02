@@ -5,7 +5,7 @@
 		RegexToFA		// 正则表达式转为 FA，Thompson 构造法
 		FAToRegex		// FA 转正则表达式
 */
-package api
+package handler
 
 import (
 	"fmt"

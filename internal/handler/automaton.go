@@ -8,7 +8,7 @@ NFADeterminization                     	// NFA 转 DFA
 AutomatonEquivalenceCheck				// 判断两个有限自动机是否等价
 AutomatonGenerateExampleString					// 生成字符串示例，含可识别和不可识别的
 */
-package api
+package handler
 
 import (
 	"fmt"

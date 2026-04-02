@@ -10,7 +10,7 @@ GrammarFirstSet			// 计算文法的First集
 GrammarFollowSet		// 计算文法的Follow集
 GrammarGenerateExampleString // 生成文法可推导和不可推导的字符串示例
 */
-package api
+package handler
 
 import (
 	"fmt"
