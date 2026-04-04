@@ -12,14 +12,15 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/chenzanhong/zlog"
+	"github.com/gin-gonic/gin"
+
 	"github.com/chenzanhong/formallanglab-master/internal/domain/dto"
 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 	"github.com/chenzanhong/formallanglab-master/internal/metrics"
 	"github.com/chenzanhong/formallanglab-master/internal/service/automaton_s"
 	"github.com/chenzanhong/formallanglab-master/internal/service/grammar_s"
 	"github.com/chenzanhong/formallanglab-master/internal/service/regex_s"
-	"github.com/chenzanhong/zlog"
-	"github.com/gin-gonic/gin"
 )
 
 func GrammarToFA(c *gin.Context) {

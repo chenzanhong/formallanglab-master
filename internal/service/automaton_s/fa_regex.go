@@ -60,6 +60,7 @@ func needWrap(s string) bool {
 			rightCount++
 		}
 	}
+
 	return has && (leftCount != rightCount || (leftCount == 0 && rightCount == 0))
 }
 

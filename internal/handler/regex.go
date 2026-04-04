@@ -10,11 +10,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/chenzanhong/zlog"
+	"github.com/gin-gonic/gin"
+
 	"github.com/chenzanhong/formallanglab-master/internal/domain/dto"
 	"github.com/chenzanhong/formallanglab-master/internal/metrics"
 	re "github.com/chenzanhong/formallanglab-master/internal/service/regex_s"
-	"github.com/chenzanhong/zlog"
-	"github.com/gin-gonic/gin"
 )
 
 func RegexValidate(c *gin.Context) {

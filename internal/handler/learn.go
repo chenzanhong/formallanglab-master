@@ -5,11 +5,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/chenzanhong/zlog"
+	"github.com/gin-gonic/gin"
+
 	"github.com/chenzanhong/formallanglab-master/internal/domain/dto"
 	"github.com/chenzanhong/formallanglab-master/internal/metrics"
 	"github.com/chenzanhong/formallanglab-master/internal/service/learn_s"
-	"github.com/chenzanhong/zlog"
-	"github.com/gin-gonic/gin"
 )
 
 type LearnHandler struct {

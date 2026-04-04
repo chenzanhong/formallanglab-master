@@ -12,6 +12,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/chenzanhong/goutil/jwtx"
+	"github.com/chenzanhong/zlog"
+	"github.com/gin-gonic/gin"
+
 	"github.com/chenzanhong/formallanglab-master/configs"
 	cf "github.com/chenzanhong/formallanglab-master/configs"
 	"github.com/chenzanhong/formallanglab-master/internal/handler"
@@ -22,9 +26,6 @@ import (
 	storeSvc "github.com/chenzanhong/formallanglab-master/internal/service/store_s"
 	"github.com/chenzanhong/formallanglab-master/pkg/binding"
 	"github.com/chenzanhong/formallanglab-master/pkg/oss"
-	"github.com/chenzanhong/goutil/jwtx"
-	"github.com/chenzanhong/zlog"
-	"github.com/gin-gonic/gin"
 )
 
 func init() {

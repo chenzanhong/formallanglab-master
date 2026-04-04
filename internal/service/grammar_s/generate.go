@@ -7,10 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/chenzanhong/zlog"
+
 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 	"github.com/chenzanhong/formallanglab-master/internal/service/automaton_s"
 	"github.com/chenzanhong/formallanglab-master/pkg/util"
-	"github.com/chenzanhong/zlog"
 )
 
 const (

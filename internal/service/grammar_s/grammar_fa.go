@@ -3,9 +3,10 @@ package grammar_s
 import (
 	"fmt"
 
+	"github.com/chenzanhong/zlog"
+
 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 	"github.com/chenzanhong/formallanglab-master/pkg/util"
-	"github.com/chenzanhong/zlog"
 )
 
 // 正则文法转自动机，需要区分左线性和右线性

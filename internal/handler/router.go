@@ -1,10 +1,11 @@
 package handler
 
 import (
-	mtr "github.com/chenzanhong/formallanglab-master/internal/metrics"
-	"github.com/chenzanhong/formallanglab-master/internal/middleware"
 	"github.com/chenzanhong/goutil/jwtx"
 	"github.com/gin-gonic/gin"
+
+	mtr "github.com/chenzanhong/formallanglab-master/internal/metrics"
+	"github.com/chenzanhong/formallanglab-master/internal/middleware"
 )
 
 func SetupRouter(storeHandler *StoreHandler, learnHandler *LearnHandler) *gin.Engine {

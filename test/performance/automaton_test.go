@@ -9,9 +9,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/chenzanhong/zlog"
+
 	"github.com/chenzanhong/formallanglab-master/internal/domain/dto"
 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
-	"github.com/chenzanhong/zlog"
 )
 
 // PerformanceTestConfig 性能测试配置
