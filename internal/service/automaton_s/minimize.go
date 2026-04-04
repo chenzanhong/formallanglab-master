@@ -14,14 +14,13 @@ func DFAMinimize(automaton *model.Automaton) *model.Automaton {
 	if automaton == nil {
 		return nil
 	}
-	// 可选：未来可加 algo := config.GetMinimizationAlgo()
+
 	minimized, _ := minimizeByHopcroft(automaton)
 
 	return minimized
 	// return minimizeByTableFilling(automaton)
 }
 
-// DFAMinimizeWithProcess 执行DFA最小化并返回最小化过程记录
 func DFAMinimizeWithProcess(automaton *model.Automaton) (*model.Automaton, *model.MinimizationProcess) {
 	if automaton == nil {
 		return nil, nil
@@ -30,12 +29,13 @@ func DFAMinimizeWithProcess(automaton *model.Automaton) (*model.Automaton, *mode
 	return minimizeByHopcroft(automaton)
 }
 
-// minimizeByTableFilling 使用表格填充法（Table-Filling Method）对 DFA 进行最小化
+// 使用表格填充法（Table-Filling Method）对 DFA 进行最小化
 func minimizeByTableFilling(automaton *model.Automaton) *model.Automaton {
 	if automaton == nil {
 		return nil
 	}
-	// 步骤 1: 去除不可达状态
+
+	// 去除不可达状态
 	reachable := getReachableStates(automaton)
 	var states []model.State
 	for s := range reachable {
@@ -72,18 +72,17 @@ func minimizeByTableFilling(automaton *model.Automaton) *model.Automaton {
 		Type:            model.DFA,
 	}
 
-	// 步骤 2 & 3: 表格填充法标记可区分状态对
+	// 表格填充法标记可区分状态对
 	distinguishable := markDistinguishablePairs(reduced, acceptingSet)
 
-	// 步骤 4: 构建等价类
+	// 构建等价类
 	classes := findEquivalenceClasses(reduced.States, distinguishable)
 
-	// 步骤 5: 构建最小 DFA
+	// 构建最小 DFA
 	return buildMinimizedDFA(reduced, classes, acceptingSet)
 }
 
 // minimizeByHopcroft 使用 Hopcroft 算法对 DFA 进行最小化
-// 修改minimizeByHopcroft函数，添加过程记录功能
 func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.MinimizationProcess) {
 	if automaton == nil {
 		return nil, nil
@@ -98,7 +97,7 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 	}
 	stepCount := 0
 
-	// Step 1: 移除不可达状态
+	// 移除不可达状态
 	reachable := getReachableStates(automaton)
 	actions := []string{"移除不可达状态"}
 	reduced := &model.Automaton{
@@ -110,7 +109,6 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 		Type:            model.DFA,
 	}
 
-	// 记录步骤：初始状态（移除不可达状态后）
 	stepCount++
 	partition := [][]model.State{}
 	stateList := make([]model.State, 0, len(reduced.States))
@@ -124,7 +122,6 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 	})
 
 	if len(reduced.States) <= 1 {
-		// 记录最终步骤
 		stepCount++
 		finalPartition := [][]model.State{}
 		finalStateList := make([]model.State, 0, len(reduced.States))
@@ -150,8 +147,7 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 		acceptingSet[s] = true
 	}
 
-	var P [][]model.State //
-	// 只添加非空的状态集合
+	var P [][]model.State
 	if len(reduced.AcceptingStates) > 0 {
 		P = append(P, reduced.AcceptingStates)
 	}
@@ -165,7 +161,6 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 		P = append(P, nonAccepting)
 	}
 
-	// 记录步骤：初始划分
 	stepCount++
 	actions = append(actions, "根据接受/非接受状态进行初始划分")
 	initialPartition := [][]model.State{}
@@ -174,7 +169,7 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 		stateList = append(stateList, block...)
 		initialPartition = append(initialPartition, stateList)
 	}
-	// 临时构建 stateToClass
+
 	tempStateToClass := make(map[model.State][]model.State)
 	for _, cls := range P {
 		for _, s := range cls {
@@ -287,7 +282,6 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 			}
 
 			stepCount++
-			// 临时构建 stateToClass
 			tempStateToClass := make(map[model.State][]model.State)
 			for _, cls := range P {
 				for _, s := range cls {
@@ -326,14 +320,6 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 	// 构建新 DFA
 	minimizedDFA := buildMinimizedDFAFromClasses(reduced, classes, acceptingSet, stateToClass)
 
-	// 可以将 process 用于日志记录或返回给前端展示
-	fmt.Println("DFA 最小化过程记录:")
-	for _, step := range process.Steps {
-		fmt.Printf("步骤 %d:\n", step.Step)
-		fmt.Printf("  划分: %v\n", step.Partition)
-		fmt.Printf("  操作: %v\n\n", step.Actions)
-	}
-
 	// 把可能添加的陷阱状态去除，经过buildMinimizedDFAFromClasses后，model.DeadState被[]包裹
 	// UnCompleteDFA(minimizedDFA, "["+model.SinkState+"]")
 
@@ -365,11 +351,11 @@ func filterTransitions(trans []model.Transition, reachable map[model.State]bool)
 func getDFANextState(automaton *model.Automaton, from model.State, input model.Symbol) model.State {
 	for _, t := range automaton.Transitions {
 		if t.FromState == from && t.Input == input {
-			return t.ToStates[0] // DFA only has one next state
+			return t.ToStates[0]
 		}
 	}
 
-	return "" // No transition (should not happen in complete DFA)
+	return ""
 }
 
 func markDistinguishablePairs(automaton *model.Automaton, acceptingSet map[model.State]bool) map[model.State]map[model.State]bool {
@@ -382,7 +368,6 @@ func markDistinguishablePairs(automaton *model.Automaton, acceptingSet map[model
 		distinguishable[s] = make(map[model.State]bool)
 	}
 
-	// 初始化：接受 vs 非接受
 	for i, p := range states {
 		for _, q := range states[i+1:] {
 			if acceptingSet[p] != acceptingSet[q] {
@@ -392,7 +377,6 @@ func markDistinguishablePairs(automaton *model.Automaton, acceptingSet map[model
 		}
 	}
 
-	// 迭代标记
 	changed := true
 	for changed {
 		changed = false
@@ -447,7 +431,6 @@ func buildReverseTransitions(automaton *model.Automaton) map[model.State]map[mod
 	return rev
 }
 
-// 辅助函数：判断两个状态集合是否相等
 func equalSet(a, b []model.State) bool {
 	if len(a) != len(b) {
 		return false
@@ -607,15 +590,15 @@ func findEquivalenceClasses(states []model.State, distinguishable map[model.Stat
 		classesMap[root] = append(classesMap[root], s)
 	}
 
-	var result [][]model.State
+	var classes [][]model.State
 	for _, cls := range classesMap {
 		sort.Slice(cls, func(i, j int) bool {
 			return string(cls[i]) < string(cls[j])
 		}) // 排序，确保确定性，但不是必须的
-		result = append(result, cls)
+		classes = append(classes, cls)
 	}
 
-	return result
+	return classes
 }
 
 func buildMinimizedDFA(

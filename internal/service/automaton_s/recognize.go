@@ -32,7 +32,6 @@ func Recognize(automaton *model.Automaton, str string) (*model.RecognitionResult
 		}, fmt.Errorf("自动机状态为空")
 	}
 
-	// 初始化 TransMap 以提高识别效率
 	automaton.InitTransMap()
 
 	switch automaton.Type {
@@ -50,12 +49,11 @@ func Recognize(automaton *model.Automaton, str string) (*model.RecognitionResult
 	}
 }
 
-// recognizeDFA 识别DFA是否接受输入字符串 str
 func recognizeDFA(automaton *model.Automaton, str string) (*model.RecognitionResult, error) {
 	var mustFailed bool
 	symbols, err := automaton.SplitString(str)
 	if err != nil {
-		if len(symbols) == 0 { // 第一个字符就非法了
+		if len(symbols) == 0 {
 			return &model.RecognitionResult{
 				IsAccepted: false,
 				Steps:      []model.RecognitionStep{},
@@ -83,7 +81,6 @@ func recognizeDFA(automaton *model.Automaton, str string) (*model.RecognitionRes
 			}, fmt.Errorf("当前状态 %s 下输入 %s 没有相关的有效转移", currentState, sym)
 		}
 		nextState := automaton.TransMap[currentState][sym][0]
-		// fmt.Printf("currentState: %s, nextState: %s", currentState, nextState)
 		steps = append(steps, model.RecognitionStep{
 			State:     currentState,
 			Input:     sym,
@@ -92,9 +89,7 @@ func recognizeDFA(automaton *model.Automaton, str string) (*model.RecognitionRes
 		currentState = nextState
 	}
 
-	// 检查最终状态是否为接收状态
 	for _, st := range automaton.AcceptingStates {
-		// fmt.Printf("DFA: %+v		%s\n", automaton.AcceptingStates, currentState)
 		if st == currentState {
 			return &model.RecognitionResult{
 				IsAccepted: !mustFailed,
@@ -109,9 +104,6 @@ func recognizeDFA(automaton *model.Automaton, str string) (*model.RecognitionRes
 	}, fmt.Errorf("该自动机不接受输入字符串 %s", str)
 }
 
-// ===================== NFA =====================
-
-// recognizeNFA 识别NFA是否接受输入字符串 str，DFS
 func recognizeNFA(automaton *model.Automaton, str string) (*model.RecognitionResult, error) {
 	// 处理空字符串
 	if str == "" {

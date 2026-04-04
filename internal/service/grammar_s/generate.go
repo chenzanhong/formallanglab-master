@@ -169,6 +169,7 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 					return accept
 				}
 			}
+
 			continue // 句子不能再推导
 		}
 
@@ -177,6 +178,7 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 			if times%100 == 0 {
 				zlog.Debugw("跳过 - 超过深度限制", "depth", node.depth, "maxDepth", maxDerivationDepth)
 			}
+
 			continue
 		}
 
@@ -236,6 +238,7 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 					}
 				}
 				found = true
+
 				break // 最左推导，只替换第一个非终结符
 			}
 		}
@@ -257,6 +260,7 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 				}
 			}
 		}
+
 		return []string{"(未找到短接受字符串)"}
 	}
 
@@ -499,6 +503,7 @@ func generateRejectExampleString(g *model.Grammar, seenAccept map[string]bool) (
 	if validatedCount > 0 && rejectedCount == 0 {
 		zlog.Warnw("所有候选字符串都被接受，可能没有拒绝字符串",
 			"validated", validatedCount)
+
 		return []string{"(在终结符集中未找到短拒绝字符串，该语言可能包含所有字符串)"}
 	}
 

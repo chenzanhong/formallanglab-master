@@ -1,19 +1,18 @@
 /*
-GrammarValidate        	// 文法校验——是否有效
-GrammarAmbiguityCheck   // 正则文法二义性判断，其他型的文法的二义性是不可判定问题
-GrammarStringRecognize  // 字符串识别——是否被指定文法所接受；（可选）扩展：返回递归下降分析、LL(1)分析、LR(0)分析或LR(1)分析的过程
-GrammarTypeDetermine    // 判断所给文法的类型
-GrammarEquivalenceCheck // 判断所给的两个正则文法是否等价
-GrammarSimplify			// 文法的化简——去无用符号（不可派生、不可达）、单一产生式、空产生式
-GrammarTree			// 生成树（是否实现待确定）
-GrammarFirstSet			// 计算文法的First集
-GrammarFollowSet		// 计算文法的Follow集
+GrammarValidate              // 文法校验——是否有效
+GrammarAmbiguityCheck        // 正则文法二义性判断，其他型的文法的二义性是不可判定问题
+GrammarStringRecognize       // 字符串识别——是否被指定文法所接受；（可选）扩展：返回递归下降分析、LL(1) 分析、LR(0) 分析或 LR(1) 分析的过程
+GrammarTypeDetermine         // 判断所给文法的类型
+GrammarEquivalenceCheck      // 判断所给的两个正则文法是否等价
+GrammarSimplify              // 文法的化简——去无用符号（不可派生、不可达）、单一产生式、空产生式
+GrammarTree                  // 生成树（是否实现待确定）
+GrammarFirstSet              // 计算文法的 First 集
+GrammarFollowSet             // 计算文法的 Follow 集
 GrammarGenerateExampleString // 生成文法可推导和不可推导的字符串示例
 */
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -25,33 +24,27 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 文法校验——是否有效
 func GrammarValidate(c *gin.Context) {
 	start := time.Now()
 	defer func() {
 		metrics.ObserveOperationDuration("grammar", "validate", time.Since(start).Seconds())
 	}()
+
 	var req dto.GrammarValidateRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("grammar", "validate", "failure: parameter parsing error")
 		zlog.Warnw("文法校验失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(http.StatusBadRequest, dto.GrammarValidateResponse{
-			Valid: false,
-			Msg:   "参数解析失败",
-			// Error:  err.Error(),
+			Valid:  false,
+			Msg:    "参数解析失败",
 			Result: false,
 		})
 
 		return
 	}
 
-	// 先统一 ε 表示
-	fmt.Printf("%+v\n", req.Grammar)
 	normalizeGrammar(&req.Grammar)
-	fmt.Printf("%+v\n", req.Grammar)
-	// 如果文法结构不完整，先完善结构
-	// req.Grammar = *grammar_s.CompleteGrammarStructure(&req.Grammar)
 
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "validate", "failure: invalid grammar")
@@ -75,32 +68,27 @@ func GrammarValidate(c *gin.Context) {
 	})
 }
 
-// 正则文法二义性判断，其他型的文法的二义性是不可判定问题
 func GrammarAmbiguityCheck(c *gin.Context) {
 	start := time.Now()
 	defer func() {
 		metrics.ObserveOperationDuration("grammar", "ambiguity_check", time.Since(start).Seconds())
 	}()
+
 	var req dto.GrammarAmbiguityCheckRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("grammar", "ambiguity_check", "failure: parameter parsing error")
 		zlog.Warnw("文法二义性检查失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(http.StatusBadRequest, dto.GrammarAmbiguityCheckResponse{
-			Msg: "参数解析失败",
-			// Error:  err.Error(),
+			Msg:    "参数解析失败",
 			Result: false,
 		})
 
 		return
 	}
 
-	// 先统一 ε 表示
 	normalizeGrammar(&req.Grammar)
-	// 如果文法结构不完整，先完善结构
-	// req.Grammar = *grammar_s.CompleteGrammarStructure(&req.Grammar)
 
-	// 可选：先校验文法有效性
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "ambiguity_check", "failure: invalid grammar")
 		zlog.Warnw("文法二义性检查失败", "detail", "文法格式无效")
@@ -112,37 +100,33 @@ func GrammarAmbiguityCheck(c *gin.Context) {
 		return
 	}
 
-	// === 1. 先判断文法类型 ===
 	grammarType := grammar_s.TypeDetermine(&req.Grammar)
 
 	if grammarType != model.RegularGrammar {
 		metrics.IncOperation("grammar", "ambiguity_check", "failure: not regular grammar")
 		zlog.Warnw("文法二义性检查失败", "detail", "文法类型不是正则文法，二义性不可判定")
 		c.JSON(http.StatusOK, dto.GrammarAmbiguityCheckResponse{
-			Msg:         "文法类型不是正则文法（3型），其二义性为不可判定问题",
+			Msg:         "文法类型不是正则文法（3 型），其二义性为不可判定问题",
 			Type:        grammarType,
-			IsAmbiguous: nil, // 无法判断
+			IsAmbiguous: nil,
 		})
 
 		return
 	}
 
-	// === 2. 检查正则文法是否二义 ===
 	isAmbiguous, err := grammar_s.IsAmbiguousRegular(&req.Grammar)
 	if err != nil {
 		metrics.IncOperation("grammar", "ambiguity_check", "failure: ambiguity check error")
 		zlog.Warnw("文法二义性检查失败", "detail", "二义性判断过程中发生错误")
 		c.JSON(http.StatusInternalServerError, dto.GrammarAmbiguityCheckResponse{
-			Msg:  "二义性判断出错：" + err.Error(),
-			Type: model.RegularGrammar,
-			// Error:  err.Error(),
+			Msg:    "二义性判断出错：" + err.Error(),
+			Type:   model.RegularGrammar,
 			Result: false,
 		})
 
 		return
 	}
 
-	// === 3. 返回结果 ===
 	var resultMsg string
 	if isAmbiguous {
 		resultMsg = "该正则文法是二义的"
@@ -160,56 +144,48 @@ func GrammarAmbiguityCheck(c *gin.Context) {
 	})
 }
 
-// 字符串识别——是否被指定文法所接受；（可选）扩展：返回递归下降分析、LL(1)分析、LR(0)分析或LR(1)分析的过程
 func GrammarStringRecognize(c *gin.Context) {
 	start := time.Now()
 	defer func() {
 		metrics.ObserveOperationDuration("grammar", "string_recognize", time.Since(start).Seconds())
 	}()
+
 	var req dto.GrammarStringRecognizeRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("grammar", "string_recognize", "failure: parameter parsing error")
 		zlog.Warnw("文法字符串识别失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(http.StatusBadRequest, dto.GrammarStringRecognizeResponse{
-			Msg: "参数解析失败",
-			// Error:  err.Error(),
+			Msg:    "参数解析失败",
 			Result: false,
 		})
 
 		return
 	}
 
-	// 先统一 ε 表示
 	normalizeGrammar(&req.Grammar)
-	// 如果文法结构不完整，先完善结构
-	// req.Grammar = *grammar_s.CompleteGrammarStructure(&req.Grammar)
 
-	// 可选：先校验文法有效性
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "string_recognize", "failure: invalid grammar")
 		zlog.Warnw("文法字符串识别失败", "detail", "文法格式无效")
 		c.JSON(http.StatusBadRequest, dto.GrammarStringRecognizeResponse{
 			Accepted: false,
-			Msg:      "无效文法: " + err.Error(),
+			Msg:      "无效文法：" + err.Error(),
 			Result:   false,
 		})
 
 		return
 	}
 
-	// 默认模式为 auto
 	if req.Mode == "" {
-		req.Mode = "auto"
+		req.Mode = string(grammar_s.AutoMode)
 	}
 
-	// 直接将输入字符串传递给分析函数，不再提前转换为符号
 	result := grammar_s.ParseStringWithMode(&req.Grammar, req.Str, grammar_s.ParseMode(req.Mode), req.ShowSteps)
 
 	metrics.IncOperation("grammar", "string_recognize", "success")
 	zlog.Infow("文法字符串识别成功")
 
-	// 返回结果
 	response := dto.GrammarStringRecognizeResponse{
 		Accepted: result.Accepted,
 		Method:   result.Method,
@@ -236,20 +212,19 @@ func GrammarStringRecognize(c *gin.Context) {
 	})
 }
 
-// 判断所给文法的类型
 func GrammarTypeDetermine(c *gin.Context) {
 	start := time.Now()
 	defer func() {
 		metrics.ObserveOperationDuration("grammar", "type_determine", time.Since(start).Seconds())
 	}()
+
 	var req dto.GrammarTypeDetermineRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("grammar", "type_determine", "failure: parameter parsing error")
 		zlog.Warnw("文法类型判断失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(http.StatusBadRequest, dto.GrammarTypeDetermineResponse{
-			Type: model.InvalidGrammar,
-			// Error:  err.Error(),
+			Type:   model.InvalidGrammar,
 			Result: false,
 			Msg:    "参数解析失败",
 		})
@@ -257,12 +232,8 @@ func GrammarTypeDetermine(c *gin.Context) {
 		return
 	}
 
-	// 先统一 ε 表示
 	normalizeGrammar(&req.Grammar)
-	// 如果文法结构不完整，先完善结构
-	// req.Grammar = *grammar_s.CompleteGrammarStructure(&req.Grammar)
 
-	// 可选：先校验文法有效性
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "type_determine", "failure: invalid grammar")
 		zlog.Warnw("文法类型判断失败", "detail", "文法格式无效")
@@ -276,7 +247,6 @@ func GrammarTypeDetermine(c *gin.Context) {
 	}
 
 	grammarType := grammar_s.TypeDetermine(&req.Grammar)
-
 	typeName := model.GrammarTypeNameMap[grammarType]
 
 	metrics.IncOperation("grammar", "type_determine", "success")
@@ -288,32 +258,27 @@ func GrammarTypeDetermine(c *gin.Context) {
 	})
 }
 
-// 文法的化简——去无用符号（不可派生、不可达）、单一产生式、空产生式
 func GrammarSimplify(c *gin.Context) {
 	start := time.Now()
 	defer func() {
 		metrics.ObserveOperationDuration("grammar", "simplify", time.Since(start).Seconds())
 	}()
+
 	var req dto.GrammarSimplifyRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("grammar", "simplify", "failure: parameter parsing error")
 		zlog.Warnw("文法化简失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(http.StatusBadRequest, dto.GrammarSimplifyResponse{
-			Msg: "参数解析失败",
-			// Error:  err.Error(),
+			Msg:    "参数解析失败",
 			Result: false,
 		})
 
 		return
 	}
 
-	// 先统一 ε 表示
 	normalizeGrammar(&req.Grammar)
-	// 如果文法结构不完整，先完善结构
-	// grammar = *grammar_s.CompleteGrammarStructure(&grammar)
 
-	// 可选：先校验文法有效性
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "simplify", "failure: invalid grammar")
 		zlog.Warnw("文法化简失败", "detail", "文法格式无效")
@@ -325,22 +290,23 @@ func GrammarSimplify(c *gin.Context) {
 		return
 	}
 
-	new_grammar := grammar_s.Simplify(&req.Grammar)
+	newGrammar := grammar_s.Simplify(&req.Grammar)
+
 	metrics.IncOperation("grammar", "simplify", "success")
 	zlog.Infow("文法化简成功")
 	c.JSON(http.StatusOK, dto.GrammarSimplifyResponse{
 		Msg:     "简化成功",
-		Grammar: new_grammar,
+		Grammar: newGrammar,
 		Result:  true,
 	})
 }
 
-// 判断所给的两个正则文法是否等价
 func GrammarEquivalenceCheck(c *gin.Context) {
 	start := time.Now()
 	defer func() {
 		metrics.ObserveOperationDuration("grammar", "equivalence_check", time.Since(start).Seconds())
 	}()
+
 	type Req dto.GrammarEquivalenceCheckRequest
 	var req Req
 
@@ -348,64 +314,58 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 		metrics.IncOperation("grammar", "equivalence_check", "failure: parameter parsing error")
 		zlog.Warnw("文法等价性检查失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
-			Msg: "参数解析失败",
-			// Error:        err.Error(),
+			Msg:          "参数解析失败",
 			IsEquivalent: false,
 			Result:       false,
 		})
 
 		return
 	}
-	// fmt.Printf("%+v\n", req.Grammar1)
-	// fmt.Printf("%+v\n", req.Grammar2)
-	// 先统一 ε 表示
+
 	normalizeGrammar(&req.Grammar1)
 	normalizeGrammar(&req.Grammar2)
-	// fmt.Printf("统一空转移符号后%+v\n", req.Grammar1)
-	// fmt.Printf("统一空转移符号后%+v\n", req.Grammar2)
-	// 如果文法结构不完整，先完善结构
-	// req.Grammar1 = *grammar_s.CompleteGrammarStructure(&req.Grammar1)
-	// req.Grammar2 = *grammar_s.CompleteGrammarStructure(&req.Grammar2)
 
-	// 先判断两个文法是否有效，且为正则文法
 	if grammar_s.GrammarCheckValidity(&req.Grammar1) != nil {
 		metrics.IncOperation("grammar", "equivalence_check", "failure: invalid grammar1")
 		zlog.Warnw("文法等价性检查失败", "detail", "第一个文法格式无效")
 		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
-			Msg:          "无效的文法1",
+			Msg:          "无效的文法 1",
 			IsEquivalent: false,
 			Result:       false,
 		})
 
 		return
 	}
-	if grammar_s.TypeDetermine(&req.Grammar1) != model.RegularGrammar { // 非正则文法
+
+	if grammar_s.TypeDetermine(&req.Grammar1) != model.RegularGrammar {
 		metrics.IncOperation("grammar", "equivalence_check", "failure: grammar1 not regular")
 		zlog.Warnw("文法等价性检查失败", "detail", "第一个文法不是正则文法")
 		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
-			Msg:          "文法1不是正则文法",
+			Msg:          "文法 1 不是正则文法",
 			IsEquivalent: false,
 			Result:       false,
 		})
 
 		return
 	}
+
 	if grammar_s.GrammarCheckValidity(&req.Grammar2) != nil {
 		metrics.IncOperation("grammar", "equivalence_check", "failure: invalid grammar2")
 		zlog.Warnw("文法等价性检查失败", "detail", "第二个文法格式无效")
 		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
-			Msg:          "无效的文法2",
+			Msg:          "无效的文法 2",
 			IsEquivalent: false,
 			Result:       false,
 		})
 
 		return
 	}
-	if grammar_s.TypeDetermine(&req.Grammar2) != model.RegularGrammar { // 非正则文法
+
+	if grammar_s.TypeDetermine(&req.Grammar2) != model.RegularGrammar {
 		metrics.IncOperation("grammar", "equivalence_check", "failure: grammar2 not regular")
 		zlog.Warnw("文法等价性检查失败", "detail", "第二个文法不是正则文法")
 		c.JSON(http.StatusBadRequest, dto.GrammarEquivalenceCheckResponse{
-			Msg:          "文法2不是正则文法",
+			Msg:          "文法 2 不是正则文法",
 			IsEquivalent: false,
 			Result:       false,
 		})
@@ -413,21 +373,18 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 		return
 	}
 
-	// time1 := time.Now()
-	// 再判断是否等价 GrammarIsEquivalent较IsEquivalent慢一点
 	if is, err := grammar_s.GrammarIsEquivalent(&req.Grammar1, &req.Grammar2); !is || err != nil {
 		metrics.IncOperation("grammar", "equivalence_check", "success: not equivalent")
 		zlog.Infow("文法等价性检查成功", "detail", "两个文法不等价")
-		// fmt.Println("耗时：", time.Since(time1))
 		c.JSON(http.StatusOK, dto.GrammarEquivalenceCheckResponse{
-			Msg:          "这两个文法不是等价的：对应的最小DFA不是同构的",
+			Msg:          "这两个文法不是等价的：对应的最小 DFA 不是同构的",
 			IsEquivalent: false,
 			Result:       true,
 		})
 
 		return
 	}
-	// fmt.Println("耗时：", time.Since(time1))
+
 	metrics.IncOperation("grammar", "equivalence_check", "success: equivalent")
 	zlog.Infow("文法等价性检查成功", "detail", "两个文法等价")
 	c.JSON(http.StatusOK, dto.GrammarEquivalenceCheckResponse{
@@ -437,17 +394,17 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 	})
 }
 
-// 计算文法的First集
 func GrammarFirstSet(c *gin.Context) {
 	start := time.Now()
 	defer func() {
 		metrics.ObserveOperationDuration("grammar", "first_set", time.Since(start).Seconds())
 	}()
+
 	var req dto.GrammarFirstSetRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("grammar", "first_set", "failure: parameter parsing error")
-		zlog.Warnw("计算First集失败", "detail", "参数解析失败，请检查请求格式是否正确")
+		zlog.Warnw("计算 First 集失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(http.StatusBadRequest, dto.GrammarFirstSetResponse{
 			Msg:    "参数解析失败",
 			Result: false,
@@ -456,13 +413,11 @@ func GrammarFirstSet(c *gin.Context) {
 		return
 	}
 
-	// 先统一 ε 表示
 	normalizeGrammar(&req.Grammar)
 
-	// 校验文法有效性
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "first_set", "failure: invalid grammar")
-		zlog.Warnw("计算First集失败", "detail", "文法格式无效")
+		zlog.Warnw("计算 First 集失败", "detail", "文法格式无效")
 		c.JSON(http.StatusBadRequest, dto.GrammarFirstSetResponse{
 			Msg:    "无效文法：" + err.Error(),
 			Result: false,
@@ -471,32 +426,29 @@ func GrammarFirstSet(c *gin.Context) {
 		return
 	}
 
-	// 计算First集
 	firstSet := grammar_s.CalculateFirst(&req.Grammar)
-
-	// 转换为响应格式
 	result := convertMapToStringSlice(firstSet)
 
 	metrics.IncOperation("grammar", "first_set", "success")
-	zlog.Infow("计算First集成功")
+	zlog.Infow("计算 First 集成功")
 	c.JSON(http.StatusOK, dto.GrammarFirstSetResponse{
 		FirstSet: result,
-		Msg:      "计算First集成功",
+		Msg:      "计算 First 集成功",
 		Result:   true,
 	})
 }
 
-// 计算文法的Follow集
 func GrammarFollowSet(c *gin.Context) {
 	start := time.Now()
 	defer func() {
 		metrics.ObserveOperationDuration("grammar", "follow_set", time.Since(start).Seconds())
 	}()
+
 	var req dto.GrammarFollowSetRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("grammar", "follow_set", "failure: parameter parsing error")
-		zlog.Warnw("计算Follow集失败", "detail", "参数解析失败，请检查请求格式是否正确")
+		zlog.Warnw("计算 Follow 集失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(http.StatusBadRequest, dto.GrammarFollowSetResponse{
 			Msg:    "参数解析失败",
 			Result: false,
@@ -505,13 +457,11 @@ func GrammarFollowSet(c *gin.Context) {
 		return
 	}
 
-	// 先统一 ε 表示
 	normalizeGrammar(&req.Grammar)
 
-	// 校验文法有效性
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "follow_set", "failure: invalid grammar")
-		zlog.Warnw("计算Follow集失败", "detail", "文法格式无效")
+		zlog.Warnw("计算 Follow 集失败", "detail", "文法格式无效")
 		c.JSON(http.StatusBadRequest, dto.GrammarFollowSetResponse{
 			Msg:    "无效文法：" + err.Error(),
 			Result: false,
@@ -520,20 +470,15 @@ func GrammarFollowSet(c *gin.Context) {
 		return
 	}
 
-	// 计算First集（用于Follow集计算）
 	firstSet := grammar_s.CalculateFirst(&req.Grammar)
-
-	// 计算Follow集
 	followSet := grammar_s.CalculateFollow(&req.Grammar, firstSet)
-
-	// 转换为响应格式
 	result := convertMapToStringSlice(followSet)
 
 	metrics.IncOperation("grammar", "follow_set", "success")
-	zlog.Infow("计算Follow集成功")
+	zlog.Infow("计算 Follow 集成功")
 	c.JSON(http.StatusOK, dto.GrammarFollowSetResponse{
 		FollowSet: result,
-		Msg:       "计算Follow集成功",
+		Msg:       "计算 Follow 集成功",
 		Result:    true,
 	})
 }
@@ -543,26 +488,22 @@ func GrammarGenerateExampleString(c *gin.Context) {
 	defer func() {
 		metrics.ObserveOperationDuration("grammar", "generate_example", time.Since(start).Seconds())
 	}()
+
 	var req dto.GrammarGenerateExampleStringRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("grammar", "generate_example", "failure: parameter parsing error")
 		zlog.Warnw("文法生成字符串示例失败", "detail", "参数解析失败，请检查请求格式是否正确")
 		c.JSON(http.StatusBadRequest, dto.GrammarSimplifyResponse{
-			Msg: "参数解析失败",
-			// Error:  err.Error(),
+			Msg:    "参数解析失败",
 			Result: false,
 		})
 
 		return
 	}
 
-	// 先统一 ε 表示
 	normalizeGrammar(&req.Grammar)
-	// 如果文法结构不完整，先完善结构
-	// grammar = *grammar_s.CompleteGrammarStructure(&grammar)
 
-	// 先校验文法有效性
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "generate_example", "failure: invalid grammar")
 		zlog.Warnw("文法生成字符串示例失败", "detail", "文法格式无效")
@@ -586,50 +527,31 @@ func GrammarGenerateExampleString(c *gin.Context) {
 
 		return
 	}
+
 	accept, reject := grammar_s.GrammarGenerateExampleString(&req.Grammar)
-	c.JSON(200, dto.GrammarGenerateExampleStringResponse{
-		Msg:            "示例生成成功",
+	metrics.IncOperation("grammar", "generate_example", "success")
+	c.JSON(http.StatusOK, dto.GrammarGenerateExampleStringResponse{
+		Msg:            "示例字符串生成成功",
 		Result:         true,
 		AcceptExamples: accept,
 		RejectExamples: reject,
 	})
 }
 
-// normalizeGrammar 将前端传入的文法中的空字符串统一规范为后端使用的 model.Epsilon("ε") 表示
-func normalizeGrammar(g *model.Grammar) {
-	// 终结符集合规范化
-	for i, t := range g.Terminals {
-		if string(t) == "ε" {
-			g.Terminals[i] = model.Epsilon
-		}
-	}
-	// 产生式左右部规范化
-	for pi := range g.Productions {
-		// 右部：将 "" 统一为单符号 model.Epsilon
-		right := g.Productions[pi].Right
-		if len(right) == 0 {
-			g.Productions[pi].Right = []model.Symbol{model.Epsilon}
-			continue
-		}
-		allEmpty := len(right) > 0
-		for ri, rs := range right {
-			if string(rs) == "" {
-				right[ri] = model.Epsilon
-			} else {
-				allEmpty = false
+func normalizeGrammar(grammar *model.Grammar) {
+	for _, prod := range grammar.Productions {
+		for i, sym := range prod.Right {
+			if sym == "ε" || sym == "λ" || sym == "epsilon" {
+				prod.Right[i] = model.Epsilon
 			}
-		}
-		if allEmpty {
-			g.Productions[pi].Right = []model.Symbol{model.Epsilon}
-		} else {
-			g.Productions[pi].Right = right
 		}
 	}
 }
 
-// convertMapToStringSlice 将 map[model.Symbol]map[model.Symbol]struct{} 转换为 map[string][]string
+// 将 map[model.Symbol]map[model.Symbol]struct{} 转换为 map[string][]string
 func convertMapToStringSlice(original map[model.Symbol]map[model.Symbol]struct{}) map[string][]string {
 	result := make(map[string][]string)
+
 	for symbol, symbolsMap := range original {
 		symbols := make([]string, 0, len(symbolsMap))
 		for s := range symbolsMap {
@@ -637,6 +559,5 @@ func convertMapToStringSlice(original map[model.Symbol]map[model.Symbol]struct{}
 		}
 		result[string(symbol)] = symbols
 	}
-
 	return result
 }

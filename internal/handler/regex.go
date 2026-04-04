@@ -1,8 +1,8 @@
 /*
-RegexValidate      	// 判断是否为有效的正则表达式
-RegexRecognize		// 查看是否正则表达式是否匹配字符串
-RegexEquivalenceCheck // 检查两个正则表达式是否等价
-RegexGenerateExampleString // 生成正则表达式可匹配的字符串示例
+RegexValidate      			// 判断是否为有效的正则表达式
+RegexRecognize				// 查看是否正则表达式是否匹配字符串
+RegexEquivalenceCheck 		// 检查两个正则表达式是否等价
+RegexGenerateExampleString 	// 生成正则表达式可匹配的字符串示例
 */
 package handler
 
@@ -17,17 +17,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 使用dto包中的结构体替代本地定义
-
-// 限定所使用的符号为后端实际功能实现所支持的：仅包含：[a-zA-Z0-9]、*、+、？、|、（）
 func RegexValidate(c *gin.Context) {
 	start := time.Now()
 	defer func() {
 		metrics.ObserveOperationDuration("regex", "validate", time.Since(start).Seconds())
 	}()
+
 	var req dto.RegexValidateRequest
 
-	// 绑定并验证请求数据
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("regex", "validate", "failure: parameter parsing error")
 		zlog.Warnw("正则表达式验证失败", "detail", "参数解析失败，请检查请求格式是否正确")
@@ -52,7 +49,6 @@ func RegexValidate(c *gin.Context) {
 		return
 	}
 
-	// 验证通过
 	metrics.IncOperation("regex", "validate", "success")
 	zlog.Infow("正则表达式验证成功")
 	c.JSON(200, dto.RegexValidateResponse{
@@ -67,8 +63,9 @@ func RegexRecognize(c *gin.Context) {
 	defer func() {
 		metrics.ObserveOperationDuration("regex", "recognize", time.Since(start).Seconds())
 	}()
+
 	var req dto.RegexRecognizeRequest
-	// 绑定并验证请求数据
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("regex", "recognize", "failure: parameter parsing error")
 		zlog.Warnw("正则表达式匹配失败", "detail", "参数解析失败，请检查请求格式是否正确")
@@ -118,6 +115,7 @@ func RegexRecognize(c *gin.Context) {
 
 		return
 	}
+
 	metrics.IncOperation("regex", "recognize", "success")
 	zlog.Infow("正则表达式匹配成功")
 	c.JSON(http.StatusOK, dto.RegexRecognizeResponse{
@@ -132,8 +130,9 @@ func RegexEquivalenceCheck(c *gin.Context) {
 	defer func() {
 		metrics.ObserveOperationDuration("regex", "equivalence_check", time.Since(start).Seconds())
 	}()
+
 	var req dto.RegexEquivalenceCheckRequest
-	// 绑定并验证请求数据
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("regex", "equivalence_check", "failure: parameter parsing error")
 		zlog.Warnw("正则表达式等价检查失败", "detail", "参数解析失败，请检查请求格式是否正确")
@@ -147,7 +146,7 @@ func RegexEquivalenceCheck(c *gin.Context) {
 
 	if err := re.RegexValidate(req.Pattern1); err != nil {
 		metrics.IncOperation("regex", "equivalence_check", "failure: invalid regex1")
-		zlog.Warnw("正则表达式等价检查失败", "detail", "正则表达式1格式无效")
+		zlog.Warnw("正则表达式等价检查失败", "detail", "正则表达式 1 格式无效")
 		c.JSON(http.StatusBadRequest, dto.RegexEquivalenceCheckResponse{
 			Msg:    "无效的正则表达式",
 			Result: false,
@@ -158,7 +157,7 @@ func RegexEquivalenceCheck(c *gin.Context) {
 
 	if err := re.RegexValidate(req.Pattern2); err != nil {
 		metrics.IncOperation("regex", "equivalence_check", "failure: invalid regex2")
-		zlog.Warnw("正则表达式等价检查失败", "detail", "正则表达式2格式无效")
+		zlog.Warnw("正则表达式等价检查失败", "detail", "正则表达式 2 格式无效")
 		c.JSON(http.StatusBadRequest, dto.RegexEquivalenceCheckResponse{
 			Msg:    "无效的正则表达式",
 			Result: false,
@@ -170,7 +169,7 @@ func RegexEquivalenceCheck(c *gin.Context) {
 	ok, err := re.RegexEquivalenceCheck(req.Pattern1, req.Pattern2)
 	if !ok {
 		metrics.IncOperation("regex", "equivalence_check", "failure: equivalence check failed")
-		zlog.Warnw("正则表达式等价检查成功", "detail", "正则表达式1和2不等价")
+		zlog.Warnw("正则表达式等价检查成功", "detail", "正则表达式 1 和 2 不等价")
 		c.JSON(http.StatusOK, dto.RegexEquivalenceCheckResponse{
 			Msg:          "等价性检查失败：" + err.Error(),
 			Result:       true,
@@ -179,6 +178,7 @@ func RegexEquivalenceCheck(c *gin.Context) {
 
 		return
 	}
+
 	metrics.IncOperation("regex", "equivalence_check", "success")
 	zlog.Infow("正则表达式等价检查成功")
 	c.JSON(http.StatusOK, dto.RegexEquivalenceCheckResponse{
@@ -195,7 +195,7 @@ func RegexGenerateExampleString(c *gin.Context) {
 	}()
 
 	var req dto.RegexGenerateExampleStringRequest
-	// 绑定并验证请求数据
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.IncOperation("regex", "generate_example", "failure: parameter parsing error")
 		zlog.Warnw("正则表达式示例生成失败", "detail", "参数解析失败，请检查请求格式是否正确")
@@ -219,6 +219,7 @@ func RegexGenerateExampleString(c *gin.Context) {
 	}
 
 	accept, reject := re.RegexGenerateExampleString(req.Pattern)
+
 	metrics.IncOperation("regex", "generate_example", "success")
 	zlog.Infow("正则表达式示例生成成功")
 	c.JSON(http.StatusOK, dto.RegexGenerateExampleStringResponse{

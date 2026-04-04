@@ -8,7 +8,7 @@ import (
 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
-// NFAToDFA 将 NFA 转换为等价的 DFA， 子集构造法
+// 将 NFA 转换为等价的 DFA，子集构造法
 // 假设输入 NFA 已经有效，ε 转移用 model.Epsilon 表示
 func NFAToDFA(nfa *model.Automaton) *model.Automaton {
 	if nfa == nil {
@@ -21,7 +21,7 @@ func NFAToDFA(nfa *model.Automaton) *model.Automaton {
 	// 构建 DFA 字母表
 	var alphabet []model.Symbol
 	for _, sym := range nfa.Alphabet {
-		if sym != model.Epsilon { // 确保没有 ε
+		if sym != model.Epsilon {
 			alphabet = append(alphabet, sym)
 		}
 	}
@@ -43,7 +43,7 @@ func NFAToDFA(nfa *model.Automaton) *model.Automaton {
 	var dfaTransitions []model.Transition
 	var dfaAccepting []model.State
 
-	// 1. 初始状态：NFA 初始状态的 ε-闭包
+	// 初始状态：NFA 初始状态的 ε-闭包
 	initialSet := computeEpsilonClosure(nfa, []model.State{nfa.InitialState})
 	initialState := stateName(initialSet)
 	seen[string(initialState)] = true
@@ -52,21 +52,18 @@ func NFAToDFA(nfa *model.Automaton) *model.Automaton {
 	// BFS 队列：存储 NFA 状态集合
 	queue := [][]model.State{initialSet}
 
-	// 2. 子集构造主循环
 	for len(queue) > 0 {
 		currentSet := queue[0]
 		queue = queue[1:]
 		currentName := stateName(currentSet)
 
-		// 3. 对每个非 ε 输入符号，计算转移
+		// 对每个非 ε 输入符号，计算转移
 		for _, sym := range alphabet {
 			var nextSet []model.State
 
-			// 遍历 currentSet 中每个状态
 			for _, state := range currentSet {
 				for _, t := range nfa.Transitions {
 					if t.FromState == state && t.Input == sym {
-						// 添加所有目标状态（去重）
 						for _, target := range t.ToStates {
 							if !ContainsState(nextSet, target) {
 								nextSet = append(nextSet, target)
@@ -76,7 +73,7 @@ func NFAToDFA(nfa *model.Automaton) *model.Automaton {
 				}
 			}
 
-			// 4. 对 nextSet 取 ε-闭包
+			// 对 nextSet 取 ε-闭包
 			closure := computeEpsilonClosure(nfa, nextSet)
 			if len(closure) == 0 {
 				continue // 无有效状态，跳过
@@ -84,14 +81,12 @@ func NFAToDFA(nfa *model.Automaton) *model.Automaton {
 
 			nextName := stateName(closure)
 
-			// 5. 添加 DFA 转移
 			dfaTransitions = append(dfaTransitions, model.Transition{
 				FromState: currentName,
 				Input:     sym,
-				ToStates:  []model.State{nextName}, // DFA 单目标
+				ToStates:  []model.State{nextName},
 			})
 
-			// 6. 如果是新状态，加入队列
 			if !seen[string(nextName)] {
 				seen[string(nextName)] = true
 				dfaStates = append(dfaStates, nextName)
@@ -99,7 +94,7 @@ func NFAToDFA(nfa *model.Automaton) *model.Automaton {
 			}
 		}
 
-		// 7. 判断当前状态是否为接受状态
+		// 判断当前状态是否为接受状态
 		for _, s := range currentSet {
 			if ContainsState(nfa.AcceptingStates, s) {
 				dfaAccepting = append(dfaAccepting, currentName)
@@ -118,6 +113,7 @@ func NFAToDFA(nfa *model.Automaton) *model.Automaton {
 	}
 }
 
+// 带转换过程的 NFA 转 DFA
 func NFAToDFAWithProcess(nfa *model.Automaton) *model.NFADeterminizationProcess {
 	if nfa == nil {
 		return nil
@@ -151,7 +147,7 @@ func NFAToDFAWithProcess(nfa *model.Automaton) *model.NFADeterminizationProcess 
 	var dfaTransitions []model.Transition
 	var dfaAccepting []model.State
 
-	// 1. 初始状态：NFA 初始状态的 ε-闭包
+	// 初始状态：NFA 初始状态的 ε-闭包
 	initialSet := computeEpsilonClosure(nfa, []model.State{nfa.InitialState})
 	initialState := stateName(initialSet)
 	seen[string(initialState)] = true
@@ -161,9 +157,9 @@ func NFAToDFAWithProcess(nfa *model.Automaton) *model.NFADeterminizationProcess 
 	queue := [][]model.State{initialSet}
 
 	// 记录转换过程
-	steps := []model.NFADeterminizationStep{} // 使用空切片初始化，确保JSON序列化为[]而不是null
+	steps := []model.NFADeterminizationStep{}
 	step := 0
-	// 初始快照
+
 	initialDFA := &model.Automaton{
 		States:       []model.State{initialState},
 		Alphabet:     alphabet,
@@ -181,7 +177,6 @@ func NFAToDFAWithProcess(nfa *model.Automaton) *model.NFADeterminizationProcess 
 		Type: model.DFA,
 	}
 
-	// 生成初始步骤描述
 	initialDesc := fmt.Sprintf("步骤 %d: 初始状态为 NFA 初始状态 %s 的 ε-闭包 → %s",
 		step, nfa.InitialState, initialState)
 
@@ -194,7 +189,6 @@ func NFAToDFAWithProcess(nfa *model.Automaton) *model.NFADeterminizationProcess 
 	})
 	step++
 
-	// 2. 子集构造主循环
 	for len(queue) > 0 {
 		currentSet := queue[0]
 		queue = queue[1:]
@@ -203,11 +197,10 @@ func NFAToDFAWithProcess(nfa *model.Automaton) *model.NFADeterminizationProcess 
 		// 用于收集本轮新增的转移和新状态（用于描述）
 		var processedTransitions []string
 
-		// 3. 对每个非 ε 输入符号，计算转移
+		// 对每个非 ε 输入符号，计算转移
 		for _, sym := range alphabet {
 			var nextSet []model.State
 
-			// 遍历 currentSet 中每个状态
 			for _, state := range currentSet {
 				for _, t := range nfa.Transitions {
 					if t.FromState == state && t.Input == sym {
@@ -221,7 +214,7 @@ func NFAToDFAWithProcess(nfa *model.Automaton) *model.NFADeterminizationProcess 
 				}
 			}
 
-			// 4. 对 nextSet 取 ε-闭包
+			// 对 nextSet 取 ε-闭包
 			closure := computeEpsilonClosure(nfa, nextSet)
 			if len(closure) == 0 {
 				continue // 无有效状态，跳过
@@ -229,26 +222,24 @@ func NFAToDFAWithProcess(nfa *model.Automaton) *model.NFADeterminizationProcess 
 
 			nextName := stateName(closure)
 
-			// 5. 添加 DFA 转移
 			dfaTransitions = append(dfaTransitions, model.Transition{
 				FromState: currentName,
 				Input:     sym,
-				ToStates:  []model.State{nextName}, // DFA 单目标
+				ToStates:  []model.State{nextName},
 			})
 
-			// 6. 如果是新状态，加入队列
+			// 如果是新状态，加入队列
 			if !seen[string(nextName)] {
 				seen[string(nextName)] = true
 				dfaStates = append(dfaStates, nextName)
 				queue = append(queue, closure)
 			}
 
-			// 记录这条转移用于描述
 			processedTransitions = append(processedTransitions,
 				fmt.Sprintf("δ(%s, %s) = %s", currentName, sym, nextName))
 		}
 
-		// 7. 判断当前状态是否为接受状态
+		// 判断当前状态是否为接受状态
 		for _, s := range currentSet {
 			if ContainsState(nfa.AcceptingStates, s) {
 				if !ContainsState(dfaAccepting, currentName) {
@@ -259,7 +250,6 @@ func NFAToDFAWithProcess(nfa *model.Automaton) *model.NFADeterminizationProcess 
 			}
 		}
 
-		// 生成描述
 		var desc string
 		if len(processedTransitions) == 0 {
 			desc = fmt.Sprintf("步骤 %d: 状态 %s 无有效转移", step, currentName)

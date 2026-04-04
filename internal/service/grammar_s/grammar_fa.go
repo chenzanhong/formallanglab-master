@@ -84,7 +84,6 @@ func rightLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 		transition.FromState = model.State(production.Left[0])
 		// 右部
 		if len(production.Right) == 1 { // 单一符号产生式右部
-			// fmt.Println("单一", production.Right[0])
 			// 如果是终结符，直接转移到接受状态
 			if g.CheckIsTerminal(production.Right[0]) {
 				if !hasModelAccept {
@@ -95,7 +94,6 @@ func rightLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 				automaton.Transitions = append(automaton.Transitions, transition)
 			} else if production.Right[0] == model.Epsilon {
 				// 空转移，加入接受态
-				// fmt.Println("===============空转移")
 				automaton.AcceptingStates = append(automaton.AcceptingStates, model.State(production.Left[0]))
 			} else {
 				// 如果是非终结符，转移到下一个状态
@@ -197,14 +195,12 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 		switch {
 		// 1) 形如 A -> ε，将A加入接收状态
 		case rightLen == 1 && prod.Right[0] == model.Epsilon:
-			fmt.Println("形如 A -> ε")
 			// 将A加入接收状态
 			automaton.AcceptingStates = append(automaton.AcceptingStates, fromState)
 			step.Description = fmt.Sprintf("因产生式 %s → ε，将状态 %s 加入接受状态集合", leftSym, fromState)
 
 		// 2) 形如 A -> a，新增转移 A →a→ accept
 		case rightLen == 1 && g.CheckIsTerminal(prod.Right[0]):
-			fmt.Println("形如 A -> a")
 			input := prod.Right[0]
 			toState := model.UniqueFinalState
 			trans := model.Transition{
@@ -221,7 +217,6 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 
 		// 3) 形如 A -> B，新增转移 A →ε→ B
 		case rightLen == 1 && g.CheckIsNonTerminal(prod.Right[0]):
-			fmt.Println("形如 A -> B")
 			toState := model.State(prod.Right[0])
 			trans := model.Transition{
 				FromState: fromState,
@@ -234,7 +229,6 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 
 		// 4) 形如 A -> aB，新增转移 A →a→ B
 		case rightLen == 2 && g.CheckIsTerminal(prod.Right[0]) && g.CheckIsNonTerminal(prod.Right[1]):
-			fmt.Println("形如 A -> aB")
 			input := prod.Right[0]
 			toState := model.State(prod.Right[1])
 			trans := model.Transition{
@@ -248,7 +242,6 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 
 		// 5) 形如A -> w，w =a1a2a3...an，需展开为 A →a1→ A_1 →a2→ A_2 →...→ A_n-1 →an→ accept
 		case rightLen >= 2 && g.CheckIsTerminal(prod.Right[rightLen-1]):
-			fmt.Println("形如 A -> w")
 			currentState := fromState
 			newStates := make([]model.State, 0)
 			newTransitions := make([]model.Transition, 0)
@@ -292,7 +285,6 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 
 		// 6） 形如 A -> wB，w =a1a2a3...an，n>1，需展开为 A →a1→ A_1 →a2→ A_2 →...→ A_n-1 →an→ B
 		case rightLen > 2 && g.CheckIsNonTerminal(prod.Right[rightLen-1]):
-			fmt.Println("形如 A -> B")
 			// 最后一个是非终结符
 			currentState := fromState
 			newStates := make([]model.State, 0)

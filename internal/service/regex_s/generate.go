@@ -1,13 +1,13 @@
 package regex_s
 
 import (
-	"fmt"
 	"regexp"
 	"slices"
 
 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 	"github.com/chenzanhong/formallanglab-master/internal/service/automaton_s"
 	"github.com/chenzanhong/formallanglab-master/pkg/util"
+	"github.com/chenzanhong/zlog"
 )
 
 const (
@@ -26,15 +26,15 @@ func RegexGenerateExampleString(regex model.Regex) (accept, reject []string) {
 // 转DFA+补集
 func regexGenerateExampleStringByCompletedDFAAndBFS(regex model.Regex) (accept, reject []string) {
 	a, err := RegexToFA(regex)
-	if err != nil { // 转换失败
-		fmt.Println("转为DFA失败")
+	if err != nil {
+		zlog.Info("转为DFA失败")
 		return regexGenerateExampleStringByEnumAndVerify(regex)
 	}
 	if a.Type != model.DFA {
 		a = automaton_s.NFAToDFA(a)
 	}
-	if err := a.CompleteDFA(); err != nil { // 完备化失败
-		fmt.Printf("完备化失败：%v", err)
+	if err := a.CompleteDFA(); err != nil {
+		zlog.Info("完备化失败：" + err.Error())
 		return regexGenerateExampleStringByEnumAndVerify(regex)
 	}
 

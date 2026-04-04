@@ -55,10 +55,10 @@ func (s *AutomatonTestSuite) TestAutomatonValidate() error {
 			for j := 0; j < s.config.RequestsPerUser; j++ {
 				automaton := s.createRandomAutomaton()
 				err := s.callAutomatonValidate(automaton)
-
 				if err != nil {
 					atomic.AddInt64(&failed, 1)
 					zlog.Errorw("自动机验证请求失败", "error", err.Error())
+
 					continue
 				}
 
@@ -94,10 +94,10 @@ func (s *AutomatonTestSuite) TestAutomatonCleanup() error {
 			for j := 0; j < s.config.RequestsPerUser; j++ {
 				automaton := s.createRandomAutomaton()
 				err := s.callAutomatonCleanup(automaton)
-
 				if err != nil {
 					atomic.AddInt64(&failed, 1)
 					zlog.Errorw("自动机清理请求失败", "error", err.Error())
+
 					continue
 				}
 
@@ -133,10 +133,10 @@ func (s *AutomatonTestSuite) TestDFAMinimize() error {
 			for j := 0; j < s.config.RequestsPerUser; j++ {
 				dfa := s.createRandomDFA()
 				err := s.callDFAMinimize(dfa)
-
 				if err != nil {
 					atomic.AddInt64(&failed, 1)
 					zlog.Errorw("DFA 最小化请求失败", "error", err.Error())
+
 					continue
 				}
 
@@ -173,10 +173,10 @@ func (s *AutomatonTestSuite) TestAutomatonStringRecognize() error {
 				automaton := s.createRandomAutomaton()
 				str := s.generateRandomString(automaton.Alphabet, 5)
 				err := s.callAutomatonStringRecognize(automaton, str)
-
 				if err != nil {
 					atomic.AddInt64(&failed, 1)
 					zlog.Errorw("自动机字符串识别请求失败", "error", err.Error())
+
 					continue
 				}
 
@@ -212,10 +212,10 @@ func (s *AutomatonTestSuite) TestNFADeterminization() error {
 			for j := 0; j < s.config.RequestsPerUser; j++ {
 				nfa := s.createRandomNFA()
 				err := s.callNFADeterminization(nfa)
-
 				if err != nil {
 					atomic.AddInt64(&failed, 1)
 					zlog.Errorw("NFA 确定化请求失败", "error", err.Error())
+
 					continue
 				}
 
@@ -252,10 +252,10 @@ func (s *AutomatonTestSuite) TestAutomatonEquivalenceCheck() error {
 				automaton1 := s.createRandomAutomaton()
 				automaton2 := s.createRandomAutomaton()
 				err := s.callAutomatonEquivalenceCheck(automaton1, automaton2)
-
 				if err != nil {
 					atomic.AddInt64(&failed, 1)
 					zlog.Errorw("自动机等价性检查请求失败", "error", err.Error())
+
 					continue
 				}
 
@@ -291,10 +291,10 @@ func (s *AutomatonTestSuite) TestAutomatonGenerateExampleString() error {
 			for j := 0; j < s.config.RequestsPerUser; j++ {
 				automaton := s.createRandomAutomaton()
 				err := s.callAutomatonGenerateExampleString(automaton)
-
 				if err != nil {
 					atomic.AddInt64(&failed, 1)
 					zlog.Errorw("自动机生成示例字符串请求失败", "error", err.Error())
+
 					continue
 				}
 
@@ -551,6 +551,7 @@ func (s *AutomatonTestSuite) generateRandomString(alphabet []model.Symbol, lengt
 	for i := 0; i < length; i++ {
 		result += string(alphabet[i%len(alphabet)])
 	}
+
 	return result
 }
 
@@ -613,5 +614,6 @@ func repeatString(s string, n int) string {
 	for i := 0; i < n; i++ {
 		result += s
 	}
+
 	return result
 }

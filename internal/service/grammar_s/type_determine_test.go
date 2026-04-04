@@ -8,13 +8,13 @@ import (
 
 func TestTypeDetermine(t *testing.T) {
 	tests := []struct {
-		name      string
-		grammar   *model.Grammar
-		wantType  model.GrammarType
+		name     string
+		grammar  *model.Grammar
+		wantType model.GrammarType
 	}{
 		{
-			name: "nil grammar",
-			grammar: nil,
+			name:     "nil grammar",
+			grammar:  nil,
 			wantType: model.InvalidGrammar,
 		},
 		{
@@ -84,10 +84,10 @@ func TestTypeDetermine(t *testing.T) {
 
 func TestIsRegular(t *testing.T) {
 	tests := []struct {
-		name         string
-		grammar      *model.Grammar
-		wantRegular  bool
-		wantLinear   model.GrammarLinearity
+		name        string
+		grammar     *model.Grammar
+		wantRegular bool
+		wantLinear  model.GrammarLinearity
 	}{
 		{
 			name: "right linear grammar",

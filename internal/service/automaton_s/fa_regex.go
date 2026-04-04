@@ -2,7 +2,6 @@ package automaton_s
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
@@ -61,7 +60,6 @@ func needWrap(s string) bool {
 			rightCount++
 		}
 	}
-	// fmt.Println(leftCount, " ", rightCount)
 	return has && (leftCount != rightCount || (leftCount == 0 && rightCount == 0))
 }
 
@@ -99,7 +97,6 @@ func starRegex(alphabet []model.Symbol, r model.Regex) model.Regex {
 
 func containSymbol(alphabet []model.Symbol, sym model.Symbol) bool {
 	for _, s := range alphabet {
-		fmt.Println("sym:", sym, " s:", s)
 		if s == sym {
 			return true
 		}
@@ -157,8 +154,6 @@ func FAToRegex(a *model.Automaton) model.Regex {
 			} else {
 				regexMap[t.FromState][to] = unionRegex(current, input)
 			}
-
-			// fmt.Println("from:", t.FromState, "input:", input, "to:", to, "regex:", regexMap[t.FromState][to])
 		}
 	}
 
@@ -202,14 +197,11 @@ func FAToRegex(a *model.Automaton) model.Regex {
 				var newPath model.Regex
 				if loop == model.Regex(model.Epsilon) {
 					newPath = concatRegex(ir, rj)
-					// fmt.Println(1, " ", i, " ", r, " ", j)
 				} else {
 					newPath = concatRegex(concatRegex(ir, starLoop), rj)
-					// fmt.Println(2, " ", i, " ", r, " ", j)
 				}
 				oldPath := regexMap[i][j]
 				regexMap[i][j] = unionRegex(oldPath, newPath)
-				// fmt.Println("oldPath:", oldPath, " newPath", newPath, "union:", regexMap[i][j])
 			}
 		}
 
@@ -318,10 +310,8 @@ func FAToRegexWithProcess(a *model.Automaton) (*model.ConversionProcess, error) 
 				var newPath model.Regex
 				if loop == model.Regex(model.Epsilon) {
 					newPath = concatRegex(ir, rj)
-					// fmt.Println(1, " ", i, " ", r, " ", j)
 				} else {
 					newPath = concatRegex(concatRegex(ir, starLoop), rj)
-					// fmt.Println(2, " ", i, " ", r, " ", j)
 				}
 				oldPath := regexMap[i][j]
 				newUnion := unionRegex(oldPath, newPath)

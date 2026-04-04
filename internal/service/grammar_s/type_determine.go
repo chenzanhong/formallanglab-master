@@ -1,8 +1,6 @@
 package grammar_s
 
 import (
-	"fmt"
-
 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
@@ -79,36 +77,27 @@ func IsRegular(g *model.Grammar) (IsRegular bool, linear model.GrammarLinearity)
 	for _, p := range g.Productions {
 		// left := p.Left[0]
 		right := p.Right
-		fmt.Println("right:", right)
 		// 右部单一符号，允许空产生式
 		if len(right) == 1 || right[0] == model.Epsilon {
-			fmt.Println(1)
 			continue
 		}
 
 		// 检测是否右线性
 		if isRightLinearProduction(right, g) {
 			hasRightLinear = true
-			fmt.Println(2)
-
 			continue
 		}
 
 		// 检测是否左线性
 		if isLeftLinearProduction(right, g) {
 			hasLeftLinear = true
-			fmt.Println(3)
-
 			continue
 		}
 
-		fmt.Println(4)
 		// 都不是，非正则
 		return false, model.InvalidLinearity
 	}
 
-	fmt.Println(5)
-	fmt.Println(hasLeftLinear, " ", hasRightLinear)
 	// 必须全部右线性或全部左线性
 	if hasRightLinear && hasLeftLinear {
 		return false, model.InvalidLinearity

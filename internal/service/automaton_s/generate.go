@@ -1,8 +1,6 @@
 package automaton_s
 
 import (
-	"fmt"
-
 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 	"github.com/chenzanhong/formallanglab-master/pkg/util"
 )
@@ -22,7 +20,6 @@ func automatonGenerateExampleStringByDFAAndBFS(a *model.Automaton) (accept, reje
 		a = NFAToDFA(a)
 	}
 	if err := a.CompleteDFA(); err != nil { // 完备化失败
-		fmt.Println("BFSShortestAcceptedStringsForDFA")
 		return automatonGenerateExampleStringByEnumAndVerify(a)
 	}
 
@@ -80,7 +77,6 @@ func BFSShortestAcceptedStringsForDFA(dfa *model.Automaton, k int) []string {
 	if dfa == nil || len(dfa.States) == 0 || k <= 0 {
 		return nil
 	}
-	fmt.Println("BFSShortestAcceptedStringsForDFA")
 	dfa.InitTransMap()
 
 	acceptingSet := make(map[model.State]bool)

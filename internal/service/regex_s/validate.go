@@ -8,14 +8,12 @@ import (
 )
 
 func RegexValidate(regex model.Regex) error {
-	// 调用 Regex 对象的 IsValid 方法进行验证
 	return regex.IsValid()
 }
 
-var alphaNumRegexp = regexp.MustCompile(`^[a-zA-Z0-9]*$`) // 或 +，根据需求
+var alphaNumRegexp = regexp.MustCompile(`^[a-zA-Z0-9]*$`)
 
 func RegexValidString(str string) (bool, error) {
-	// 允许输入为单一字符 ε 或 ∅
 	if str == string(model.Epsilon) || str == string(model.EmptyLanguageToken) {
 		return true, nil
 	}

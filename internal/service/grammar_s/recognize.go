@@ -2467,15 +2467,12 @@ func (p *RecursiveDescentParser) parseNonTerminal(nt model.Symbol) bool {
 	// 找到所有以 nt 为左部的产生式
 	var candidates []model.Production
 	for _, prod := range p.Grammar.Productions {
-		fmt.Println("产生式：", prod.String())
 		if len(prod.Left) > 0 && prod.Left[0] == nt {
-			fmt.Println("ok")
 			candidates = append(candidates, prod)
 		}
 	}
 
 	if len(candidates) == 0 {
-		fmt.Println("消费失败，无相关产生式的nt：", nt)
 		p.addStep(model.ParseStep{
 			StepType:    "error",
 			Description: fmt.Sprintf("未找到非终结符 %s 的产生式", string(nt)),
@@ -2491,45 +2488,13 @@ func (p *RecursiveDescentParser) parseNonTerminal(nt model.Symbol) bool {
 	// 选择适合的产生式（基于FIRST集）
 	var selectedProd *model.Production
 	for _, prod := range candidates {
-		fmt.Println("选择产生式中，现在的产生式：", prod.String())
 		if len(prod.Right) == 0 || (len(prod.Right) == 1 && prod.Right[0] == model.Epsilon) {
-			fmt.Println(1)
 			// 空产生式，检查 current 是否在 FOLLOW(nt) 中
 			if _, ok := followSet[nt][current]; ok {
-				fmt.Println(2)
 				selectedProd = &prod
-
 				break
 			}
 		} else {
-			// 非空产生式，检查FIRST集
-			// firstSymbol := prod.Right[0]
-			// if firstSymbol == current {
-			// 	fmt.Println(3)
-			// 	// 直接匹配
-			// 	selectedProd = &prod
-			// 	break
-			// } else if p.Grammar.CheckIsNonTerminal(firstSymbol) {
-			// 	fmt.Println(4)
-			// 	// 检查FIRST集
-			// 	if _, inFirst := firstSet[firstSymbol][current]; inFirst {
-
-			// 		fmt.Println(5)
-			// 		selectedProd = &prod
-			// 		break
-			// 	}
-			// 	// 检查是否可以推出ε
-			// 	if _, hasEpsilon := firstSet[firstSymbol][model.Epsilon]; hasEpsilon {
-			// 		fmt.Println(6)
-			// 		// 递归检查后续符号
-			// 		if p.canDerive(prod.Right, current, firstSet) {
-			// 			fmt.Println(7)
-			// 			selectedProd = &prod
-			// 			break
-			// 		}
-			// 	}
-			// }
-
 			firstOfRight := p.calculateFirstOfSequence(prod.Right, firstSet)
 			if _, inFirst := firstOfRight[current]; inFirst {
 				selectedProd = &prod
@@ -2541,12 +2506,10 @@ func (p *RecursiveDescentParser) parseNonTerminal(nt model.Symbol) bool {
 					break
 				}
 			}
-			fmt.Println(8)
 		}
 	}
 
 	if selectedProd == nil {
-		fmt.Println("消费失败，无对应产生式的nt：", nt)
 		p.addStep(model.ParseStep{
 			StepType:    "error",
 			Description: fmt.Sprintf("没有适合的产生式匹配当前输入 %s", string(current)),

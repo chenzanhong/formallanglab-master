@@ -69,13 +69,10 @@ func TestGrammarGenerateExampleString(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			accept, reject := GrammarGenerateExampleString(tt.grammar)
 
-			fmt.Printf("Test: %s\n", tt.name)
-			fmt.Println("Accept strings:")
 			for i, s := range accept {
 				fmt.Printf("  %d: %s\n", i+1, s)
 			}
 
-			fmt.Println("Reject strings:")
 			for i, s := range reject {
 				fmt.Printf("  %d: %s\n", i+1, s)
 			}

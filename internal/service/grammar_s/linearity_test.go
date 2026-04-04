@@ -8,13 +8,13 @@ import (
 
 func TestDetermineLinearity(t *testing.T) {
 	tests := []struct {
-		name         string
-		grammar      *model.Grammar
-		wantLinear   model.GrammarLinearity
+		name       string
+		grammar    *model.Grammar
+		wantLinear model.GrammarLinearity
 	}{
 		{
-			name: "nil grammar",
-			grammar: nil,
+			name:       "nil grammar",
+			grammar:    nil,
 			wantLinear: model.InvalidLinearity,
 		},
 		{
