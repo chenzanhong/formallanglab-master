@@ -1,6 +1,7 @@
 package grammar_s
 
 import (
+	"context"
 	"fmt"
 	"math/rand/v2"
 	"strings"
@@ -357,45 +358,100 @@ func generateRejectExampleString(g *model.Grammar, seenAccept map[string]bool) (
 	// 策略 1：优先生成奇数长度的字符串（很多文法只接受偶数长度）
 	// 策略 2：生成单一字符重复的字符串（如 "aaa", "bbb"）
 	// 策略 3：随机生成字符串
-	maxValidation := 30 // 最多验证 30 次
+	// 策略 4：超长字符串（用于捕获有界长度文法）
+	maxValidation := 40 // 最多验证 40 次（与候选字符串数量一致）
 	validationCount := 0
 	validatedCount := 0
 	rejectedCount := 0
 
 	// 生成候选字符串的辅助函数
 	generateCandidates := func() []string {
+		seen := make(map[string]bool)
 		var candidates []string
 
-		// 策略 1：奇数长度字符串（1, 3, 5）
-		for _, term := range pureTerminals {
-			for len := 1; len <= 5; len += 2 {
-				candidates = append(candidates, strings.Repeat(term, len))
+		addCandidate := func(s string) {
+			if s == "" || seen[s] {
+				return
+			}
+			seen[s] = true
+			candidates = append(candidates, s)
+		}
+
+		// 策略 1：单字符重复（长度 1~6）
+		for _, t := range pureTerminals {
+			for l := 1; l <= 6; l++ {
+				addCandidate(strings.Repeat(t, l))
 			}
 		}
 
-		// 策略 2：混合但长度不平衡
+		// 策略 2：奇数 vs 偶数（很多文法只接受偶数长度）
+		if len(pureTerminals) == 1 {
+			t := pureTerminals[0]
+			// 如果已有偶数长度（如 "aa", "aaaa"），再加奇数
+			for l := 1; l <= 7; l += 2 { // 1,3,5,7
+				addCandidate(strings.Repeat(t, l))
+			}
+		}
+
+		// 策略 3：两字符不平衡组合（仅当 ≥2 个终结符）
 		if len(pureTerminals) >= 2 {
-			// 如 "aab", "abb", "aaab", "abbb"
-			for i := 1; i <= 3; i++ {
-				for j := 1; j <= 3; j++ {
-					if i != j { // 只生成不平衡的组合
-						candidates = append(candidates,
-							strings.Repeat(pureTerminals[0], i)+
-								strings.Repeat(pureTerminals[1], j))
+			a, b := pureTerminals[0], pureTerminals[1]
+
+			// 不平衡数量：a^m b^n, m ≠ n, m,n ∈ [1,4]
+			for m := 1; m <= 4; m++ {
+				for n := 1; n <= 4; n++ {
+					if m != n {
+						addCandidate(strings.Repeat(a, m) + strings.Repeat(b, n))
+						addCandidate(strings.Repeat(b, n) + strings.Repeat(a, m)) // 反向
 					}
 				}
 			}
+
+			// 交替模式：abab... vs aabb...
+			for l := 2; l <= 6; l++ {
+				var alt1, alt2 strings.Builder
+				for i := 0; i < l; i++ {
+					if i%2 == 0 {
+						alt1.WriteString(a)
+						alt2.WriteString(a)
+					} else {
+						alt1.WriteString(b)
+						alt2.WriteString(b)
+					}
+				}
+				// abab...
+				addCandidate(alt1.String())
+				// aaabbb (分块)
+				half := l / 2
+				addCandidate(strings.Repeat(a, half) + strings.Repeat(b, l-half))
+			}
 		}
 
-		// 策略 3：随机生成一些字符串
-		rng := rand.New(rand.NewPCG(uint64(time.Now().UnixNano()), 0))
-		for i := 0; i < 10; i++ {
-			length := rng.IntN(5) + 1 // 1-5
-			s := ""
-			for j := 0; j < length; j++ {
-				s += pureTerminals[rng.IntN(len(pureTerminals))]
+		// 策略 4：超长字符串（用于捕获有界长度文法）
+		longLen := max(7, len(g.Terminals)+1)
+		if len(pureTerminals) == 1 {
+			addCandidate(strings.Repeat(pureTerminals[0], longLen))
+		} else if len(pureTerminals) >= 2 {
+			// 随机生成 3 个长串
+			rng := rand.New(rand.NewPCG(uint64(time.Now().UnixNano()), 0))
+			for i := 0; i < 3; i++ {
+				var sb strings.Builder
+				for j := 0; j < longLen; j++ {
+					sb.WriteString(pureTerminals[rng.IntN(len(pureTerminals))])
+				}
+				addCandidate(sb.String())
 			}
-			candidates = append(candidates, s)
+		}
+
+		// 打乱顺序，避免总是先验短串
+		rand.Shuffle(len(candidates), func(i, j int) {
+			candidates[i], candidates[j] = candidates[j], candidates[i]
+		})
+
+		// 限制总数
+		maxCandidates := 40
+		if len(candidates) > maxCandidates {
+			candidates = candidates[:maxCandidates]
 		}
 
 		return candidates
@@ -419,7 +475,6 @@ func generateRejectExampleString(g *model.Grammar, seenAccept map[string]bool) (
 			validationCount++
 			validatedCount++
 
-			zlog.Infow("判断绝字符串", "s", s)
 			// 使用快速模式验证（带超时限制）
 			// 对于简单的 membership test，不需要完整的解析分析
 			result := quickValidateString(g, s)
@@ -440,6 +495,13 @@ func generateRejectExampleString(g *model.Grammar, seenAccept map[string]bool) (
 		"rejected", rejectedCount,
 		"finalCount", len(reject))
 
+	// 如果所有验证的字符串都被接受，说明可能没有短拒绝字符串
+	if validatedCount > 0 && rejectedCount == 0 {
+		zlog.Warnw("所有候选字符串都被接受，可能没有拒绝字符串",
+			"validated", validatedCount)
+		return []string{"(在终结符集中未找到短拒绝字符串，该语言可能包含所有字符串)"}
+	}
+
 	if len(reject) == 0 {
 		zlog.Warnw("未找到拒绝字符串")
 		return []string{"(在终结符集中未找到短拒绝字符串)"}
@@ -457,7 +519,7 @@ func generateRejectExampleString(g *model.Grammar, seenAccept map[string]bool) (
 }
 
 // quickValidateString 快速验证字符串是否被文法接受
-// 使用带严格限制的 BFS，避免复杂文法导致性能问题
+// 使用带超时的 BFS，确保不会阻塞
 func quickValidateString(g *model.Grammar, input string) *model.ParseResult {
 	// 转换输入为符号数组
 	inputSymbols, err := g.StringToSymbols(input)
@@ -468,18 +530,31 @@ func quickValidateString(g *model.Grammar, input string) *model.ParseResult {
 		}
 	}
 
-	// 使用严格的 BFS 限制：最多 50 步，宽度 20
-	// 这样即使对于复杂文法也能在几毫秒内完成
-	accepted, _, err := RecognizeString(g, inputSymbols, 50, 20)
-	if err != nil {
+	// 使用超时控制：最多 100ms
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+
+	// 使用更严格的 BFS 限制：最多 20 步，宽度 10
+	// 如果 100ms 内没返回，说明文法太复杂，保守认为不接受
+	done := make(chan bool, 1)
+	var accepted bool
+
+	go func() {
+		accepted, _, _ = RecognizeString(g, inputSymbols, 20, 10)
+		done <- true
+	}()
+
+	select {
+	case <-done:
+		return &model.ParseResult{
+			Accepted: accepted,
+			Method:   "BFS (快速)",
+		}
+	case <-ctx.Done():
+		// 超时，保守认为不接受（或者无法判断）
 		return &model.ParseResult{
 			Accepted: false,
-			Error:    err.Error(),
+			Error:    "验证超时（文法太复杂）",
 		}
-	}
-
-	return &model.ParseResult{
-		Accepted: accepted,
-		Method:   "BFS (受限)",
 	}
 }
