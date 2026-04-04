@@ -132,6 +132,10 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 			if !seenAccept[s] && len(s) <= maxSentenceLength {
 				accept = append(accept, s)
 				seenAccept[s] = true
+				// 达到目标数量后立即返回，不再继续生成
+				if len(accept) >= maxExampleNum {
+					return accept
+				}
 			}
 			continue // 句子不能再推导
 		}
@@ -209,7 +213,7 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 	return accept
 }
 
-// 对产生式进行排序，优先选择包含终结符的产生式和 ε 产生式
+// 对产生式进行排序，优先选择能快速终结的产生式
 func rankProductions(rhsList [][]model.Symbol, terminalsSet, nonTerminalsSet map[model.Symbol]bool) [][]model.Symbol {
 	type productionInfo struct {
 		rhs   []model.Symbol
@@ -220,11 +224,11 @@ func rankProductions(rhsList [][]model.Symbol, terminalsSet, nonTerminalsSet map
 	for i, rhs := range rhsList {
 		score := 0
 
-		// ε 产生式优先级最高
+		// ε 产生式优先级最高（能快速终结）
 		if len(rhs) == 1 && rhs[0] == model.Epsilon {
-			score = 100
+			score = 1000
 		} else {
-			// 计算终结符数量
+			// 计算终结符数量和非终结符数量
 			terminalCount := 0
 			nonTerminalCount := 0
 			for _, sym := range rhs {
@@ -234,8 +238,20 @@ func rankProductions(rhsList [][]model.Symbol, terminalsSet, nonTerminalsSet map
 					nonTerminalCount++
 				}
 			}
-			// 终结符越多，分数越高
-			score = terminalCount*10 - nonTerminalCount*5
+
+			// 优先选择：终结符多、非终结符少的产生式
+			// 对于 S → SS 这种会导致爆炸的产生式，给予极低分数
+			if nonTerminalCount >= 2 {
+				score = -100 // 严重惩罚会增加非终结符的产生式
+			} else {
+				// 终结符越多分数越高，非终结符越少分数越高
+				score = terminalCount*50 - nonTerminalCount*30
+			}
+
+			// 额外奖励：纯终结符的产生式（能直接完成推导）
+			if nonTerminalCount == 0 && terminalCount > 0 {
+				score += 500
+			}
 		}
 
 		infos[i] = productionInfo{rhs: rhs, score: score}
