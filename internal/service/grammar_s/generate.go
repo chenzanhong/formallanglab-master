@@ -95,8 +95,8 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 	seenAccept := make(map[string]bool)
 	seenForms := make(map[string]bool) // 避免重复处理相同的句型
 
-	maxDerivationDepth := 8 // 限制推导深度，避免无限递归
-	maxSentenceLength := 10 // 限制句子长度
+	maxDerivationDepth := max(10, min(len(g.Productions), 15)) // 限制推导深度，避免无限递归
+	maxSentenceLength := max(8, min(len(g.Terminals)*2, 10))   // 限制句子长度
 
 	terminalsSet := make(map[model.Symbol]bool)
 	for _, s := range g.Terminals {
