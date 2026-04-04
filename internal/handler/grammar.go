@@ -204,7 +204,7 @@ func GrammarStringRecognize(c *gin.Context) {
 	}
 
 	// 直接将输入字符串传递给分析函数，不再提前转换为符号
-	result := grammar_s.ParseStringWithMode(&req.Grammar, req.Str, grammar_s.Mode(req.Mode), req.ShowSteps)
+	result := grammar_s.ParseStringWithMode(&req.Grammar, req.Str, grammar_s.ParseMode(req.Mode), req.ShowSteps)
 
 	metrics.IncOperation("grammar", "string_recognize", "success")
 	zlog.Infow("文法字符串识别成功")

@@ -21,7 +21,6 @@ func RegexGenerateExampleString(regex model.Regex) (accept, reject []string) {
 	}
 	// 转DFA+补集
 	return regexGenerateExampleStringByCompletedDFAAndBFS(regex)
-	// 枚举+验证
 }
 
 // 转DFA+补集

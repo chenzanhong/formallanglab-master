@@ -31,7 +31,6 @@ import (
 // 空间复杂度：O(1)
 func TypeDetermine(g *model.Grammar) model.GrammarType {
 	if g == nil || GrammarCheckValidity(g) != nil {
-		fmt.Println("无效文法")
 		g.GrammarType = model.InvalidGrammar
 
 		return model.InvalidGrammar
@@ -41,12 +40,10 @@ func TypeDetermine(g *model.Grammar) model.GrammarType {
 	if isContextFreeForm(g) {
 		// 左部都是单个非终结符 → 可能是 Type2 或 Type3
 		if isRegular, _ := IsRegular(g); isRegular {
-			fmt.Println("三型文法")
 			g.GrammarType = model.RegularGrammar
 
 			return model.RegularGrammar
 		}
-		fmt.Println("二型文法")
 		g.GrammarType = model.ContextFreeGrammar
 
 		return model.ContextFreeGrammar
@@ -54,12 +51,10 @@ func TypeDetermine(g *model.Grammar) model.GrammarType {
 
 	// === 第二步：不是 CFG → 判断是 Type1 还是 Type0 ===
 	if isContextSensitive(g) {
-		fmt.Println("一型文法")
 		g.GrammarType = model.ContextSensitiveGrammar
 
 		return model.ContextSensitiveGrammar
 	}
-	fmt.Println("零型文法")
 	g.GrammarType = model.PhraseStructureGrammar
 
 	return model.PhraseStructureGrammar

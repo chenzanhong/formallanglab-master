@@ -1192,22 +1192,22 @@ func LL1ParseWithRecovery(grammar *model.Grammar, input []model.Symbol) *model.P
 // ===================================================================================
 
 // ========== 标记开始: 分析模式定义 ==========
-type Mode string
+type ParseMode string
 
 const (
-	LL1Mode              Mode = "ll1"               // LL(1)分析模式
-	LL1RecoveryMode      Mode = "ll1_recovery"      // LL(1)带错误恢复的分析模式
-	RecursiveDescentMode Mode = "recursive_descent" // 递归下降分析模式
-	LR0Mode              Mode = "lr0"               // LR(0)分析模式
-	LR1Mode              Mode = "lr1"               // LR(1)分析模式，未实现
-	BFSMode              Mode = "bfs"               // 广度优先分析模式
-	AutoMode             Mode = "auto"              // 自动选择最优分析模式
+	LL1Mode              ParseMode = "ll1"               // LL(1)分析模式
+	LL1RecoveryMode      ParseMode = "ll1_recovery"      // LL(1)带错误恢复的分析模式
+	RecursiveDescentMode ParseMode = "recursive_descent" // 递归下降分析模式
+	LR0Mode              ParseMode = "lr0"               // LR(0)分析模式
+	LR1Mode              ParseMode = "lr1"               // LR(1)分析模式，未实现
+	BFSMode              ParseMode = "bfs"               // 广度优先分析模式
+	AutoMode             ParseMode = "auto"              // 自动选择最优分析模式
 )
 
 // ========== 标记结束: 分析模式定义 ==========
 
 // ParseStringWithMode 根据指定模式分析输入串
-func ParseStringWithMode(grammar *model.Grammar, input string, mode Mode, showSteps bool) *model.ParseResult {
+func ParseStringWithMode(grammar *model.Grammar, input string, mode ParseMode, showSteps bool) *model.ParseResult {
 	// 转换输入为符号数组
 	var inputSymbols []model.Symbol
 	var err error

@@ -32,7 +32,9 @@ func isTerminals(ss []model.Symbol, set map[model.Symbol]bool) bool {
 func GrammarGenerateExampleString(g *model.Grammar) (accept, reject []string) {
 	// 转DFA+补集
 	if g.GrammarType == model.RegularGrammar {
-		grammarGenerateExampleStringByCompletedDFAAndBFS(g)
+		if acc, rej := grammarGenerateExampleStringByCompletedDFAAndBFS(g); len(acc) > 0 && len(rej) > 0 {
+			return acc, rej
+		}
 	}
 	// 枚举+验证
 	return grammarGenerateExampleStringByEnumAndVerify(g)
@@ -93,10 +95,8 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 	seenAccept := make(map[string]bool)
 	seenForms := make(map[string]bool) // 避免重复处理相同的句型
 
-	maxDerivationDepth := len(g.Productions) * 3
-	if maxDerivationDepth < 10 {
-		maxDerivationDepth = 10
-	}
+	maxDerivationDepth := 8 // 限制推导深度，避免无限递归
+	maxSentenceLength := 10 // 限制句子长度
 
 	terminalsSet := make(map[model.Symbol]bool)
 	for _, s := range g.Terminals {
@@ -108,8 +108,8 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 		nonTerminalsSet[s] = true
 	}
 
-	times := 0           // 避免左递归导致无限步
-	maxQueueSize := 1000 // 限制队列大小，避免内存溢出
+	times := 0          // 避免左递归导致无限步
+	maxQueueSize := 500 // 限制队列大小，避免内存溢出
 	for len(queue) > 0 && len(accept) < maxExampleNum && times < maxTimes && len(queue) < maxQueueSize {
 		times++
 		node := queue[0]
@@ -122,13 +122,17 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 		}
 		seenForms[s] = true
 
+		// 限制句型长度，避免无限增长
+		if len(node.sententialForm) > maxSentenceLength {
+			continue
+		}
+
 		// 如果是句子（全终结符），加入 accept
 		if isTerminals(node.sententialForm, terminalsSet) {
-			if !seenAccept[s] {
+			if !seenAccept[s] && len(s) <= maxSentenceLength {
 				accept = append(accept, s)
 				seenAccept[s] = true
 			}
-
 			continue // 句子不能再推导
 		}
 
@@ -143,9 +147,13 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 			if nonTerminalsSet[sym] {
 				// 应用所有以 sym 为左部的产生式
 				if rhsList, ok := cfgView.Productions[sym]; ok {
-					for _, rhs := range rhsList {
+					// 优先尝试包含终结符的产生式和 ε 产生式
+					rankedProductions := rankProductions(rhsList, terminalsSet, nonTerminalsSet)
+
+					for _, rhs := range rankedProductions {
 						var newForm []model.Symbol
 						if len(rhs) == 1 && rhs[0] == model.Epsilon {
+							// 空产生式
 							newForm = make([]model.Symbol, 0, len(node.sententialForm)-1)
 							newForm = append(newForm, node.sententialForm[:i]...)
 							newForm = append(newForm, node.sententialForm[i+1:]...)
@@ -154,6 +162,11 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 							newForm = append(newForm, node.sententialForm[:i]...)
 							newForm = append(newForm, rhs...)
 							newForm = append(newForm, node.sententialForm[i+1:]...)
+						}
+
+						// 检查新句型是否过长
+						if len(newForm) > maxSentenceLength {
+							continue
 						}
 
 						newFormStr := util.SymbolsToString(newForm)
@@ -166,7 +179,6 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 					}
 				}
 				found = true
-
 				break // 最左推导，只替换第一个非终结符
 			}
 		}
@@ -178,10 +190,73 @@ func generateAcceptExampleString(g *model.Grammar) (accept []string) {
 	}
 
 	if len(accept) == 0 {
+		// 尝试直接生成空字符串
+		if g.StartSymbol == "S" {
+			for _, prod := range g.Productions {
+				if len(prod.Left) == 1 && prod.Left[0] == "S" && len(prod.Right) == 1 && prod.Right[0] == model.Epsilon {
+					return []string{"ε"}
+				}
+			}
+		}
 		return []string{"(未找到短接受字符串)"}
 	}
 
+	// 确保返回的字符串数量不超过 maxExampleNum
+	if len(accept) > maxExampleNum {
+		accept = accept[:maxExampleNum]
+	}
+
 	return accept
+}
+
+// 对产生式进行排序，优先选择包含终结符的产生式和 ε 产生式
+func rankProductions(rhsList [][]model.Symbol, terminalsSet, nonTerminalsSet map[model.Symbol]bool) [][]model.Symbol {
+	type productionInfo struct {
+		rhs   []model.Symbol
+		score int // 分数越高，优先级越高
+	}
+
+	infos := make([]productionInfo, len(rhsList))
+	for i, rhs := range rhsList {
+		score := 0
+
+		// ε 产生式优先级最高
+		if len(rhs) == 1 && rhs[0] == model.Epsilon {
+			score = 100
+		} else {
+			// 计算终结符数量
+			terminalCount := 0
+			nonTerminalCount := 0
+			for _, sym := range rhs {
+				if terminalsSet[sym] {
+					terminalCount++
+				} else if nonTerminalsSet[sym] {
+					nonTerminalCount++
+				}
+			}
+			// 终结符越多，分数越高
+			score = terminalCount*10 - nonTerminalCount*5
+		}
+
+		infos[i] = productionInfo{rhs: rhs, score: score}
+	}
+
+	// 按分数排序
+	for i := 0; i < len(infos)-1; i++ {
+		for j := i + 1; j < len(infos); j++ {
+			if infos[i].score < infos[j].score {
+				infos[i], infos[j] = infos[j], infos[i]
+			}
+		}
+	}
+
+	// 提取排序后的产生式
+	sorted := make([][]model.Symbol, len(infos))
+	for i, info := range infos {
+		sorted[i] = info.rhs
+	}
+
+	return sorted
 }
 
 // 通过枚举+识别，找寻拒绝字符串
