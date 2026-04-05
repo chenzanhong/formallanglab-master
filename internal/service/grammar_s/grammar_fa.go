@@ -9,7 +9,7 @@ import (
 	"github.com/chenzanhong/formallanglab-master/pkg/util"
 )
 
-// 正则文法转自动机，需要区分左线性和右线性
+// RegularGrammarToFA 正则文法转自动机，需要区分左线性和右线性
 // 默认已经检查过类型检查，是正则文法
 func RegularGrammarToFA(g *model.Grammar) (*model.Automaton, error) {
 	if g == nil {
@@ -42,13 +42,13 @@ func RegularGrammarToFAWithProcess(g *model.Grammar, grammarLinearity model.Gram
 	return nil
 }
 
-// 右线性文法转自动机
+// rightLinearGrammarToFA 右线性文法转自动机
 // 算法思路：
-// 1. 右线性文法的产生式形式为 A → aB 或 A → a（A,B为非终结符，a为终结符串）
+// 1. 右线性文法的产生式形式为 A → aB 或 A → a（A,B 为非终结符，a 为终结符串）
 // 2. 将每个非终结符映射为自动机的一个状态
 // 3. 文法的开始符号对应自动机的初始状态
-// 4. 对于形如 A → aB 的产生式，创建一条从状态A到状态B的转移边，标记为a
-// 5. 对于形如 A → a 的产生式，创建一条从状态A到接受状态的转移边，标记为a，如果a为model.Epsilon，也可以单纯只把A纳入接受态
+// 4. 对于形如 A → aB 的产生式，创建一条从状态 A 到状态 B 的转移边，标记为 a
+// 5. 对于形如 A → a 的产生式，创建一条从状态 A 到接受状态的转移边，标记为 a，如果 a 为 model.Epsilon，也可以单纯只把 A 纳入接受态
 // 6. 如果有多个直接产生终结符串的产生式，可能需要创建一个额外的接受状态
 func rightLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 	var automaton model.Automaton
@@ -79,7 +79,6 @@ func rightLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 	automaton.Transitions = make([]model.Transition, 0)
 	hasModelAccept := false
 	for _, production := range g.Productions {
-		// fmt.Printf("产生式：%v", production)
 		var transition model.Transition
 		// 左部
 		transition.FromState = model.State(production.Left[0])
@@ -192,7 +191,6 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 		fromState := model.State(leftSym)
 
 		rightLen := len(prod.Right)
-		fmt.Printf("%v", prod)
 		switch {
 		// 1) 形如 A -> ε，将A加入接收状态
 		case rightLen == 1 && prod.Right[0] == model.Epsilon:

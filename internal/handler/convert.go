@@ -99,8 +99,6 @@ func FAToGrammar(c *gin.Context) {
 		return
 	}
 
-	fmt.Printf("自动机转文法：%v", req.Automaton)
-
 	grammar := automaton_s.FAToGrammar(&req.Automaton)
 
 	c.JSON(http.StatusOK, dto.FAToGrammarResponse{

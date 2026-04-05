@@ -71,7 +71,7 @@ func GenerateStrings(terminals []string, maxLen int) []string {
 	return result
 }
 
-// 随机采样
+// SamplingExampleStrings 随机采样
 func SamplingExampleStrings(ss []string, maxExampleNum int) []string {
 	simpleMap := make(map[string]bool)
 	samplingByLen := make(map[int][]string)
@@ -173,7 +173,7 @@ func PrintAutomaton(a *model.Automaton) {
 	}
 }
 
-// 辅助函数：将 []State 转为带引号的字符串切片
+// QuoteStates 辅助函数：将 []State 转为带引号的字符串切片
 func QuoteStates(states []model.State) []string {
 	result := make([]string, len(states))
 	for i, s := range states {
@@ -183,7 +183,7 @@ func QuoteStates(states []model.State) []string {
 	return result
 }
 
-// 把[]model.Symbol转为[]model.State
+// SymbolsToStates 把 []model.Symbol 转为 []model.State
 func SymbolsToStates(syms []model.Symbol) []model.State {
 	result := make([]model.State, len(syms))
 	for i, sym := range syms {

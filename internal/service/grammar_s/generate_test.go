@@ -1,7 +1,6 @@
 package grammar_s
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
@@ -68,19 +67,9 @@ func TestGrammarGenerateExampleString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			accept, reject := GrammarGenerateExampleString(tt.grammar)
-
-			for i, s := range accept {
-				fmt.Printf("  %d: %s\n", i+1, s)
-			}
-
-			for i, s := range reject {
-				fmt.Printf("  %d: %s\n", i+1, s)
-			}
-
 			if len(accept) < tt.wantAcceptLen {
 				t.Errorf("GrammarGenerateExampleString() accept = %v, want at least %d", accept, tt.wantAcceptLen)
 			}
-
 			if len(reject) < tt.wantRejectLen {
 				t.Errorf("GrammarGenerateExampleString() reject = %v, want at least %d", reject, tt.wantRejectLen)
 			}

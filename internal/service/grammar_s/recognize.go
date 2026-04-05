@@ -254,7 +254,7 @@ func CalculateFollowCached(grammar *model.Grammar, firstSet map[model.Symbol]map
 	return followSet
 }
 
-// CalculateFollow 计算 FOLLOW 集
+// CalculateFollow 计算每个非终结符的 FOLLOW 集
 func CalculateFollow(grammar *model.Grammar, firstSet map[model.Symbol]map[model.Symbol]struct{}) map[model.Symbol]map[model.Symbol]struct{} {
 	followSet := make(map[model.Symbol]map[model.Symbol]struct{})
 
@@ -447,7 +447,7 @@ func RecognizeString(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth 
 	return false, nil, nil
 }
 
-// BFSParseDetailed BFS推导详细分析版本 - 仅记录成功路径
+// BFSParseDetailed BFS 推导详细分析版本 - 仅记录成功路径
 func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth int) *model.ParseResult {
 	result := &model.ParseResult{
 		Method: "BFS 推导模拟",
@@ -611,7 +611,7 @@ func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth
 }
 
 /*
-// BFSParseDetailed BFS推导详细分析版本 - 支持多符号左部产生式
+// BFS 推导详细分析版本 - 支持多符号左部产生式
 func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth int) *model.ParseResult {
 	result := &model.ParseResult{
 		Method: "BFS 推导模拟",
@@ -1002,7 +1002,7 @@ func LL1Parse(grammar *model.Grammar, input []model.Symbol) (bool, []string, err
 	return result.Accepted, steps, nil
 }
 
-// LL1ParseWithRecovery LL(1)分析器带错误恢复机制
+// LL1ParseWithRecovery LL(1) 分析器带错误恢复机制
 func LL1ParseWithRecovery(grammar *model.Grammar, input []model.Symbol) *model.ParseResult {
 	result := &model.ParseResult{
 		Method: "LL(1) 分析（带错误恢复）",
@@ -1382,37 +1382,37 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode ParseMode, s
 //                         6. LR分析数据结构定义模块
 // ===================================================================================
 
-// LR0Item 表示LR(0)项目
+// LR0Item LR(0) 项目
 type LR0Item struct {
 	Production *model.Production // 对应的产生式
 	DotPos     int               // 点的位置
 }
 
-// LR1Item 表示LR(1)项目
+// LR1Item LR(1) 项目
 type LR1Item struct {
 	Production *model.Production // 对应的产生式
 	DotPos     int               // 点的位置
 	Lookahead  model.Symbol      // 向前看符号
 }
 
-// LRState 表示LR状态
+// LRState LR 状态
 type LRState struct {
-	ID     int       // 状态ID
-	Items  []LR0Item // LR(0)项目集
-	Items1 []LR1Item // LR(1)项目集（仅LR(1)使用）
+	ID     int       // 状态 ID
+	Items  []LR0Item // LR(0) 项目集
+	Items1 []LR1Item // LR(1) 项目集（仅 LR(1) 使用）
 }
 
-// LRAction 表示LR分析表中的动作
+// LRAction LR 分析表中的动作
 type LRAction struct {
 	Type       string            // "shift", "reduce", "accept", "error"
-	Target     int               // 目标状态号（shift时）或产生式号（reduce时）
+	Target     int               // 目标状态号（shift 时）或产生式号（reduce 时）
 	Production *model.Production // 归约使用的产生式
 }
 
-// LRTable 表示LR分析表
+// LRTable LR 分析表
 type LRTable struct {
-	Action map[int]map[model.Symbol]*LRAction // ACTION表 [state][terminal] -> action
-	Goto   map[int]map[model.Symbol]int       // GOTO表 [state][nonterminal] -> state
+	Action map[int]map[model.Symbol]*LRAction // ACTION 表 [state][terminal] -> action
+	Goto   map[int]map[model.Symbol]int       // GOTO 表 [state][nonterminal] -> state
 	States []LRState                          // 状态集合
 }
 
@@ -1420,7 +1420,7 @@ type LRTable struct {
 //                           7. LR(0)分析算法模块
 // ===================================================================================
 
-// IsLR0Grammar 判断文法是否为LR(0)文法
+// IsLR0Grammar 判断文法是否为 LR(0) 文法
 func IsLR0Grammar(grammar *model.Grammar) (bool, string) {
 	// 使用ToCFGView检查文法是否为上下文无关文法
 	_, err := grammar.ToCFGView()
@@ -1471,7 +1471,7 @@ func augmentGrammar(grammar *model.Grammar) *model.Grammar {
 	return augmented
 }
 
-// BuildLR0Table 构造LR(0)分析表
+// BuildLR0Table 构造 LR(0) 分析表
 func BuildLR0Table(grammar *model.Grammar) (*LRTable, error) {
 	table := &LRTable{
 		Action: make(map[int]map[model.Symbol]*LRAction),
@@ -1563,7 +1563,7 @@ func BuildLR0Table(grammar *model.Grammar) (*LRTable, error) {
 	return table, nil
 }
 
-// constructLR0ItemSets 构造LR(0)项目集族
+// constructLR0ItemSets 构造 LR(0) 项目集族
 func constructLR0ItemSets(grammar *model.Grammar) []LRState {
 	var states []LRState
 	stateMap := make(map[string]int) // 项目集字符串 -> 状态ID
@@ -1667,7 +1667,7 @@ func closure(items []LR0Item, grammar *model.Grammar) []LR0Item {
 	return result
 }
 
-// gotoItemSet 计算GOTO(I, X)
+// gotoItemSet 计算 GOTO(I, X)
 func gotoItemSet(items []LR0Item, symbol model.Symbol, grammar *model.Grammar) []LR0Item {
 	var newItems []LR0Item
 
@@ -1691,7 +1691,7 @@ func gotoItemSet(items []LR0Item, symbol model.Symbol, grammar *model.Grammar) [
 	return closure(newItems, grammar)
 }
 
-// 辅助函数
+// itemToString 辅助函数
 func itemToString(item LR0Item) string {
 	prod := item.Production
 	var parts []string
@@ -1784,7 +1784,7 @@ func productionsEqual(p1, p2 *model.Production) bool {
 //                        8. 其他LR分析算法占位模块
 // ===================================================================================
 
-// IsLR1Grammar 判断文法是否为LR(1)文法
+// IsLR1Grammar 判断文法是否为 LR(1) 文法
 func IsLR1Grammar(grammar *model.Grammar) (bool, string) {
 	// TODO: 实现LR(1)文法判断逻辑
 	// 1. 构造LR(1)项目集族
@@ -1792,7 +1792,7 @@ func IsLR1Grammar(grammar *model.Grammar) (bool, string) {
 	return false, "LR(1)文法判断尚未实现"
 }
 
-// BuildLR1Table 构造LR(1)分析表
+// BuildLR1Table 构造 LR(1) 分析表
 func BuildLR1Table(grammar *model.Grammar) (*LRTable, error) {
 	// TODO: 实现LR(1)分析表构造
 	// 1. 计算LR(1)项目集族
@@ -1952,7 +1952,7 @@ func LR0ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 	}
 }
 
-// LR0ParseDetailed LR(0)分析器
+// LR0ParseDetailed LR(0) 分析器
 func LR1ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.ParseResult {
 	result := &model.ParseResult{
 		Method: "LR(1) 分析",
@@ -2047,7 +2047,7 @@ func needsLeftFactoring(grammar *model.Grammar) bool {
 	return false
 }
 
-// hasLeftRecursion 检查文法是否有左递归
+// 检查文法是否有左递归
 func hasLeftRecursion(grammar *model.Grammar) bool {
 	// 检查直接左递归：A -> A α
 	for _, prod := range grammar.Productions {
@@ -2101,17 +2101,17 @@ func hasLeftRecursion(grammar *model.Grammar) bool {
 	return false
 }
 
-// HasLeftRecursion 检查文法是否有左递归（导出用于测试）
+// 检查文法是否有左递归（导出用于测试）
 func HasLeftRecursion(grammar *model.Grammar) bool {
 	return hasLeftRecursion(grammar)
 }
 
-// EliminateLeftRecursion 消除左递归（导出用于测试）
+// 消除左递归（导出用于测试）
 func EliminateLeftRecursion(grammar *model.Grammar) *model.Grammar {
 	return eliminateLeftRecursion(grammar)
 }
 
-// eliminateLeftRecursion 消除左递归
+// 消除左递归
 func eliminateLeftRecursion(grammar *model.Grammar) *model.Grammar {
 	// 创建新文法的副本
 	newGrammar := &model.Grammar{
@@ -2189,7 +2189,7 @@ func eliminateLeftRecursion(grammar *model.Grammar) *model.Grammar {
 	return newGrammar
 }
 
-// leftFactor 提取左公因子
+// 提取左公因子
 func leftFactor(grammar *model.Grammar) *model.Grammar {
 	// 创建新文法的副本
 	newGrammar := &model.Grammar{
@@ -2301,7 +2301,7 @@ func findCommonPrefix(seq1, seq2 []model.Symbol) []model.Symbol {
 	return prefix
 }
 
-// RecursiveDescentParse 递归下降分析器
+// 递归下降分析器
 func RecursiveDescentParse(grammar *model.Grammar, input []model.Symbol) *model.ParseResult {
 	result := &model.ParseResult{
 		Method: "递归下降分析",
@@ -2392,7 +2392,7 @@ func (p *RecursiveDescentParser) addStep(step model.ParseStep) {
 	p.Steps = append(p.Steps, step)
 }
 
-// getCurrentSymbol 获取当前输入符号
+// 获取当前输入符号
 func (p *RecursiveDescentParser) getCurrentSymbol() model.Symbol {
 	if p.Pos >= len(p.Input) {
 		return "#" // 输入结束
@@ -2430,7 +2430,7 @@ func (p *RecursiveDescentParser) consume(expected model.Symbol) bool {
 	return false
 }
 
-// parseSymbol 解析一个符号（终结符或非终结符）
+// 解析一个符号（终结符或非终结符）
 func (p *RecursiveDescentParser) parseSymbol(symbol model.Symbol) bool {
 	// 如果是终结符，直接匹配
 	if p.Grammar.CheckIsTerminal(symbol) {
