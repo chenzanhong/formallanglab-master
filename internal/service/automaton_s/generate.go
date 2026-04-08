@@ -26,7 +26,7 @@ func automatonGenerateExampleStringByDFAAndBFS(a *model.Automaton) (accept, reje
 	return GenerateExampleStringsFromCompletedDFA(a)
 }
 
-// 根据一个完备的自动机，生成其可识别和不可识别的字符串示例
+// GenerateExampleStringsFromCompletedDFA 根据一个完备的自动机，生成其可识别和不可识别的字符串示例
 func GenerateExampleStringsFromCompletedDFA(a *model.Automaton) (accept, reject []string) {
 	if a.Type != model.DFA {
 		return automatonGenerateExampleStringByEnumAndVerify(a) // 备选
