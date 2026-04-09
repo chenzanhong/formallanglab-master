@@ -96,8 +96,10 @@ func main() {
 	// 12. 启动 pprof http 服务（通过 PPROF_PORT 环境变量控制，默认为 6060）
 	go func() {
 		if pprofPort := os.Getenv("PPROF_PORT"); pprofPort != "0" && pprofPort != "" {
-			zlog.Infow("Starting pprof on localhost:" + pprofPort)
-			http.ListenAndServe(fmt.Sprintf("localhost:%s", pprofPort), nil)
+			zlog.Info("Starting pprof on :"+pprofPort)
+			if err := http.ListenAndServe(":"+pprofPort, nil); err != nil {
+				zlog.Errorf("pprof server error: %v", err)
+			}
 		}
 	}()
 
