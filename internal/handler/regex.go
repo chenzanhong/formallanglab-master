@@ -14,7 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/chenzanhong/formallanglab-master/internal/domain/dto"
-	"github.com/chenzanhong/formallanglab-master/internal/metrics"
+	"github.com/chenzanhong/formallanglab-master/internal/middleware/metrics"
 	re "github.com/chenzanhong/formallanglab-master/internal/service/regex_s"
 )
 

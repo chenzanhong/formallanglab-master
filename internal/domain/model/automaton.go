@@ -39,13 +39,18 @@ func (t *Transition) String() string {
 	return s.String()
 }
 
-type AutomatonType int
+type AutomatonType string
 
 const (
-	DFA        AutomatonType = 0 // 确定有限自动机
-	NFA        AutomatonType = 1 // 非确定有限自动机
-	EpsilonNFA AutomatonType = 2 // 非确定有限自动机（允许 ε-转移）
+	DFA                  AutomatonType = "DFA"        // 确定有限自动机
+	NFA                  AutomatonType = "NFA"        // 非确定有限自动机
+	EpsilonNFA           AutomatonType = "EpsilonNFA" // 非确定有限自动机（允许 ε-转移）
+	DefaultAutomatonType               = NFA
 )
+
+func (a AutomatonType) String() string {
+	return string(a)
+}
 
 // Automaton 基础自动机结构
 type Automaton struct {
@@ -65,7 +70,7 @@ func NewEmptyLanguageAutomaton() *Automaton {
 		Transitions:     []Transition{},
 		InitialState:    "q0",
 		AcceptingStates: []State{},
-		Type:            DFA,
+		Type:            DefaultAutomatonType,
 	}
 }
 

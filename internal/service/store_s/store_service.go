@@ -41,12 +41,27 @@ func NewStoreService(storeRepo repository.StoreRepository) StoreService {
 
 // CreateAutomaton 创建自动机记录
 func (s *StoreServiceImpl) CreateAutomaton(ctx context.Context, a *storage.AutomatonRecord) error {
+	// 在保存前调用 Validate 函数确保自动机设置了 type，不需要校验 err，允许结构不完整
+	_ = a.Automaton.Validate()
+
 	data, err := json.Marshal(a.Automaton)
 	if err != nil {
 		return err
 	}
 	sum := sha256.Sum256(data)
 	a.AutomatonHash = hex.EncodeToString(sum[:])
+
+	// 根据 Validate 后的 Automaton.Type 设置 AutomatonType 字段
+	switch a.Automaton.Type {
+	case model.DFA:
+		a.AutomatonType = model.DFA.String()
+	case model.NFA:
+		a.AutomatonType = model.NFA.String()
+	case model.EpsilonNFA:
+		a.AutomatonType = model.EpsilonNFA.String()
+	default:
+		a.AutomatonType = model.DefaultAutomatonType.String()
+	}
 
 	return s.storeRepo.CreateAutomaton(ctx, a)
 }

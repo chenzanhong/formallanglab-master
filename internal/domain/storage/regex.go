@@ -7,11 +7,11 @@ import (
 )
 
 type RegexRecord struct {
-	ID        uint        `gorm:"primaryKey"`
-	Name      string      `gorm:"default:none"`
-	Username  string      `gorm:"not null"`
-	Pattern   model.Regex `gorm:"type:jsonb;not null"`
-	CreatedAt time.Time   `gorm:"not null;default:CURRENT_TIMESTAMP"`
+	ID        uint        `gorm:"column:id;primaryKey"`
+	Name      string      `gorm:"column:name;default:none"`
+	Username  string      `gorm:"column:username;not null"`
+	Pattern   model.Regex `gorm:"column:pattern;type:jsonb;not null"`
+	CreatedAt time.Time   `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP"`
 }
 
 func (RegexRecord) TableName() string {

@@ -4,8 +4,10 @@ import (
 	"github.com/chenzanhong/goutil/jwtx"
 	"github.com/gin-gonic/gin"
 
-	mtr "github.com/chenzanhong/formallanglab-master/internal/metrics"
-	"github.com/chenzanhong/formallanglab-master/internal/middleware"
+	"github.com/chenzanhong/formallanglab-master/internal/middleware/cors"
+	"github.com/chenzanhong/formallanglab-master/internal/middleware/metrics"
+	"github.com/chenzanhong/formallanglab-master/internal/middleware/rate"
+	"github.com/chenzanhong/formallanglab-master/internal/middleware/requestid"
 )
 
 func SetupRouter(storeHandler *StoreHandler, learnHandler *LearnHandler) *gin.Engine {
@@ -15,16 +17,16 @@ func SetupRouter(storeHandler *StoreHandler, learnHandler *LearnHandler) *gin.En
 	// router.GET("/master/ai/ws", aiHandler.AIChatWS) // WebSocket聊天接口，不经过JWT中间件
 
 	// 2. 请求ID中间件 - 尽早设置，让后续中间件都能使用
-	router.Use(middleware.RequestID())
+	router.Use(requestid.RequestID())
 	// 3. 全局速率限制 - 在处理请求初期进行限制，避免资源浪费，
 	// 但为了与UserRateLimitMiddleware不重复，只在后面的公共路由组添加
-	// router.Use(middleware.GlobalRateLimitMiddleware())
+	// router.Use(rate.GlobalRateLimitMiddleware())
 	// 4. CORS中间件 - 尽早处理跨域请求，避免不必要的后续处理
-	router.Use(middleware.CORSMiddleware())
+	router.Use(cors.CORSMiddleware())
 	// 5. 日志中间件 - 在业务逻辑前记录请求，在业务逻辑后记录响应。日志中间件，但是感觉有点笨重，暂时不使用
 	// router.Use(middleware.Logging(middleware.DefaultLoggingConfig))
 	// 6. 指标收集 - 收集所有处理过程的指标
-	router.Use(mtr.HTTPMiddleware())
+	router.Use(metrics.HTTPMiddleware())
 
 	router.GET("/gdesign/master/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -44,7 +46,7 @@ func SetupRouter(storeHandler *StoreHandler, learnHandler *LearnHandler) *gin.En
 
 func setupAuthRoutes(router *gin.Engine, learnHandler *LearnHandler, storeHandler *StoreHandler) {
 	// 使用 JWT、Rate 中间件保护这些路由
-	r := router.Group("/gdesign/master", jwtx.GinJWTAuthMiddleware(), middleware.UserRateLimitMiddleware())
+	r := router.Group("/gdesign/master", jwtx.GinJWTAuthMiddleware(), rate.UserRateLimitMiddleware())
 
 	// 文法相关接口
 	grammar := r.Group("/grammar")

@@ -7,12 +7,13 @@ import (
 )
 
 type AutomatonRecord struct {
-	ID            uint            `gorm:"primaryKey"`
-	Name          string          `gorm:"default:none"`
-	Username      string          `gorm:"not null"`
-	Automaton     model.Automaton `gorm:"type:jsonb;not null;serializer:json"`
-	AutomatonHash string          `gorm:"type:char(64);not null"`
-	CreatedAt     time.Time       `gorm:"not null;default:CURRENT_TIMESTAMP"`
+	ID            uint            `gorm:"column:id;primaryKey"`
+	Name          string          `gorm:"column:name;default:none"`
+	Username      string          `gorm:"column:username;not null"`
+	Automaton     model.Automaton `gorm:"column:automaton;type:jsonb;not null;serializer:json"`
+	AutomatonHash string          `gorm:"column:automaton_hash;type:char(64);not null"`
+	AutomatonType string          `gorm:"column:automaton_type;type:varchar(50);not null;default:'DFA'"`
+	CreatedAt     time.Time       `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP"`
 }
 
 func (AutomatonRecord) TableName() string {

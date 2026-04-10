@@ -17,7 +17,7 @@ import (
 
 	"github.com/chenzanhong/formallanglab-master/internal/domain/dto"
 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
-	"github.com/chenzanhong/formallanglab-master/internal/metrics"
+	"github.com/chenzanhong/formallanglab-master/internal/middleware/metrics"
 	"github.com/chenzanhong/formallanglab-master/internal/service/automaton_s"
 	"github.com/chenzanhong/formallanglab-master/internal/service/grammar_s"
 	"github.com/chenzanhong/formallanglab-master/internal/service/regex_s"

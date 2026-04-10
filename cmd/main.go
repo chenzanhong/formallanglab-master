@@ -19,8 +19,8 @@ import (
 	"github.com/chenzanhong/formallanglab-master/configs"
 	cf "github.com/chenzanhong/formallanglab-master/configs"
 	"github.com/chenzanhong/formallanglab-master/internal/handler"
-	mtr "github.com/chenzanhong/formallanglab-master/internal/metrics"
-	"github.com/chenzanhong/formallanglab-master/internal/middleware"
+	"github.com/chenzanhong/formallanglab-master/internal/middleware/jwt"
+	"github.com/chenzanhong/formallanglab-master/internal/middleware/metrics"
 	rep "github.com/chenzanhong/formallanglab-master/internal/repository"
 	learnSvc "github.com/chenzanhong/formallanglab-master/internal/service/learn_s"
 	storeSvc "github.com/chenzanhong/formallanglab-master/internal/service/store_s"
@@ -29,7 +29,7 @@ import (
 )
 
 func init() {
-	mtr.PrometheusRegister()     // 初始化 Prometheus
+	metrics.PrometheusRegister() // 初始化 Prometheus
 	binding.RegisterValidation() // 注册自定义验证器
 }
 
@@ -42,7 +42,7 @@ func main() {
 	// 2. 设置环境变量
 	cf.SyncConfigToEnv(*config)
 	// 3. 初始化JWT
-	jwtx.InitWithHS256(config.JWT.Key, &middleware.Claims{}, jwtx.WithAutoInject(true))
+	jwtx.InitWithHS256(config.JWT.Key, &jwt.Claims{}, jwtx.WithAutoInject(true))
 
 	// 4. 初始化日志
 	zlog.InitLogger(config.Log)
@@ -96,7 +96,7 @@ func main() {
 	// 12. 启动 pprof http 服务（通过 PPROF_PORT 环境变量控制，默认为 6060）
 	go func() {
 		if pprofPort := os.Getenv("PPROF_PORT"); pprofPort != "0" && pprofPort != "" {
-			zlog.Info("Starting pprof on :"+pprofPort)
+			zlog.Info("Starting pprof on :" + pprofPort)
 			if err := http.ListenAndServe(":"+pprofPort, nil); err != nil {
 				zlog.Errorf("pprof server error: %v", err)
 			}
@@ -109,7 +109,7 @@ func main() {
 			r := gin.New()
 			r.Use(gin.Recovery())
 			zlog.Infow("Starting metrics on localhost:" + metricsPort)
-			r.GET("/gdesign/master/metrics", mtr.MetricsHandler())
+			r.GET("/gdesign/master/metrics", metrics.MetricsHandler())
 			r.Run(fmt.Sprintf(":%s", metricsPort))
 		}
 	}()

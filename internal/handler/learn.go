@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/chenzanhong/formallanglab-master/internal/domain/dto"
-	"github.com/chenzanhong/formallanglab-master/internal/metrics"
+	"github.com/chenzanhong/formallanglab-master/internal/middleware/metrics"
 	"github.com/chenzanhong/formallanglab-master/internal/service/learn_s"
 )
 
