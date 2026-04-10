@@ -3,8 +3,8 @@ CREATE TABLE IF NOT EXISTS automatons (
     id SERIAL PRIMARY KEY,
     name varchar(64) DEFAULT 'none',
     automaton JSONB NOT NULL,  -- 存储自动机的详细内容，使用 JSONB 类型支持结构化查询
-    automaton_hash CHAR(64) NOT NULL, -- SHA256 哈希值，用于内容去重
-    automaton_type VARCHAR(50) NOT NULL DEFAULT 'NFA',  -- 自动机类型，如 DFA, NFA, EpsilonNFA
+    automaton_hash VARCHAR(64) NOT NULL, -- SHA256 哈希值，用于内容去重
+    automaton_type VARCHAR(32) NOT NULL DEFAULT 'NFA',  -- 自动机类型，如 DFA, NFA, EpsilonNFA
     username VARCHAR NOT NULL,  -- 外键关联到 users 表的 name 字段
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     -- 添加外键约束
