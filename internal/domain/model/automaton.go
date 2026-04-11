@@ -52,7 +52,7 @@ func (a AutomatonType) String() string {
 	return string(a)
 }
 
-// Automaton 基础自动机结构
+// Automaton 有限自动机结构体，对应数学定义 M = (Q, Σ, δ, q0, F)
 type Automaton struct {
 	States          []State                      `json:"states"`                    // 状态集合
 	Alphabet        []Symbol                     `json:"alphabet"`                  // 符号表

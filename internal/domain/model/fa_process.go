@@ -27,7 +27,7 @@ type MinimizationProcess struct {
 	Steps []MinimizationStep `json:"steps"` // 最小化步骤列表
 }
 
-// ===================	  NFA最小化的过程记录    ===================
+// ===================	  NFA确定化的过程记录    ===================
 type NFADeterminizationStep struct {
 	Step          int                 `json:"step"`        // 步骤编号
 	Description   string              `json:"description"` // 步骤描述

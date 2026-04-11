@@ -5,17 +5,15 @@ import (
 	"regexp"
 )
 
-// 正则表达式支持的符合，包括0~1，a~z，A~Z，|，（，），*，？，·，ε，∅
-var ValidCSet = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789*+?|()ε∅")
-
-// 允许：字母、数字、*, +, ?, |, (, ), ε, ∅
-const ValidRegex = `^[a-zA-Z0-9*+?|()ε∅]+$`
-
 type Regex string
 
 const (
-	EmptyLanguageToken Regex = "∅" // 空集
+	ValidRegex               = `^[a-zA-Z0-9*+?|()ε∅]+$` // 允许：字母、数字、*, +, ?, |, (, ), ε, ∅
+	EmptyLanguageToken Regex = "∅"                      // 空集
 )
+
+// 正则表达式支持的符合，包括0~1，a~z，A~Z，|，（，），*，？，·，ε，∅
+var ValidCSet = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789*+?|()ε∅")
 
 func (r Regex) IsValid() error {
 	if r == EmptyLanguageToken {

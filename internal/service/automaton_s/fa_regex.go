@@ -150,7 +150,7 @@ func FAToRegex(a *model.Automaton) model.Regex {
 		for _, to := range t.ToStates {
 			input := model.Regex(t.Input)
 			current := regexMap[t.FromState][to]
-			if current == model.EmptyLanguageToken || t.FromState == to { // 自环或空转移
+			if current == model.EmptyLanguageToken { // 空转移
 				regexMap[t.FromState][to] = input
 			} else {
 				regexMap[t.FromState][to] = unionRegex(current, input)
@@ -260,7 +260,7 @@ func FAToRegexWithProcess(a *model.Automaton) (*model.ConversionProcess, error) 
 		for _, to := range t.ToStates {
 			input := model.Regex(t.Input)
 			current := regexMap[t.FromState][to]
-			if current == model.EmptyLanguageToken || t.FromState == to { // 自环或空转移
+			if current == model.EmptyLanguageToken { // 空转移
 				regexMap[t.FromState][to] = model.Regex(input)
 			} else {
 				regexMap[t.FromState][to] = unionRegex(current, input)

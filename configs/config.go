@@ -95,12 +95,8 @@ type Config struct {
 	Server ServerConfig `yaml:"server"`
 	JWT    JWTConfig    `yaml:"jwt"`
 	PG     PGConfig     `yaml:"pg"`
-	// Redis  RedisConfig  `yaml:"redis"`
-	// Email      EMAILConfig      `yaml:"email"`
-	// SMTPServer SMTPServerConfig `yaml:"smtp_server"`
 	Rate  RateConfig  `yaml:"rate"`
 	Kafka KafkaConfig `yaml:"kafka"`
-	// AI    AIConfig          `yaml:"ai"`
 	Log zlog.LoggerConfig `yaml:"log"`
 	OSS OSSConfig         `yaml:"oss"`
 }
@@ -202,14 +198,6 @@ func ApplyEnvToConfig(cfg *Config) {
 	cfg.PG.User = getEnv("DB_USER", cfg.PG.User)
 	cfg.PG.Password = getEnv("DB_PASSWORD", cfg.PG.Password)
 
-	// // Redis
-	// cfg.Redis.Host = getEnv("REDIS_HOST", cfg.Redis.Host)
-	// cfg.Redis.Port = getEnv("REDIS_PORT", cfg.Redis.Port)
-	// cfg.Redis.Password = getEnv("REDIS_PASSWORD", cfg.Redis.Password)
-	// cfg.Redis.DB = getEnvInt("REDIS_DB", cfg.Redis.DB)
-	// cfg.Redis.MaxConn = getEnvInt("REDIS_MAX_CONN", cfg.Redis.MaxConn)
-	// cfg.Redis.MaxIdleConn = getEnvInt("REDIS_MAX_IDLE_CONN", cfg.Redis.MaxIdleConn)
-
 	// Rate
 	cfg.Rate.UserRate = getEnvInt("RATE_USER_RATE", cfg.Rate.UserRate)
 	cfg.Rate.UserBurst = getEnvInt("RATE_USER_BURST", cfg.Rate.UserBurst)
@@ -256,11 +244,6 @@ func parseLogFieldsFromEnv() map[string]string {
 }
 
 func SyncConfigToEnv(config Config) {
-	// config, err := LoadConfig()
-	// if err != nil {
-	// 	log.Fatalf("加载配置失败：%v", err.Error())
-	// }
-
 	// 辅助函数：如果 envVar 未设置，则用 fallback 值设置它
 	setEnvIfNotSet := func(envVar, fallback string) {
 		if os.Getenv(envVar) == "" {
@@ -283,22 +266,6 @@ func SyncConfigToEnv(config Config) {
 	setEnvIfNotSet("DB_PORT", config.PG.Port)
 	setEnvIfNotSet("DB_NAME", config.PG.Name)
 
-	// Redis
-	// setEnvIfNotSet("REDIS_HOST", config.Redis.Host)
-	// setEnvIfNotSet("REDIS_PORT", config.Redis.Port)
-	// setEnvIfNotSet("REDIS_PASSWORD", config.Redis.Password)
-	// setEnvIfNotSet("REDIS_DB", strconv.Itoa(config.Redis.DB))
-	// setEnvIfNotSet("REDIS_MAX_CONN", strconv.Itoa(config.Redis.MaxConn))
-	// setEnvIfNotSet("REDIS_MAX_IDLE_CONN", strconv.Itoa(config.Redis.MaxIdleConn))
-	/*
-		// Email
-		setEnvIfNotSet("EMAIL_NAME", config.Email.Name)
-		setEnvIfNotSet("EMAIL_PASSWORD", config.Email.Password)
-
-		// SMTP Server
-		setEnvIfNotSet("SMTP_SERVER_HOST", config.SMTPServer.Host)
-		setEnvIfNotSet("SMTP_SERVER_PORT", config.SMTPServer.Port)
-	*/
 	// Rate Limiting
 	setEnvIfNotSet("RATE_USER_RATE", strconv.Itoa(config.Rate.UserRate))
 	setEnvIfNotSet("RATE_USER_BURST", strconv.Itoa(config.Rate.UserBurst))
