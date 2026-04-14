@@ -14,6 +14,8 @@ func NFAToDFA(nfa *model.Automaton) *model.Automaton {
 	if nfa == nil {
 		return nil
 	}
+
+	_ = nfa.Validate() // 设置 Type
 	if nfa.Type != model.NFA && nfa.Type != model.EpsilonNFA {
 		return nil
 	}
@@ -118,6 +120,8 @@ func NFAToDFAWithProcess(nfa *model.Automaton) *model.NFADeterminizationProcess 
 	if nfa == nil {
 		return nil
 	}
+	
+	_ = nfa.Validate() // 设置 Type
 	if nfa.Type != model.NFA && nfa.Type != model.EpsilonNFA {
 		return nil
 	}

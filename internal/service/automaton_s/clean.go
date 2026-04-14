@@ -4,7 +4,7 @@ import (
 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
-// 清理自动机：移除不可达状态和未使用的符号（正确支持 ε-NFA）
+// 清理自动机：移除不可达状态和未使用的符号
 func Cleanup(automaton *model.Automaton) {
 	if automaton == nil {
 		return

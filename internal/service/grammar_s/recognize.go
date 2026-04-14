@@ -1242,7 +1242,6 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode ParseMode, s
 
 		return result
 
-	// 教学用
 	case LL1RecoveryMode:
 		// 检查文法是否为CFG
 		_, err := grammar.ToCFGView()
@@ -1356,6 +1355,15 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode ParseMode, s
 			if LL1Result.Accepted {
 				return LL1Result
 			}
+		}
+		
+		// 接着尝试 LR(0)
+		lr0Result := LR0ParseDetailed(grammar, inputSymbols)
+		if !showSteps {
+			lr0Result.Steps = nil
+		}
+		if lr0Result.Accepted {
+			return lr0Result
 		}
 
 		// 最后 fallback 到 BFS

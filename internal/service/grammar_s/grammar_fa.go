@@ -15,7 +15,9 @@ func RegularGrammarToFA(g *model.Grammar) (*model.Automaton, error) {
 	if g == nil {
 		return nil, fmt.Errorf("文法为空")
 	}
+
 	DetermineLinearity(g) // 确定线性
+
 	// 检查文法为左线性还是右线性
 	switch g.GrammarLinearity {
 	case model.RightLinear:

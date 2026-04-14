@@ -17,14 +17,18 @@ func AutomatonEquivalenceCheck(a1, a2 *model.Automaton) (minDFA1, minDFA2 *model
 
 		return a1, a2, false
 	}
+
+	a1.Validate() // 设置 Type
 	if a1.Type != model.DFA {
 		a1 = NFAToDFA(a1)
 	}
 	minDFA1 = DFAMinimize(a1)
 
+	a2.Validate() // 设置 Type
 	if a2.Type != model.DFA {
 		a2 = NFAToDFA(a2)
 	}
+
 	minDFA2 = DFAMinimize(a2)
 
 	return minDFA1, minDFA2, AreDFAsIsomorphic(minDFA1, minDFA2)
