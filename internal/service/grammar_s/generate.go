@@ -52,6 +52,10 @@ func grammarGenerateExampleStringByCompletedDFAAndBFS(g *model.Grammar) (accept,
 	if err != nil { // 非线性，但是理论上不会出现，前面已经确认是正则文法了
 		return grammarGenerateExampleStringByEnumAndVerify(g)
 	}
+	// 验证自动机并设置 Type 字段
+	if err := a.Validate(); err != nil {
+		return grammarGenerateExampleStringByEnumAndVerify(g)
+	}
 	if a.Type != model.DFA {
 		a = automaton_s.NFAToDFA(a)
 	}

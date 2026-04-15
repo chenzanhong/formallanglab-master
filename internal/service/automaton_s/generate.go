@@ -16,6 +16,10 @@ func AutomatonGenerateExampleString(a *model.Automaton) (accept, reject []string
 }
 
 func automatonGenerateExampleStringByDFAAndBFS(a *model.Automaton) (accept, reject []string) {
+	// 验证自动机并设置 Type 字段
+	if err := a.Validate(); err != nil {
+		return automatonGenerateExampleStringByEnumAndVerify(a)
+	}
 	if a.Type != model.DFA {
 		a = NFAToDFA(a)
 	}
