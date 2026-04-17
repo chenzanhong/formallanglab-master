@@ -54,6 +54,7 @@ func stateSetEqual(a, b []model.State) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -71,6 +72,7 @@ func symbolSetEqual(a, b []model.Symbol) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -94,6 +96,7 @@ func transitionSetEqual(a, b []model.Transition) bool {
 			return false
 		}
 	}
+
 	return true
 }
 

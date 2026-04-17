@@ -8,11 +8,11 @@ import (
 
 func TestRegexGenerateExampleString(t *testing.T) {
 	tests := []struct {
-		name   string
-		regex  string
+		name  string
+		regex string
 	}{
 		{"aa", "aa"},
-		{"a(∅|ε)a", "a(∅|ε)a"}, // 应该化简为 aa
+		{"a(∅|ε)a", "a(∅|ε)a"},         // 应该化简为 aa
 		{"(a|b|∅)*c∅?", "(a|b|∅)*c∅?"}, // 应该化简为 (a|b)*c
 	}
 
@@ -25,7 +25,7 @@ func TestRegexGenerateExampleString(t *testing.T) {
 			if len(reject) == 0 {
 				t.Errorf("RegexGenerateExampleString(%q) reject is empty", tt.regex)
 			}
-			
+
 			// 特别检查 a(∅|ε)a 是否化简为 aa
 			if tt.regex == "a(∅|ε)a" {
 				// aa 应该能匹配

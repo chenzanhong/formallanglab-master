@@ -92,13 +92,13 @@ type LogConfig struct {
 }
 
 type Config struct {
-	Server ServerConfig `yaml:"server"`
-	JWT    JWTConfig    `yaml:"jwt"`
-	PG     PGConfig     `yaml:"pg"`
-	Rate  RateConfig  `yaml:"rate"`
-	Kafka KafkaConfig `yaml:"kafka"`
-	Log zlog.LoggerConfig `yaml:"log"`
-	OSS OSSConfig         `yaml:"oss"`
+	Server ServerConfig      `yaml:"server"`
+	JWT    JWTConfig         `yaml:"jwt"`
+	PG     PGConfig          `yaml:"pg"`
+	Rate   RateConfig        `yaml:"rate"`
+	Kafka  KafkaConfig       `yaml:"kafka"`
+	Log    zlog.LoggerConfig `yaml:"log"`
+	OSS    OSSConfig         `yaml:"oss"`
 }
 
 // getConfigPath 获取数据库配置文件的路径

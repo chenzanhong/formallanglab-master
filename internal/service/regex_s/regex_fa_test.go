@@ -13,10 +13,10 @@ func TestRegexToFA(t *testing.T) {
 		wantErr bool
 	}{
 		{"aa", model.Regex("aa"), false},
-		{"a(∅|ε)a", model.Regex("a(∅|ε)a"), false}, // 应该化简为 aa
+		{"a(∅|ε)a", model.Regex("a(∅|ε)a"), false},         // 应该化简为 aa
 		{"(a|b|∅)*c∅?", model.Regex("(a|b|∅)*c∅?"), false}, // 应该化简为 (a|b)*c
-		{"∅", model.Regex("∅"), false}, // 空语言自动机
-		{"ε", model.Regex("ε"), false}, // ε 化简后返回接受空串的自动机
+		{"∅", model.Regex("∅"), false},                     // 空语言自动机
+		{"ε", model.Regex("ε"), false},                     // ε 化简后返回接受空串的自动机
 	}
 
 	for _, tt := range tests {

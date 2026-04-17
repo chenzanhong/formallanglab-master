@@ -6,10 +6,10 @@ import (
 
 func TestSimplifyRegex(t *testing.T) {
 	tests := []struct {
-		name          string
-		input         string
+		name           string
+		input          string
 		wantSimplified string
-		wantEmpty     bool
+		wantEmpty      bool
 	}{
 		{"空集", "∅", "", true},
 		{"空串", "ε", "", false},

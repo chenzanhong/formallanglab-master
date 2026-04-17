@@ -47,6 +47,7 @@ func (r Regex) IsValid() error {
 		if isOperand(char) {
 			lastWasOperand = true
 			i += size
+
 			continue
 		}
 
@@ -106,6 +107,7 @@ func isOperand(r rune) bool {
 	if r == 'ε' || r == '∅' {
 		return true
 	}
+
 	return false
 }
 
@@ -115,5 +117,6 @@ func containsRune(s string, r rune) bool {
 			return true
 		}
 	}
+
 	return false
 }

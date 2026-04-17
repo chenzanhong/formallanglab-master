@@ -1356,7 +1356,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode ParseMode, s
 				return LL1Result
 			}
 		}
-		
+
 		// 接着尝试 LR(0)
 		lr0Result := LR0ParseDetailed(grammar, inputSymbols)
 		if !showSteps {

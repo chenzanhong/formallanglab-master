@@ -57,6 +57,7 @@ func SimplifyRegex(regexStr string) (simplified string, isEmptyLanguage bool) {
 		if newRegex != processedRegex {
 			changed = true
 			processedRegex = newRegex
+
 			continue
 		}
 
@@ -64,6 +65,7 @@ func SimplifyRegex(regexStr string) (simplified string, isEmptyLanguage bool) {
 		if newRegex != processedRegex {
 			changed = true
 			processedRegex = newRegex
+
 			continue
 		}
 
@@ -72,6 +74,7 @@ func SimplifyRegex(regexStr string) (simplified string, isEmptyLanguage bool) {
 		if newRegex != processedRegex {
 			changed = true
 			processedRegex = newRegex
+
 			continue
 		}
 
@@ -79,6 +82,7 @@ func SimplifyRegex(regexStr string) (simplified string, isEmptyLanguage bool) {
 		if newRegex != processedRegex {
 			changed = true
 			processedRegex = newRegex
+
 			continue
 		}
 
@@ -87,6 +91,7 @@ func SimplifyRegex(regexStr string) (simplified string, isEmptyLanguage bool) {
 		if newRegex != processedRegex {
 			changed = true
 			processedRegex = newRegex
+
 			continue
 		}
 
@@ -94,6 +99,7 @@ func SimplifyRegex(regexStr string) (simplified string, isEmptyLanguage bool) {
 		if newRegex != processedRegex {
 			changed = true
 			processedRegex = newRegex
+
 			continue
 		}
 
@@ -163,6 +169,7 @@ func RegexRecognize(pattern model.Regex, str string) (bool, error) {
 		if err != nil {
 			return false, err
 		}
+
 		return re.MatchString(str), nil
 	}
 
@@ -177,5 +184,6 @@ func RegexRecognize(pattern model.Regex, str string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	return re.MatchString(str), nil
 }

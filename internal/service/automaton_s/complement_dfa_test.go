@@ -102,9 +102,9 @@ func TestComplementDFACorrectness(t *testing.T) {
 		input    string
 		expected bool
 	}{
-		{"", true},       // 空串应该被接受（原 DFA 不接受空串）
-		{"a", false},     // "a"不应该被接受（原 DFA 接受"a"）
-		{"aa", false},    // "aa"不应该被接受（原 DFA 接受"aa"）
+		{"", true},    // 空串应该被接受（原 DFA 不接受空串）
+		{"a", false},  // "a"不应该被接受（原 DFA 接受"a"）
+		{"aa", false}, // "aa"不应该被接受（原 DFA 接受"aa"）
 	}
 
 	for _, tc := range testCases {
