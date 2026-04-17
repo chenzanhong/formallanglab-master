@@ -13,7 +13,7 @@ import (
 type LearnRepository interface {
 	// ListMaterials 获取学习资源列表
 	ListMaterials(ctx context.Context, category string) ([]*model.LearnMaterial, error)
-	// GetMaterialByID 根据ID获取学习资源
+	// GetMaterialByID 根据 ID 获取学习资源
 	GetMaterialByID(ctx context.Context, id int64) (*model.LearnMaterial, error)
 	// CreateMaterial 创建学习资源
 	CreateMaterial(ctx context.Context, material *model.LearnMaterial) (int64, error)
@@ -49,12 +49,12 @@ func (r *LearnRepositoryImpl) ListMaterials(ctx context.Context, category string
 	return materials, nil
 }
 
-// GetMaterialByID 根据ID获取学习资源
+// GetMaterialByID 根据 ID 获取学习资源
 func (r *LearnRepositoryImpl) GetMaterialByID(ctx context.Context, id int64) (*model.LearnMaterial, error) {
 	var material model.LearnMaterial
 	if err := r.DB.WithContext(ctx).First(&material, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil // 返回nil表示资源不存在
+			return nil, nil // 返回 nil 表示资源不存在
 		}
 
 		return nil, err

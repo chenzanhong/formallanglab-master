@@ -194,9 +194,9 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 
 		rightLen := len(prod.Right)
 		switch {
-		// 1) 形如 A -> ε，将A加入接收状态
+		// 1) 形如 A -> ε，将 A 加入接收状态
 		case rightLen == 1 && prod.Right[0] == model.Epsilon:
-			// 将A加入接收状态
+			// 将 A 加入接收状态
 			automaton.AcceptingStates = append(automaton.AcceptingStates, fromState)
 			step.Description = fmt.Sprintf("因产生式 %s → ε，将状态 %s 加入接受状态集合", leftSym, fromState)
 
@@ -241,12 +241,12 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 			step.NewTransitions = []model.Transition{trans}
 			step.Description = fmt.Sprintf("添加 转移: %s --%s--> %s", fromState, input, toState)
 
-		// 5) 形如A -> w，w =a1a2a3...an，需展开为 A →a1→ A_1 →a2→ A_2 →...→ A_n-1 →an→ accept
+		// 5) 形如 A -> w，w =a1a2a3...an，需展开为 A →a1→ A_1 →a2→ A_2 →...→ A_n-1 →an→ accept
 		case rightLen >= 2 && g.CheckIsTerminal(prod.Right[rightLen-1]):
 			currentState := fromState
 			newStates := make([]model.State, 0)
 			newTransitions := make([]model.Transition, 0)
-			// 处理前n个符号（终结符）
+			// 处理前 n 个符号（终结符）
 			for i := 0; i < rightLen; i++ {
 				input := prod.Right[i]
 				if i == rightLen-1 {
@@ -291,7 +291,7 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 			newStates := make([]model.State, 0)
 			newTransitions := make([]model.Transition, 0)
 
-			// 处理前n-1个符号（终结符）
+			// 处理前 n-1 个符号（终结符）
 			for i := 0; i < rightLen-1; i++ {
 				input := prod.Right[i]
 				if i == rightLen-2 {
@@ -348,19 +348,19 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 // 算法思路（两种正确方法）：
 
 // ✅ 方法一：通过语言反转（间接法）
-// 1. 反转语言：左线性文法G生成语言L，其反转语言L^R可由右线性文法G^R生成（将每条产生式右侧字符串反转）
-// 2. 转右线性为NFA：用标准方法将G^R转换为NFA M'，它识别L^R
-// 3. 反转自动机：将M'的起始状态与所有终态互换，所有转移边方向反转，得到新NFA M，它识别原语言L
+// 1. 反转语言：左线性文法 G 生成语言 L，其反转语言 L^R 可由右线性文法 G^R 生成（将每条产生式右侧字符串反转）
+// 2. 转右线性为 NFA：用标准方法将 G^R 转换为 NFA M'，它识别 L^R
+// 3. 反转自动机：将 M'的起始状态与所有终态互换，所有转移边方向反转，得到新 NFA M，它识别原语言 L
 // 核心思想："左线性 = 右线性描述的语言的反转"
 
 // ✅ 方法二：直接构造（反向建图）
-// 1. 状态设计：每个非终结符作为一个状态；新增一个初始状态q0
+// 1. 状态设计：每个非终结符作为一个状态；新增一个初始状态 q0
 // 2. 转移规则：
-//   - 对产生式A → Ba：添加转移 B →a→ A（注意方向是从B到A）
-//   - 对产生式A → a：添加转移 q0 →a→ A
-//   - 若开始符号S → ε，则q0也是终态
+//   - 对产生式 A → Ba：添加转移 B →a→ A（注意方向是从 B 到 A）
+//   - 对产生式 A → a：添加转移 q0 →a→ A
+//   - 若开始符号 S → ε，则 q0 也是终态
 //
-// 3. 终态设定：开始符号S对应的状态设为唯一终态（或根据ε产生式调整）
+// 3. 终态设定：开始符号 S 对应的状态设为唯一终态（或根据ε产生式调整）
 // 核心思想：自动机从左读输入，而左线性文法从右生成字符串，因此转移方向要"反过来"建模
 func leftLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 	return leftLinearGrammarToFAByBuild(g) // 默认使用直接构造法
@@ -368,28 +368,28 @@ func leftLinearGrammarToFA(g *model.Grammar) *model.Automaton {
 }
 
 // 左线性文法转自动机：通过语言反转（间接法）
-// 1. 反转语言：左线性文法G生成语言L，其反转语言L^R可由右线性文法G^R生成（将每条产生式右侧字符串反转）
-// 2. 转右线性为NFA：用标准方法将G^R转换为NFA M'，它识别L^R
-// 3. 反转自动机：将M'的起始状态与所有终态互换，所有转移边方向反转，得到新NFA M，它识别原语言L
+// 1. 反转语言：左线性文法 G 生成语言 L，其反转语言 L^R 可由右线性文法 G^R 生成（将每条产生式右侧字符串反转）
+// 2. 转右线性为 NFA：用标准方法将 G^R 转换为 NFA M'，它识别 L^R
+// 3. 反转自动机：将 M'的起始状态与所有终态互换，所有转移边方向反转，得到新 NFA M，它识别原语言 L
 func leftLinearGrammarToFAByReverse(g *model.Grammar) *model.Automaton {
 	// 实现左线性文法转自动机的逻辑
 	return nil
 }
 
 // 左线性文法转自动机：直接构造（反向建图）
-// 1. 状态设计：每个非终结符作为一个状态；新增一个初始状态q0
+// 1. 状态设计：每个非终结符作为一个状态；新增一个初始状态 q0
 // 2. 转移规则：
-//   - 对产生式A → Ba：添加转移 B →a→ A（注意方向是从B到A）
-//   - 对产生式A → a：添加转移 q0 →a→ A，这里的a可以是model.Epsilon
-//   - 若开始符号S → ε，则q0也是终态
+//   - 对产生式 A → Ba：添加转移 B →a→ A（注意方向是从 B 到 A）
+//   - 对产生式 A → a：添加转移 q0 →a→ A，这里的 a 可以是 model.Epsilon
+//   - 若开始符号 S → ε，则 q0 也是终态
 //
 // δ(A, a) = {B|B→Aa∈P}
 // δ(Z, a) = {B|B→a∈P}
 // δ(Z, ε) = {B|B→ε∈P}
-// 3. 终态设定：开始符号S对应的状态设为唯一终态（或根据ε产生式调整）
+// 3. 终态设定：开始符号 S 对应的状态设为唯一终态（或根据ε产生式调整）
 func leftLinearGrammarToFAByBuild(g *model.Grammar) *model.Automaton {
 	var a model.Automaton
-	// 1. 状态：每个非终结符作为一个状态；新增一个初始状态q0
+	// 1. 状态：每个非终结符作为一个状态；新增一个初始状态 q0
 	a.States = append(a.States, model.UniqueInitialState)
 	a.InitialState = model.UniqueInitialState
 	for _, nonTerm := range g.NonTerminals {
@@ -410,18 +410,18 @@ func leftLinearGrammarToFAByBuild(g *model.Grammar) *model.Automaton {
 
 	// 3. 转移规则
 	for _, production := range g.Productions {
-		// 对产生式A → Ba：添加转移 B →a→ A（注意方向是从B到A）
-		if g.CheckIsNonTerminal(production.Right[0]) { // 形如A -> Bw，w =a1a2a3...an，需展开为 B →a1→ A1 →a2→ A2 →...→ An-1 →an→ A
+		// 对产生式 A → Ba：添加转移 B →a→ A（注意方向是从 B 到 A）
+		if g.CheckIsNonTerminal(production.Right[0]) { // 形如 A -> Bw，w =a1a2a3...an，需展开为 B →a1→ A1 →a2→ A2 →...→ An-1 →an→ A
 			wLength := len(production.Right) - 1
 			switch wLength {
-			case 0: // 形如A -> B
+			case 0: // 形如 A -> B
 				transition := model.Transition{
 					FromState: model.State(production.Right[0]),
 					Input:     model.Epsilon,
 					ToStates:  []model.State{model.State(production.Left[0])},
 				}
 				a.Transitions = append(a.Transitions, transition)
-			case 1: // 形如A -> Ba
+			case 1: // 形如 A -> Ba
 				transition := model.Transition{
 					FromState: model.State(production.Right[0]),
 					Input:     model.Symbol(production.Right[1]),
@@ -458,9 +458,9 @@ func leftLinearGrammarToFAByBuild(g *model.Grammar) *model.Automaton {
 				}
 				a.Transitions = append(a.Transitions, newTransition)
 			}
-		} else { // 形如A -> w
+		} else { // 形如 A -> w
 			wLength := len(production.Right)
-			if wLength == 1 { // 形如A -> ε 或 A -> a, 新增转移 q0 →a→ A
+			if wLength == 1 { // 形如 A -> ε 或 A -> a, 新增转移 q0 →a→ A
 				input := model.Symbol(production.Right[0])
 				transition := model.Transition{
 					FromState: a.InitialState,
@@ -468,7 +468,7 @@ func leftLinearGrammarToFAByBuild(g *model.Grammar) *model.Automaton {
 					ToStates:  []model.State{model.State(production.Left[0])},
 				}
 				a.Transitions = append(a.Transitions, transition)
-			} else { // 形如A -> w，w =a1a2a3...an，需展开为 q0 →a1→ A1 →a2→ A2 →...→ An-1 →an→ A
+			} else { // 形如 A -> w，w =a1a2a3...an，需展开为 q0 →a1→ A1 →a2→ A2 →...→ An-1 →an→ A
 				// 新增转移 q0 →a1→ A1
 				newTransition := model.Transition{
 					FromState: a.InitialState,
@@ -520,16 +520,16 @@ func leftLinearGrammarToFAByBuild(g *model.Grammar) *model.Automaton {
 }
 
 // 左线性文法转自动机：直接构造（反向建图）
-// 1. 状态设计：每个非终结符作为一个状态；新增一个初始状态q0
+// 1. 状态设计：每个非终结符作为一个状态；新增一个初始状态 q0
 // 2. 转移规则：
-//   - 对产生式A → Ba：添加转移 B →a→ A（注意方向是从B到A）
-//   - 对产生式A → a：添加转移 q0 →a→ A，这里的a可以是model.Epsilon
-//   - 若开始符号S → ε，则q0也是终态
+//   - 对产生式 A → Ba：添加转移 B →a→ A（注意方向是从 B 到 A）
+//   - 对产生式 A → a：添加转移 q0 →a→ A，这里的 a 可以是 model.Epsilon
+//   - 若开始符号 S → ε，则 q0 也是终态
 //
 // δ(A, a) = {B|B→Aa∈P}
 // δ(Z, a) = {B|B→a∈P}
 // δ(Z, ε) = {B|B→ε∈P}
-// 3. 终态设定：开始符号S对应的状态设为唯一终态（或根据ε产生式调整）
+// 3. 终态设定：开始符号 S 对应的状态设为唯一终态（或根据ε产生式调整）
 func leftLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProcess {
 	var automaton model.Automaton
 	process := &model.GrammarToFAProcess{
@@ -682,7 +682,7 @@ func leftLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProces
 			newStates := make([]model.State, 0, rightLength-1)
 			newTransitions := make([]model.Transition, 0, rightLength)
 
-			// 添加B →a1→ A1
+			// 添加 B →a1→ A1
 			newState := getNextIntermediateStateIndex(fromNonTerminal)
 			newStates = append(newStates, newState)
 			transition := model.Transition{

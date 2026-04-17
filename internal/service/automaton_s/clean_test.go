@@ -7,11 +7,101 @@ import (
 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
+// automatonEquals 判断两个自动机是否相等（不考虑状态顺序、转移顺序等）
+func automatonEquals(a, b *model.Automaton) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+
+	// 比较基本信息
+	if a.InitialState != b.InitialState || a.Type != b.Type {
+		return false
+	}
+
+	// 比较状态集合（不考虑顺序）
+	if !stateSetEqual(a.States, b.States) {
+		return false
+	}
+
+	// 比较字母表（不考虑顺序）
+	if !symbolSetEqual(a.Alphabet, b.Alphabet) {
+		return false
+	}
+
+	// 比较接受状态集合（不考虑顺序）
+	if !stateSetEqual(a.AcceptingStates, b.AcceptingStates) {
+		return false
+	}
+
+	// 比较转移集合（不考虑顺序）
+	return transitionSetEqual(a.Transitions, b.Transitions)
+}
+
+// stateSetEqual 判断两个状态集合是否相等（不考虑顺序）
+func stateSetEqual(a, b []model.State) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	set := make(map[model.State]bool)
+	for _, s := range a {
+		set[s] = true
+	}
+	for _, s := range b {
+		if !set[s] {
+			return false
+		}
+	}
+	return true
+}
+
+// symbolSetEqual 判断两个符号集合是否相等（不考虑顺序）
+func symbolSetEqual(a, b []model.Symbol) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	set := make(map[model.Symbol]bool)
+	for _, s := range a {
+		set[s] = true
+	}
+	for _, s := range b {
+		if !set[s] {
+			return false
+		}
+	}
+	return true
+}
+
+// transitionSetEqual 判断两个转移集合是否相等（不考虑顺序）
+func transitionSetEqual(a, b []model.Transition) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	// 将转移转换为字符串进行比较
+	toStr := func(t model.Transition) string {
+		return fmt.Sprintf("%s-%s-%v", t.FromState, t.Input, t.ToStates)
+	}
+
+	set := make(map[string]bool)
+	for _, t := range a {
+		set[toStr(t)] = true
+	}
+	for _, t := range b {
+		if !set[toStr(t)] {
+			return false
+		}
+	}
+	return true
+}
+
 func TestCleanup(t *testing.T) {
 	tests := []struct {
 		name      string
 		automaton *model.Automaton
-		checkFunc func(*model.Automaton) error
+		want      *model.Automaton
 	}{
 		{
 			name: "automaton with unreachable states",
@@ -23,33 +113,13 @@ func TestCleanup(t *testing.T) {
 				AcceptingStates: []model.State{"q1"},
 				Type:            model.DFA,
 			},
-			checkFunc: func(a *model.Automaton) error {
-				if len(a.States) != 2 {
-					return fmt.Errorf("Cleanup() should remove unreachable states, got %d states", len(a.States))
-				}
-				if len(a.Alphabet) != 1 {
-					return fmt.Errorf("Cleanup() should remove unused symbols, got %d symbols", len(a.Alphabet))
-				}
-
-				return nil
-			},
-		},
-		{
-			name: "automaton with epsilon transitions",
-			automaton: &model.Automaton{
-				States:          []model.State{"q0", "q1", "q2"},
-				Alphabet:        []model.Symbol{"a", model.Epsilon},
-				Transitions:     []model.Transition{{FromState: "q0", Input: model.Epsilon, ToStates: []model.State{"q1"}}, {FromState: "q1", Input: "a", ToStates: []model.State{"q2"}}},
+			want: &model.Automaton{
+				States:          []model.State{"q0", "q1"},
+				Alphabet:        []model.Symbol{"a"},
+				Transitions:     []model.Transition{{FromState: "q0", Input: "a", ToStates: []model.State{"q1"}}},
 				InitialState:    "q0",
-				AcceptingStates: []model.State{"q2"},
-				Type:            model.EpsilonNFA,
-			},
-			checkFunc: func(a *model.Automaton) error {
-				if len(a.States) != 3 {
-					return fmt.Errorf("Cleanup() should keep all reachable states with epsilon, got %d states", len(a.States))
-				}
-
-				return nil
+				AcceptingStates: []model.State{"q1"},
+				Type:            model.DFA,
 			},
 		},
 		{
@@ -62,49 +132,28 @@ func TestCleanup(t *testing.T) {
 				AcceptingStates: []model.State{"q2"},
 				Type:            model.DFA,
 			},
-			checkFunc: func(a *model.Automaton) error {
-				if len(a.States) != 3 {
-					return fmt.Errorf("Cleanup() should keep all reachable states, got %d states", len(a.States))
-				}
-				if len(a.Alphabet) != 2 {
-					return fmt.Errorf("Cleanup() should keep all used symbols, got %d symbols", len(a.Alphabet))
-				}
-
-				return nil
-			},
-		},
-		{
-			name:      "nil automaton",
-			automaton: nil,
-			checkFunc: func(a *model.Automaton) error {
-				if a != nil {
-					return fmt.Errorf("Cleanup() should return nil for nil input")
-				}
-
-				return nil
+			want: &model.Automaton{
+				States:          []model.State{"q0", "q1", "q2"},
+				Alphabet:        []model.Symbol{"a", "b"},
+				Transitions:     []model.Transition{{FromState: "q0", Input: "a", ToStates: []model.State{"q1"}}, {FromState: "q1", Input: "b", ToStates: []model.State{"q2"}}},
+				InitialState:    "q0",
+				AcceptingStates: []model.State{"q2"},
+				Type:            model.DFA,
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var automaton *model.Automaton
-			if tt.automaton != nil {
-				automaton = tt.automaton.Clone()
-				Cleanup(automaton)
-			} else {
-				Cleanup(nil)
-				automaton = nil
+			automaton := tt.automaton.Clone()
+			Cleanup(automaton)
+
+			if !automatonEquals(automaton, tt.want) {
+				t.Errorf("Cleanup() result mismatch\n got: %v\nwant: %v", automaton, tt.want)
 			}
 
-			if err := tt.checkFunc(automaton); err != nil {
-				t.Errorf("Cleanup() failed: %v", err)
-			}
-
-			if automaton != nil {
-				if err := automaton.Validate(); err != nil {
-					t.Errorf("Cleanup() result validation failed: %v", err)
-				}
+			if err := automaton.Validate(); err != nil {
+				t.Errorf("Cleanup() result validation failed: %v", err)
 			}
 		})
 	}

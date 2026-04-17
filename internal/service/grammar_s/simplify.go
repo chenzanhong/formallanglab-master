@@ -12,16 +12,16 @@ func Simplify(grammar *model.Grammar) *model.Grammar {
 		return grammar
 	}
 
-	// 步骤1: 去除不可派生的变量（Non-generating variables）
+	// 步骤 1: 去除不可派生的变量（Non-generating variables）
 	RemoveNonGenerating(grammar)
 
-	// 步骤2: 去除不可达符号（Unreachable terminals/nonterminals）
+	// 步骤 2: 去除不可达符号（Unreachable terminals/nonterminals）
 	RemoveUnreachable(grammar)
 
-	// 步骤3: 去除空产生式（ε-productions）
+	// 步骤 3: 去除空产生式（ε-productions）
 	RemoveEpsilonProductions(grammar)
 
-	// 步骤4: 去除单一产生式（Unit productions）
+	// 步骤 4: 去除单一产生式（Unit productions）
 	RemoveUnitProductions(grammar)
 
 	return grammar
@@ -126,7 +126,7 @@ func RemoveUnreachable(g *model.Grammar) {
 	g.Productions = filtered
 }
 
-// RemoveEpsilonProductions 去除空产生式（但若S可空，则保留S→ε）
+// RemoveEpsilonProductions 去除空产生式（但若 S 可空，则保留 S→ε）
 func RemoveEpsilonProductions(g *model.Grammar) {
 	U := getNullableVariables(g) // 可空变量集
 

@@ -92,7 +92,7 @@ package generate
 // 			return nil, fmt.Errorf("非正则文法，暂不支持") // 不支持，触发 fallback
 // 		}
 // 		nfa, err := grammar_s.RegularGrammarToFA(s)
-// 		if err != nil { // 理论上不会出现，因为已经通过TypeDetermine，确认是正则文法了
+// 		if err != nil { // 理论上不会出现，因为已经通过 TypeDetermine，确认是正则文法了
 // 			return nil, fmt.Errorf("非线性文法")
 // 		}
 // 		return automaton_s.NFAToDFA(nfa), nil

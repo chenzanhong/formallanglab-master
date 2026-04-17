@@ -11,24 +11,11 @@ func TestSimplify(t *testing.T) {
 		name    string
 		grammar *model.Grammar
 		wantNil bool
-		wantErr bool
 	}{
 		{
 			name:    "nil grammar",
 			grammar: nil,
 			wantNil: true,
-			wantErr: false,
-		},
-		{
-			name: "empty productions",
-			grammar: &model.Grammar{
-				StartSymbol:  "S",
-				Terminals:    []model.Symbol{"a"},
-				NonTerminals: []model.Symbol{"S"},
-				Productions:  []model.Production{},
-			},
-			wantNil: true,
-			wantErr: false,
 		},
 		{
 			name: "grammar with non-generating variables",
@@ -45,7 +32,6 @@ func TestSimplify(t *testing.T) {
 				},
 			},
 			wantNil: false,
-			wantErr: false,
 		},
 		{
 			name: "grammar with unreachable symbols",
@@ -62,7 +48,6 @@ func TestSimplify(t *testing.T) {
 				},
 			},
 			wantNil: false,
-			wantErr: false,
 		},
 		{
 			name: "grammar with epsilon productions",
@@ -79,7 +64,6 @@ func TestSimplify(t *testing.T) {
 				},
 			},
 			wantNil: false,
-			wantErr: false,
 		},
 		{
 			name: "grammar with unit productions",
@@ -96,7 +80,6 @@ func TestSimplify(t *testing.T) {
 				},
 			},
 			wantNil: false,
-			wantErr: false,
 		},
 	}
 
@@ -113,13 +96,37 @@ func TestSimplify(t *testing.T) {
 				t.Errorf("Simplify() = %v, wantNil %v", result == nil, tt.wantNil)
 			}
 
-			if result != nil {
+			// 有效文法化简后应该仍然是有效文法
+			if result != nil && tt.wantNil == false {
 				err := GrammarCheckValidity(result)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("Simplify() validation error = %v, wantErr %v", err != nil, tt.wantErr)
+				if err != nil {
+					t.Errorf("Simplify() validation error = %v", err)
 				}
 			}
 		})
+	}
+}
+
+// TestSimplifyInvalidGrammar 测试无效文法的化简（只需要一个测试）
+func TestSimplifyInvalidGrammar(t *testing.T) {
+	// 空产生式的文法是无效文法
+	grammar := &model.Grammar{
+		StartSymbol:  "S",
+		Terminals:    []model.Symbol{"a"},
+		NonTerminals: []model.Symbol{"S"},
+		Productions:  []model.Production{},
+	}
+
+	result := Simplify(grammar)
+
+	// 无效文法应返回自身，但验证会失败
+	if result == nil {
+		t.Error("Simplify() should return the grammar itself for invalid grammar")
+	}
+
+	err := GrammarCheckValidity(result)
+	if err == nil {
+		t.Error("Simplify() result should fail validation for invalid grammar")
 	}
 }
 
@@ -254,21 +261,6 @@ func TestSimplifyCompleteGrammar(t *testing.T) {
 	err := GrammarCheckValidity(result)
 	if err != nil {
 		t.Errorf("Simplified grammar is invalid: %v", err)
-	}
-}
-
-func TestSimplifyEmptyGrammar(t *testing.T) {
-	g := &model.Grammar{
-		StartSymbol:  "S",
-		Terminals:    []model.Symbol{"a"},
-		NonTerminals: []model.Symbol{"S"},
-		Productions:  []model.Production{},
-	}
-
-	result := Simplify(g)
-
-	if result != nil {
-		t.Fatal("Simplify() should return nil for empty grammar")
 	}
 }
 

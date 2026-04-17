@@ -9,7 +9,7 @@ const maxExampleNum = 6
 
 // 生成自动机可识别和不可识别的字符串示例。
 func AutomatonGenerateExampleString(a *model.Automaton) (accept, reject []string) {
-	// 转DFA+补集
+	// 转 DFA+补集
 	return automatonGenerateExampleStringByDFAAndBFS(a)
 	// 枚举+验证
 	// return automatonGenerateExampleStringByEnumAndVerify(a)

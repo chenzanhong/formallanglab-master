@@ -93,18 +93,26 @@ func TestComplementDFACorrectness(t *testing.T) {
 		t.Fatalf("ComplementDFA() failed: %v", err)
 	}
 
+	// 调试信息
+	t.Logf("Original DFA accepting states: %v", dfa.AcceptingStates)
+	t.Logf("Complemented DFA accepting states: %v", complemented.AcceptingStates)
+	t.Logf("Complemented DFA initial state: %v", complemented.InitialState)
+
 	testCases := []struct {
 		input    string
 		expected bool
 	}{
-		{"", true},
-		{"a", false},
-		{"aa", false},
+		{"", true},       // 空串应该被接受（原 DFA 不接受空串）
+		{"a", false},     // "a"不应该被接受（原 DFA 接受"a"）
+		{"aa", false},    // "aa"不应该被接受（原 DFA 接受"aa"）
 	}
 
 	for _, tc := range testCases {
 		result, err := Recognize(complemented, tc.input)
-		if err != nil && result.IsAccepted != tc.expected {
+		if err != nil {
+			t.Logf("Recognize(complemented, %q) error: %v", tc.input, err)
+		}
+		if result.IsAccepted != tc.expected {
 			t.Errorf("Recognize(complemented, %q) = %v, want %v", tc.input, result.IsAccepted, tc.expected)
 		}
 	}

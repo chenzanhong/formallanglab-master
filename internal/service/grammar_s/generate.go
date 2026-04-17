@@ -36,7 +36,7 @@ func isTerminals(ss []model.Symbol, set map[model.Symbol]bool) bool {
 
 // 生成文法可推导和不可推导的字符串示例
 func GrammarGenerateExampleString(g *model.Grammar) (accept, reject []string) {
-	// 转DFA+补集
+	// 转 DFA+补集
 	if g.GrammarType == model.RegularGrammar {
 		if acc, rej := grammarGenerateExampleStringByCompletedDFAAndBFS(g); len(acc) > 0 && len(rej) > 0 {
 			return acc, rej

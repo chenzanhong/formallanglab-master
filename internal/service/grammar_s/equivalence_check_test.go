@@ -105,6 +105,31 @@ func TestGrammarIsEquivalent(t *testing.T) {
 			wantEquiv: true,
 			wantErr:   false,
 		},
+		{
+			name: "non-regular grammar (CFG)",
+			g1: &model.Grammar{
+				StartSymbol:  "S",
+				Terminals:    []model.Symbol{"a", "b"},
+				NonTerminals: []model.Symbol{"S"},
+				Productions: []model.Production{
+					{Left: []model.Symbol{"S"}, Right: []model.Symbol{"a", "S", "b"}},
+					{Left: []model.Symbol{"S"}, Right: []model.Symbol{model.Epsilon}},
+				},
+				GrammarType: model.ContextFreeGrammar,
+			},
+			g2: &model.Grammar{
+				StartSymbol:  "S",
+				Terminals:    []model.Symbol{"a", "b"},
+				NonTerminals: []model.Symbol{"S"},
+				Productions: []model.Production{
+					{Left: []model.Symbol{"S"}, Right: []model.Symbol{"a", "S", "b"}},
+					{Left: []model.Symbol{"S"}, Right: []model.Symbol{model.Epsilon}},
+				},
+				GrammarType: model.ContextFreeGrammar,
+			},
+			wantEquiv: false,
+			wantErr:   true,
+		},
 	}
 
 	for _, tt := range tests {

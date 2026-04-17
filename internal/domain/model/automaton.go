@@ -25,7 +25,7 @@ const (
 type Transition struct {
 	FromState State   `json:"fromState"` // 起始状态
 	Input     Symbol  `json:"input"`     // 输入符号
-	ToStates  []State `json:"toStates"`  // 目标状态（对于NFA可以有多个，但是目前大部分还是分开来的，不合并相同FromState+Input的产生式）
+	ToStates  []State `json:"toStates"`  // 目标状态（对于 NFA 可以有多个，但是目前大部分还是分开来的，不合并相同 FromState+Input 的产生式）
 }
 
 func (t *Transition) String() string {
@@ -60,7 +60,7 @@ type Automaton struct {
 	InitialState    State                        `json:"initialState,omitempty"`    // 初始状态
 	AcceptingStates []State                      `json:"acceptingStates,omitempty"` // 接受状态集合
 	Type            AutomatonType                `json:"type"`                      // 类型
-	TransMap        map[State]map[Symbol][]State `json:"-"`                         // Map存储状态转移规则，识别字符串时效率高；不参与 JSON 序列化
+	TransMap        map[State]map[Symbol][]State `json:"-"`                         // Map 存储状态转移规则，识别字符串时效率高；不参与 JSON 序列化
 }
 
 func NewEmptyLanguageAutomaton() *Automaton {
@@ -74,7 +74,20 @@ func NewEmptyLanguageAutomaton() *Automaton {
 	}
 }
 
+// NewEpsilonAutomaton 创建一个接受空串 ε 的自动机
+func NewEpsilonAutomaton() *Automaton {
+	return &Automaton{
+		States:          []State{"q0"},
+		Alphabet:        []Symbol{},
+		Transitions:     []Transition{},
+		InitialState:    "q0",
+		AcceptingStates: []State{"q0"}, // 初始状态就是接受状态
+		Type:            DefaultAutomatonType,
+	}
+}
+
 // 按字符集以及最长匹配原则切分字符串，返回可被正确切分的符号序列
+// 空串应返回错误，由调用者在调用前处理
 func (a *Automaton) SplitString(s string) ([]Symbol, error) {
 	if len(s) == 0 || s == "" {
 		return nil, errors.New("输入字符串为空")
@@ -172,7 +185,7 @@ func (a *Automaton) Validate() error {
 	}
 	alphabetSet[Epsilon] = true // 允许空转移
 
-	// 5. 验证所有转移规则，检查所有转移符合和状态是否有定义，顺带确定type
+	// 5. 验证所有转移规则，检查所有转移符合和状态是否有定义，顺带确定 type
 	a.Type = DFA
 	transitionMap := make(map[string]State) // key: state|symbol
 	for _, t := range a.Transitions {
@@ -606,7 +619,7 @@ func (r *ReactFlowAutomaton) ToAutomaton() *Automaton {
       	"type": "initial", // 明确初始状态类型
       	"data": {
         "label": "q₀",
-        "isAccepting": false // 显式标记是否为接受状态，接收状态需要前端用双圆圈表示，其他节点均用圆形节点表示（节点内部展示label）
+        "isAccepting": false // 显式标记是否为接受状态，接收状态需要前端用双圆圈表示，其他节点均用圆形节点表示（节点内部展示 label）
       }
     },
     {
@@ -620,7 +633,7 @@ func (r *ReactFlowAutomaton) ToAutomaton() *Automaton {
   ],
   "edges": [
     {
-      "id": "e1", // 由后端生成唯一ID
+      "id": "e1", // 由后端生成唯一 ID
       "source": "q0",
       "target": "q1",
       "label": "a",

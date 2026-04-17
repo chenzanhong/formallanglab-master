@@ -109,17 +109,11 @@ func lex(pattern string) ([]token, error) {
 			} else if r == 'ε' {
 				tokens = append(tokens, token{typ: tokChar, value: model.Epsilon})
 			} else if r == '∅' {
-				// 空集符号单独处理
-				if i == 0 && len(runes) == 1 {
-					// 单独的空集符号
-					tokens = append(tokens, token{typ: tokChar, value: model.Symbol("∅")})
-				} else {
-					// 空集符号不能嵌入表达式中
-					return nil, fmt.Errorf("empty set symbol ∅ can only appear alone")
-				}
+				// 空集符号作为特殊字符处理
+				tokens = append(tokens, token{typ: tokChar, value: model.Symbol("∅")})
 			} else {
 				// panic(fmt.Sprintf("invalid character in regex: %c", r))
-				// 不panic，而是返回错误
+				// 不 panic，而是返回错误
 				return nil, fmt.Errorf("invalid character in regex: %c", r)
 			}
 		}
@@ -393,16 +387,30 @@ func (tb *thompsonBuilder) recordStep(node *astNode, start, end model.State) {
 	})
 }
 
-// 正则表达式转FA，不带转换过程
+// 正则表达式转 FA，不带转换过程
 func RegexToFA(regex model.Regex) (*model.Automaton, error) {
 	if regex == model.EmptyLanguageToken {
 		return model.NewEmptyLanguageAutomaton(), nil
 	}
 	pattern := string(regex)
 
+	// 先化简正则表达式，处理 ∅ 和 ε
+	if strings.Contains(pattern, "∅") || strings.Contains(pattern, "ε") {
+		simplified, isEmptyLanguage := SimplifyRegex(pattern)
+		if isEmptyLanguage {
+			return model.NewEmptyLanguageAutomaton(), nil
+		}
+		pattern = simplified
+	}
+
 	// 检查是否是单独的空集符号
 	if pattern == string(model.EmptyLanguageToken) {
 		return model.NewEmptyLanguageAutomaton(), nil
+	}
+
+	// 如果化简后为空字符串（如 ε），返回接受空串的自动机
+	if pattern == "" {
+		return model.NewEpsilonAutomaton(), nil
 	}
 
 	ast, err := parseRegex(pattern)
@@ -434,7 +442,7 @@ func RegexToFA(regex model.Regex) (*model.Automaton, error) {
 	}, nil
 }
 
-// RegexToFAWithSteps 正则表达式转FA，返回完整的转换步骤序列
+// RegexToFAWithSteps 正则表达式转 FA，返回完整的转换步骤序列
 func RegexToFAWithSteps(regex model.Regex) (result *model.RegexToFAProcess, err error) {
 	if regex == model.EmptyLanguageToken {
 		return &model.RegexToFAProcess{
@@ -454,6 +462,19 @@ func RegexToFAWithSteps(regex model.Regex) (result *model.RegexToFAProcess, err 
 	pattern := string(regex)
 	if strings.TrimSpace(pattern) == "" {
 		return nil, fmt.Errorf("empty pattern")
+	}
+
+	// 先化简正则表达式，处理 ∅ 和 ε
+	if strings.Contains(pattern, "∅") || strings.Contains(pattern, "ε") {
+		simplified, isEmptyLanguage := SimplifyRegex(pattern)
+		if isEmptyLanguage {
+			return &model.RegexToFAProcess{
+				Regex:          regex,
+				Steps:          []model.RegexToFAStep{},
+				FinalAutomaton: model.NewEmptyLanguageAutomaton(),
+			}, nil
+		}
+		pattern = simplified
 	}
 
 	// 检查是否是单独的空集符号

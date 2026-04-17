@@ -4,12 +4,12 @@ import "github.com/chenzanhong/formallanglab-master/internal/domain/model"
 
 // 文法/正则表达式转自动机的响应要带上
 
-// 文法转FA请求
+// 文法转 FA 请求
 type GrammarToFARequest struct {
 	Grammar model.Grammar `json:"grammar" binding:"required"`
 }
 
-// 文法转FA响应
+// 文法转 FA 响应
 type GrammarToFAResponse struct {
 	Msg     string                    `json:"msg"`
 	Result  bool                      `json:"result"`
@@ -41,12 +41,12 @@ type FAToRegexResponse struct {
 	Process *model.ConversionProcess `json:"process,omitempty"`
 }
 
-// 正则表达式转FA请求
+// 正则表达式转 FA 请求
 type RegexToFARequest struct {
 	Pattern model.Regex `json:"pattern" binding:"required"`
 }
 
-// 正则表达式转FA响应
+// 正则表达式转 FA 响应
 type RegexToFAResponse struct {
 	Msg     string                  `json:"msg"`
 	Result  bool                    `json:"result"`

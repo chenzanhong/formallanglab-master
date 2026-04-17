@@ -16,7 +16,7 @@ import (
 // 5. 必须至少有一个产生式
 // 6. 每个产生式的左部至少包含一个非终结符
 //
-// 时间复杂度：O(n*m + k)，其中n为产生式数量，m为产生式平均长度，k为符号集合大小
+// 时间复杂度：O(n*m + k)，其中 n 为产生式数量，m 为产生式平均长度，k 为符号集合大小
 // 空间复杂度：O(1)
 func GrammarCheckValidity(g *model.Grammar) error {
 	if g == nil {

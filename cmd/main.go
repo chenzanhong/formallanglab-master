@@ -41,7 +41,7 @@ func main() {
 	}
 	// 2. 设置环境变量
 	cf.SyncConfigToEnv(*config)
-	// 3. 初始化JWT
+	// 3. 初始化 JWT
 	jwtx.InitWithHS256(config.JWT.Key, &jwt.Claims{}, jwtx.WithAutoInject(true))
 
 	// 4. 初始化日志
@@ -53,7 +53,7 @@ func main() {
 		zlog.Fatalf("Failed to initialize database: %v", err)
 	}
 
-	// 6. 初始化OSS客户端
+	// 6. 初始化 OSS 客户端
 	ossClient, err := oss.NewAliyunOSSClient()
 	if err != nil {
 		zlog.Errorf("初始化阿里云OSS客户端失败: %v", err)

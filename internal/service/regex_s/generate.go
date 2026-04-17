@@ -3,6 +3,7 @@ package regex_s
 import (
 	"regexp"
 	"slices"
+	"strings"
 
 	"github.com/chenzanhong/zlog"
 
@@ -20,15 +21,31 @@ func RegexGenerateExampleString(regex model.Regex) (accept, reject []string) {
 	if regex == model.EmptyLanguageToken {
 		return []string{}, []string{}
 	}
-	// 转DFA+补集
+	// 转 DFA+补集
 	return regexGenerateExampleStringByCompletedDFAAndBFS(regex)
 }
 
-// 转DFA+补集
+// 转 DFA+ 补集
 func regexGenerateExampleStringByCompletedDFAAndBFS(regex model.Regex) (accept, reject []string) {
+	// 先化简正则表达式
+	pattern := string(regex)
+	if strings.Contains(pattern, "∅") || strings.Contains(pattern, "ε") {
+		simplified, isEmptyLanguage := SimplifyRegex(pattern)
+		if isEmptyLanguage {
+			return []string{}, []string{}
+		}
+		// 使用化简后的正则表达式
+		regex = model.Regex(simplified)
+	}
+
 	a, err := RegexToFA(regex)
 	if err != nil {
-		zlog.Info("转为DFA失败")
+		zlog.Info("转为 DFA 失败")
+		return regexGenerateExampleStringByEnumAndVerify(regex)
+	}
+	// 验证自动机并设置 Type 字段
+	if err := a.Validate(); err != nil {
+		zlog.Info("验证自动机失败：" + err.Error())
 		return regexGenerateExampleStringByEnumAndVerify(regex)
 	}
 	if a.Type != model.DFA {

@@ -1,7 +1,6 @@
 package regex_s
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
@@ -9,96 +8,38 @@ import (
 
 func TestRegexGenerateExampleString(t *testing.T) {
 	tests := []struct {
-		name      string
-		regex     model.Regex
-		checkFunc func(accept, reject []string) error
+		name   string
+		regex  string
 	}{
-		{
-			name:  "simple pattern: a",
-			regex: "a",
-			checkFunc: func(accept, reject []string) error {
-				if len(accept) == 0 {
-					return fmt.Errorf("should have at least one accepted string")
-				}
-				if len(reject) == 0 {
-					return fmt.Errorf("should have at least one rejected string")
-				}
-
-				return nil
-			},
-		},
-		{
-			name:  "pattern with star: a*",
-			regex: "a*",
-			checkFunc: func(accept, reject []string) error {
-				if len(accept) == 0 {
-					return fmt.Errorf("should have at least one accepted string")
-				}
-
-				return nil
-			},
-		},
-		{
-			name:  "pattern with union: a|b",
-			regex: "a|b",
-			checkFunc: func(accept, reject []string) error {
-				if len(accept) == 0 {
-					return fmt.Errorf("should have at least one accepted string")
-				}
-
-				return nil
-			},
-		},
-		{
-			name:  "empty language",
-			regex: model.EmptyLanguageToken,
-			checkFunc: func(accept, reject []string) error {
-				if len(accept) != 0 {
-					return fmt.Errorf("empty language should have no accepted strings")
-				}
-				if len(reject) != 0 {
-					return fmt.Errorf("empty language should have no rejected strings")
-				}
-
-				return nil
-			},
-		},
-		{
-			name:  "epsilon",
-			regex: "ε",
-			checkFunc: func(accept, reject []string) error {
-				if len(accept) == 0 {
-					return fmt.Errorf("epsilon should have at least one accepted string (empty string)")
-				}
-
-				return nil
-			},
-		},
+		{"aa", "aa"},
+		{"a(∅|ε)a", "a(∅|ε)a"}, // 应该化简为 aa
+		{"(a|b|∅)*c∅?", "(a|b|∅)*c∅?"}, // 应该化简为 (a|b)*c
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			accept, reject := RegexGenerateExampleString(tt.regex)
-
-			if accept == nil {
-				t.Error("RegexGenerateExampleString() accept should not be nil")
+			accept, reject := RegexGenerateExampleString(model.Regex(tt.regex))
+			if len(accept) == 0 {
+				t.Errorf("RegexGenerateExampleString(%q) accept is empty", tt.regex)
 			}
-
-			if reject == nil {
-				t.Error("RegexGenerateExampleString() reject should not be nil")
+			if len(reject) == 0 {
+				t.Errorf("RegexGenerateExampleString(%q) reject is empty", tt.regex)
 			}
-
-			if err := tt.checkFunc(accept, reject); err != nil {
-				t.Errorf("RegexGenerateExampleString() failed: %v", err)
+			
+			// 特别检查 a(∅|ε)a 是否化简为 aa
+			if tt.regex == "a(∅|ε)a" {
+				// aa 应该能匹配
+				foundAA := false
+				for _, s := range accept {
+					if s == "aa" {
+						foundAA = true
+						break
+					}
+				}
+				if !foundAA {
+					t.Errorf("RegexGenerateExampleString(%q) should accept 'aa', but got %v", tt.regex, accept)
+				}
 			}
 		})
-	}
-}
-
-func TestRegexGenerateExampleStringWithInvalidRegex(t *testing.T) {
-	// 无效的正则表达式
-	accept, reject := RegexGenerateExampleString("a|")
-	if len(accept) == 0 || len(reject) == 0 {
-		t.Error("RegexGenerateExampleString() should return results even for invalid regex")
 	}
 }

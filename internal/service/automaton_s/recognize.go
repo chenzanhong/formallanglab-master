@@ -7,16 +7,16 @@ import (
 )
 
 // Recognize 判断自动机是否接受输入字符串 str
-// 根据自动机类型（DFA或NFA或EPSILON-NFA）选择相应的识别算法
+// 根据自动机类型（DFA 或 NFA 或 EPSILON-NFA）选择相应的识别算法
 // 默认已经对自动机有效性和类型进行了判断
 //
 // 算法说明：
-// 对于DFA（确定性有限自动机）：
+// 对于 DFA（确定性有限自动机）：
 //  1. 从初始状态开始，依次读取输入字符串中的每个符号
 //  2. 根据当前状态和输入符号，按照转移函数转移到下一个状态
 //  3. 读取完所有符号后，检查当前状态是否为接受状态
 //
-// 对于NFA（非确定性有限自动机）：
+// 对于 NFA（非确定性有限自动机）：
 //  1. 从初始状态开始，维护一个可能的当前状态集合
 //  2. 依次读取输入字符串中的每个符号
 //  3. 对于当前状态集合中的每个状态，计算在该符号下的所有可能转移
@@ -50,6 +50,21 @@ func Recognize(automaton *model.Automaton, str string) (*model.RecognitionResult
 }
 
 func recognizeDFA(automaton *model.Automaton, str string) (*model.RecognitionResult, error) {
+	// 处理空字符串：检查初始状态是否为接受状态
+	if str == "" {
+		if ContainsState(automaton.AcceptingStates, automaton.InitialState) {
+			return &model.RecognitionResult{
+				IsAccepted: true,
+				Steps:      []model.RecognitionStep{},
+			}, nil
+		}
+
+		return &model.RecognitionResult{
+			IsAccepted: false,
+			Steps:      []model.RecognitionStep{},
+		}, fmt.Errorf("该自动机不接受空字符串")
+	}
+
 	var mustFailed bool
 	symbols, err := automaton.SplitString(str)
 	if err != nil {
@@ -128,7 +143,7 @@ func recognizeNFA(automaton *model.Automaton, str string) (*model.RecognitionRes
 		mustFailed = true
 	}
 
-	deepest := []model.RecognitionStep{} // 使用空切片初始化，确保JSON序列化为[]而不是null
+	deepest := []model.RecognitionStep{} // 使用空切片初始化，确保 JSON 序列化为[]而不是 null
 	pathFound, finalSteps := dfsForNFA(
 		automaton,
 		automaton.InitialState,
@@ -201,7 +216,7 @@ func dfsForNFA(
 
 // ========================== EpsilonNFA ============================
 
-// recognizeEpsilonNFA 识别带ε的NFA是否接受输入字符串 str，DFS
+// recognizeEpsilonNFA 识别带ε的 NFA 是否接受输入字符串 str，DFS
 func recognizeEpsilonNFA(automaton *model.Automaton, str string) (*model.RecognitionResult, error) {
 	// 处理空字符串
 	if str == "" {
@@ -238,7 +253,7 @@ func recognizeEpsilonNFA(automaton *model.Automaton, str string) (*model.Recogni
 		mustFailed = true
 	}
 
-	deepest := []model.RecognitionStep{} // 使用空切片初始化，确保JSON序列化为[]而不是null
+	deepest := []model.RecognitionStep{} // 使用空切片初始化，确保 JSON 序列化为[]而不是 null
 	pathFound, finalSteps := dfsWithEpsilon(
 		automaton,
 		automaton.InitialState,
@@ -261,8 +276,8 @@ func recognizeEpsilonNFA(automaton *model.Automaton, str string) (*model.Recogni
 	}, fmt.Errorf("ε-NFA 无法接受输入字符串 %s", str)
 }
 
-// findEpsilonPathToAccept 从currentState出发，通过 ε 转移找到一条到接受状态的路径
-// 但对于一开始currentState就是接受态的情况，不会记录自身的转移，返回的[]model.RecognitionStep为currentSteps
+// findEpsilonPathToAccept 从 currentState 出发，通过 ε 转移找到一条到接受状态的路径
+// 但对于一开始 currentState 就是接受态的情况，不会记录自身的转移，返回的[]model.RecognitionStep 为 currentSteps
 func findEpsilonPathToAccept(automaton *model.Automaton, currentState model.State, currentSteps []model.RecognitionStep, visited map[model.State]bool) ([]model.RecognitionStep, bool) {
 	if ContainsState(automaton.AcceptingStates, currentState) {
 		return currentSteps, true
@@ -354,7 +369,7 @@ func dfsWithEpsilon(
 func computeEpsilonClosureWithPath(states []model.State, automaton model.Automaton) ([]model.State, []model.RecognitionStep) {
 	closure := make([]model.State, 0)
 	visited := make(map[model.State]bool)
-	steps := []model.RecognitionStep{} // 使用空切片初始化，确保JSON序列化为[]而不是null
+	steps := []model.RecognitionStep{} // 使用空切片初始化，确保 JSON 序列化为[]而不是 null
 	queue := append([]model.State(nil), states...)
 
 	for _, s := range states {

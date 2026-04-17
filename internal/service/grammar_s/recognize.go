@@ -1,5 +1,5 @@
 // grammar_s/recognize.go - 文法识别和分析核心实现
-// 包含多种文法分析算法：LL(1)、LR(0)、递归下降、BFS等
+// 包含多种文法分析算法：LL(1)、LR(0)、递归下降、BFS 等
 
 package grammar_s
 
@@ -77,10 +77,10 @@ import (
 )
 
 // ===================================================================================
-//                          1. FIRST/FOLLOW集计算模块
+//                          1. FIRST/FOLLOW 集计算模块
 // ===================================================================================
 
-// 性能优化：FIRST/FOLLOW集缓存
+// 性能优化：FIRST/FOLLOW 集缓存
 var (
 	firstSetCache  = make(map[string]map[model.Symbol]map[model.Symbol]struct{})
 	followSetCache = make(map[string]map[model.Symbol]map[model.Symbol]struct{})
@@ -148,7 +148,7 @@ func CalculateFirstCached(grammar *model.Grammar) map[model.Symbol]map[model.Sym
 	}
 	cacheMutex.RUnlock()
 
-	// 计算FIRST集
+	// 计算 FIRST 集
 	firstSet := CalculateFirst(grammar)
 
 	// 存入缓存
@@ -243,7 +243,7 @@ func CalculateFollowCached(grammar *model.Grammar, firstSet map[model.Symbol]map
 	}
 	cacheMutex.RUnlock()
 
-	// 计算FOLLOW集
+	// 计算 FOLLOW 集
 	followSet := CalculateFollow(grammar, firstSet)
 
 	// 存入缓存
@@ -353,7 +353,7 @@ func canDeriveEpsilon(grammar *model.Grammar) bool {
 }
 
 // ===================================================================================
-//                         3. 字符串识别与BFS推导模块
+//                         3. 字符串识别与 BFS 推导模块
 // ===================================================================================
 
 // RecognizeString 判断字符串是否被文法生成（BFS 模拟推导）
@@ -522,7 +522,7 @@ func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth
 				Action:      "从起始符号开始",
 			})
 
-			// 中间推导步骤（从第1步到第n步）
+			// 中间推导步骤（从第 1 步到第 n 步）
 			for i := 1; i < len(curr.history); i++ {
 				steps = append(steps, model.ParseStep{
 					StepType:    "predict",
@@ -694,7 +694,7 @@ func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth
 			leftLen := len(prod.Left)
 			// 尝试在当前符号串的每个可能位置匹配产生式左部
 			for i := 0; i <= len(curr.symbols)-leftLen; i++ {
-				// 检查从位置i开始的符号序列是否与产生式左部匹配
+				// 检查从位置 i 开始的符号序列是否与产生式左部匹配
 				match := true
 				for j := 0; j < leftLen; j++ {
 					if curr.symbols[i+j] != prod.Left[j] {
@@ -1216,7 +1216,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode ParseMode, s
 	} else {
 		inputSymbols, err = grammar.StringToSymbols(input)
 		if err != nil {
-			// 充分利用StringToSymbols返回的详细错误信息
+			// 充分利用 StringToSymbols 返回的详细错误信息
 			return &model.ParseResult{
 				Accepted: false,
 				Message:  err.Error(),
@@ -1226,7 +1226,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode ParseMode, s
 
 	switch mode {
 	case LL1Mode:
-		// 检查文法是否为CFG
+		// 检查文法是否为 CFG
 		_, err := grammar.ToCFGView()
 		if err != nil {
 			return &model.ParseResult{
@@ -1243,7 +1243,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode ParseMode, s
 		return result
 
 	case LL1RecoveryMode:
-		// 检查文法是否为CFG
+		// 检查文法是否为 CFG
 		_, err := grammar.ToCFGView()
 		if err != nil {
 			return &model.ParseResult{
@@ -1260,7 +1260,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode ParseMode, s
 		return result
 
 	case RecursiveDescentMode:
-		// 检查文法是否为CFG
+		// 检查文法是否为 CFG
 		_, err := grammar.ToCFGView()
 		if err != nil {
 			return &model.ParseResult{
@@ -1277,7 +1277,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode ParseMode, s
 		return result
 
 	case LR0Mode:
-		// 检查文法是否为CFG
+		// 检查文法是否为 CFG
 		_, err := grammar.ToCFGView()
 		if err != nil {
 			return &model.ParseResult{
@@ -1295,7 +1295,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode ParseMode, s
 
 	// 暂未实现
 	case LR1Mode:
-		// 检查文法是否为CFG
+		// 检查文法是否为 CFG
 		_, err := grammar.ToCFGView()
 		if err != nil {
 			return &model.ParseResult{
@@ -1387,7 +1387,7 @@ func ParseStringWithMode(grammar *model.Grammar, input string, mode ParseMode, s
 }
 
 // ===================================================================================
-//                         6. LR分析数据结构定义模块
+//                         6. LR 分析数据结构定义模块
 // ===================================================================================
 
 // LR0Item LR(0) 项目
@@ -1430,7 +1430,7 @@ type LRTable struct {
 
 // IsLR0Grammar 判断文法是否为 LR(0) 文法
 func IsLR0Grammar(grammar *model.Grammar) (bool, string) {
-	// 使用ToCFGView检查文法是否为上下文无关文法
+	// 使用 ToCFGView 检查文法是否为上下文无关文法
 	_, err := grammar.ToCFGView()
 	if err != nil {
 		return false, fmt.Sprintf("LR(0)分析要求文法为上下文无关文法: %s", err.Error())
@@ -1439,7 +1439,7 @@ func IsLR0Grammar(grammar *model.Grammar) (bool, string) {
 	// 增广文法
 	augmentedGrammar := augmentGrammar(grammar)
 
-	// 构造LR(0)项目集族
+	// 构造 LR(0)项目集族
 	table, err := BuildLR0Table(augmentedGrammar)
 	if err != nil {
 		return false, err.Error()
@@ -1487,11 +1487,11 @@ func BuildLR0Table(grammar *model.Grammar) (*LRTable, error) {
 		States: []LRState{},
 	}
 
-	// 构造LR(0)项目集族
+	// 构造 LR(0)项目集族
 	itemSets := constructLR0ItemSets(grammar)
 	table.States = itemSets
 
-	// 初始化ACTION和GOTO表
+	// 初始化 ACTION 和 GOTO 表
 	for i := range itemSets {
 		table.Action[i] = make(map[model.Symbol]*LRAction)
 		table.Goto[i] = make(map[model.Symbol]int)
@@ -1502,11 +1502,11 @@ func BuildLR0Table(grammar *model.Grammar) (*LRTable, error) {
 		for _, item := range itemSet.Items {
 			prod := item.Production
 
-			// 情况1：移进项目 A -> α • a β (a是终结符)
+			// 情况 1：移进项目 A -> α • a β (a 是终结符)
 			if item.DotPos < len(prod.Right) {
 				nextSymbol := prod.Right[item.DotPos]
 				if grammar.CheckIsTerminal(nextSymbol) {
-					// 查找GOTO(I, a)
+					// 查找 GOTO(I, a)
 					gotoState := findGotoState(itemSets, i, nextSymbol, grammar)
 					if gotoState != -1 {
 						// 检查冲突
@@ -1519,14 +1519,14 @@ func BuildLR0Table(grammar *model.Grammar) (*LRTable, error) {
 						}
 					}
 				} else if grammar.CheckIsNonTerminal(nextSymbol) {
-					// GOTO项目
+					// GOTO 项目
 					gotoState := findGotoState(itemSets, i, nextSymbol, grammar)
 					if gotoState != -1 {
 						table.Goto[i][nextSymbol] = gotoState
 					}
 				}
 			} else {
-				// 情况2：归约项目 A -> α •
+				// 情况 2：归约项目 A -> α •
 				if len(prod.Left) > 0 && prod.Left[0] == grammar.StartSymbol && len(prod.Right) == 1 {
 					// 接受项目 S' -> S •
 					table.Action[i]["#"] = &LRAction{
@@ -1574,7 +1574,7 @@ func BuildLR0Table(grammar *model.Grammar) (*LRTable, error) {
 // constructLR0ItemSets 构造 LR(0) 项目集族
 func constructLR0ItemSets(grammar *model.Grammar) []LRState {
 	var states []LRState
-	stateMap := make(map[string]int) // 项目集字符串 -> 状态ID
+	stateMap := make(map[string]int) // 项目集字符串 -> 状态 ID
 
 	// 初始项目集 I0
 	startProd := &grammar.Productions[0] // S' -> S
@@ -1607,7 +1607,7 @@ func constructLR0ItemSets(grammar *model.Grammar) []LRState {
 			}
 		}
 
-		// 对每个符号计算GOTO
+		// 对每个符号计算 GOTO
 		for symbol := range symbols {
 			newItemSet := gotoItemSet(currentState.Items, symbol, grammar)
 			if len(newItemSet) == 0 {
@@ -1789,22 +1789,22 @@ func productionsEqual(p1, p2 *model.Production) bool {
 }
 
 // ===================================================================================
-//                        8. 其他LR分析算法占位模块
+//                        8. 其他 LR 分析算法占位模块
 // ===================================================================================
 
 // IsLR1Grammar 判断文法是否为 LR(1) 文法
 func IsLR1Grammar(grammar *model.Grammar) (bool, string) {
-	// TODO: 实现LR(1)文法判断逻辑
-	// 1. 构造LR(1)项目集族
+	// TODO: 实现 LR(1)文法判断逻辑
+	// 1. 构造 LR(1)项目集族
 	// 2. 检查向前看符号是否能解决所有冲突
 	return false, "LR(1)文法判断尚未实现"
 }
 
 // BuildLR1Table 构造 LR(1) 分析表
 func BuildLR1Table(grammar *model.Grammar) (*LRTable, error) {
-	// TODO: 实现LR(1)分析表构造
-	// 1. 计算LR(1)项目集族
-	// 2. 构造ACTION和GOTO表（包含向前看符号）
+	// TODO: 实现 LR(1)分析表构造
+	// 1. 计算 LR(1)项目集族
+	// 2. 构造 ACTION 和 GOTO 表（包含向前看符号）
 	return nil, fmt.Errorf("LR(1)分析表构造尚未实现")
 }
 
@@ -1814,7 +1814,7 @@ func LR0ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 		Steps:  []model.ParseStep{},
 	}
 
-	// 检查是否为LR(0)文法
+	// 检查是否为 LR(0)文法
 	if isLR0, msg := IsLR0Grammar(grammar); !isLR0 {
 		result.Accepted = false
 		result.Error = fmt.Sprintf("文法不是LR(0)文法: %s", msg)
@@ -1833,7 +1833,7 @@ func LR0ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 	}
 
 	// 初始化分析栈和输入
-	stateStack := []int{0}             // 状态栈，初始状态为0
+	stateStack := []int{0}             // 状态栈，初始状态为 0
 	symbolStack := []model.Symbol{"#"} // 符号栈，底部为#
 	inputWithEnd := append(copySymbols(input), "#")
 	ip := 0 // 输入指针
@@ -1865,7 +1865,7 @@ func LR0ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 			InputPos: ip,
 		}
 
-		// 查找ACTION表
+		// 查找 ACTION 表
 		action, exists := table.Action[currentState][currentSymbol]
 		if !exists {
 			step.StepType = "error"
@@ -1911,7 +1911,7 @@ func LR0ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 			leftSymbol := prod.Left[0]
 			symbolStack = append(symbolStack, leftSymbol)
 
-			// 查找GOTO表
+			// 查找 GOTO 表
 			newState := stateStack[len(stateStack)-1]
 			gotoState, gotoExists := table.Goto[newState][leftSymbol]
 			if !gotoExists {
@@ -1967,7 +1967,7 @@ func LR1ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 		Steps:  []model.ParseStep{},
 	}
 
-	// 检查是否为LR(1)文法
+	// 检查是否为 LR(1)文法
 	if isLR1, msg := IsLR1Grammar(grammar); !isLR1 {
 		result.Accepted = false
 		result.Error = fmt.Sprintf("文法不是LR(1)文法: %s", msg)
@@ -1975,8 +1975,8 @@ func LR1ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 		return result
 	}
 
-	// TODO: 实现LR(1)分析逻辑
-	// 1. 构造LR(1)分析表
+	// TODO: 实现 LR(1)分析逻辑
+	// 1. 构造 LR(1)分析表
 	// 2. 使用栈进行分析
 	// 3. 记录详细步骤
 	result.Accepted = false
@@ -1988,7 +1988,7 @@ func LR1ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 // ===================================================================================
 //                         9. 递归下降分析算法模块
 // ===================================================================================
-// 传统/手写的递归下降不依赖FIRST/FOLLOW的显示计算，但是这里为了自动化，引入了FIRST/FOLLOW，作为一种“教学型通用解析器”
+// 传统/手写的递归下降不依赖 FIRST/FOLLOW 的显示计算，但是这里为了自动化，引入了 FIRST/FOLLOW，作为一种“教学型通用解析器”
 
 // RecursiveDescentParser 递归下降分析器结构
 type RecursiveDescentParser struct {
@@ -1997,7 +1997,7 @@ type RecursiveDescentParser struct {
 	Pos        int
 	Steps      []model.ParseStep
 	callStack  []model.Symbol // 调用栈，用于记录非终结符调用链
-	currentStr []model.Symbol // 当前识别状态（句型），用于Stack字段记录
+	currentStr []model.Symbol // 当前识别状态（句型），用于 Stack 字段记录
 }
 
 // canUseRecursiveDescent 判断文法是否适用于递归下降分析
@@ -2018,7 +2018,7 @@ func canUseRecursiveDescent(grammar *model.Grammar) bool {
 		return false
 	}
 
-	// 检查是否为LL(1)
+	// 检查是否为 LL(1)
 	if isLL1, _ := IsLL1(grammar); isLL1 {
 		return true
 	}
@@ -2088,7 +2088,7 @@ func hasLeftRecursion(grammar *model.Grammar) bool {
 		}
 	}
 
-	// Floyd-Warshall算法计算传递闭包
+	// Floyd-Warshall 算法计算传递闭包
 	for _, k := range grammar.NonTerminals {
 		for _, i := range grammar.NonTerminals {
 			for _, j := range grammar.NonTerminals {
@@ -2175,7 +2175,7 @@ func eliminateLeftRecursion(grammar *model.Grammar) *model.Grammar {
 			// 添加新产生式
 			for _, prod := range leftRecursive {
 				// A -> A α 变为 A' -> α A'
-				alpha := prod.Right[1:] // 去掉第一个A
+				alpha := prod.Right[1:] // 去掉第一个 A
 				newRight := append(alpha, newNT)
 				newGrammar.Productions = append(newGrammar.Productions, model.Production{
 					Left:  []model.Symbol{newNT},
@@ -2493,7 +2493,7 @@ func (p *RecursiveDescentParser) parseNonTerminal(nt model.Symbol) bool {
 		return false
 	}
 
-	// 选择适合的产生式（基于FIRST集）
+	// 选择适合的产生式（基于 FIRST 集）
 	var selectedProd *model.Production
 	for _, prod := range candidates {
 		if len(prod.Right) == 0 || (len(prod.Right) == 1 && prod.Right[0] == model.Epsilon) {
@@ -2605,7 +2605,7 @@ func (p *RecursiveDescentParser) canDerive(symbols []model.Symbol, target model.
 	return false
 }
 
-// calculateFirstOfSequence 计算符号序列的FIRST集，用于正确选择产生式
+// calculateFirstOfSequence 计算符号序列的 FIRST 集，用于正确选择产生式
 func (p *RecursiveDescentParser) calculateFirstOfSequence(seq []model.Symbol, firstSet map[model.Symbol]map[model.Symbol]struct{}) map[model.Symbol]struct{} {
 	result := make(map[model.Symbol]struct{})
 	for _, X := range seq {

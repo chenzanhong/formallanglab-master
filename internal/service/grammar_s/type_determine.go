@@ -4,19 +4,19 @@ import (
 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
 )
 
-// TypeDetermine 判断文法的Chomsky类型（0、1、2、3型）
+// TypeDetermine 判断文法的 Chomsky 类型（0、1、2、3 型）
 // 算法思路：
 // 1. 首先检查文法是否有效
-// 2. 判断是否为上下文无关文法（CFG，2型）：
+// 2. 判断是否为上下文无关文法（CFG，2 型）：
 //   - 所有产生式的左部都必须是单个非终结符
 //
-// 3. 如果是CFG，进一步判断是否为正则文法（3型）：
+// 3. 如果是 CFG，进一步判断是否为正则文法（3 型）：
 //   - 所有产生式的右部必须符合正则文法的模式（右线性或左线性）
 //
-// 4. 如果不是CFG，判断是否为上下文有关文法（CSG，1型）：
-//   - 除S→ε外，所有产生式都满足|左部|≤|右部|
+// 4. 如果不是 CFG，判断是否为上下文有关文法（CSG，1 型）：
+//   - 除 S→ε外，所有产生式都满足|左部|≤|右部|
 //
-// 5. 如果以上都不满足，则为0型文法（短语结构文法）
+// 5. 如果以上都不满足，则为 0 型文法（短语结构文法）
 //
 // 返回值：
 // Type3: 正则文法（右线性或左线性）
@@ -25,7 +25,7 @@ import (
 // Type0: 短语结构文法
 // TypeInvalid: 无效文法
 //
-// 时间复杂度：O(n*m)，其中n为产生式数量，m为产生式平均长度
+// 时间复杂度：O(n*m)，其中 n 为产生式数量，m 为产生式平均长度
 // 空间复杂度：O(1)
 func TypeDetermine(g *model.Grammar) model.GrammarType {
 	if g == nil || GrammarCheckValidity(g) != nil {
@@ -34,7 +34,7 @@ func TypeDetermine(g *model.Grammar) model.GrammarType {
 		return model.InvalidGrammar
 	}
 
-	// === 第一步：判断是否为 2型或3型（即：所有产生式左部是否都只有一个非终结符）===
+	// === 第一步：判断是否为 2 型或 3 型（即：所有产生式左部是否都只有一个非终结符）===
 	if isContextFreeForm(g) {
 		// 左部都是单个非终结符 → 可能是 Type2 或 Type3
 		if isRegular, _ := IsRegular(g); isRegular {
@@ -121,17 +121,17 @@ func isRightLinearProduction(right []model.Symbol, g *model.Grammar) bool {
 		}
 	}
 
-	// 情况1：没有非终结符（全终结符，A → w）
+	// 情况 1：没有非终结符（全终结符，A → w）
 	if lastNonTerminalIndex == -1 {
 		return true
 	}
 
-	// 情况2：非终结符不在最右端（A → wX，但 X 必须是最右端）
+	// 情况 2：非终结符不在最右端（A → wX，但 X 必须是最右端）
 	if lastNonTerminalIndex != len(right)-1 {
 		return false
 	}
 
-	// 情况3：非终结符在最右端（A → wX），检查前面的符号是否都是终结符（或 ε）
+	// 情况 3：非终结符在最右端（A → wX），检查前面的符号是否都是终结符（或 ε）
 	for i := 0; i < len(right)-1; i++ {
 		sym := right[i]
 		if sym != model.Epsilon && !g.CheckIsTerminal(sym) {
@@ -152,17 +152,17 @@ func isLeftLinearProduction(right []model.Symbol, g *model.Grammar) bool {
 		}
 	}
 
-	// 情况1：没有非终结符（全终结符，A → w）
+	// 情况 1：没有非终结符（全终结符，A → w）
 	if firstNonTerminalIndex == -1 {
 		return true
 	}
 
-	// 情况2：非终结符不在最左端（A → Xw，但 X 必须是最左端）
+	// 情况 2：非终结符不在最左端（A → Xw，但 X 必须是最左端）
 	if firstNonTerminalIndex != 0 {
 		return false
 	}
 
-	// 情况3：非终结符在最左端（A → Xw），检查剩余符号是否都是终结符（或 ε）
+	// 情况 3：非终结符在最左端（A → Xw），检查剩余符号是否都是终结符（或 ε）
 	for i := 1; i < len(right); i++ {
 		sym := right[i]
 		if sym != model.Epsilon && !g.CheckIsTerminal(sym) {
@@ -180,7 +180,7 @@ func isContextSensitive(g *model.Grammar) bool {
 		leftLen := len(p.Left)
 		rightLen := len(p.Right)
 
-		// 对于空产生式，由于用model.Epsilon表示，长度为1，所以不用专门判断
+		// 对于空产生式，由于用 model.Epsilon 表示，长度为 1，所以不用专门判断
 		// 一般规则：|左部| <= |右部|
 		if leftLen > rightLen {
 			return false

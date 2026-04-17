@@ -69,14 +69,14 @@ type KafkaConfig struct {
 // 	ChromaCollection string `yaml:"chroma_collection"`
 // }
 
-// OSSConfig 阿里云OSS配置
+// OSSConfig 阿里云 OSS 配置
 type OSSConfig struct {
 	Endpoint        string `yaml:"endpoint"`
 	AccessKeyID     string `yaml:"access_key_id"`
 	AccessKeySecret string `yaml:"access_key_secret"`
 	BucketName      string `yaml:"bucket_name"`
 	Region          string `yaml:"region"`
-	BaseURL         string `yaml:"base_url"` // 用于生成可访问的URL
+	BaseURL         string `yaml:"base_url"` // 用于生成可访问的 URL
 }
 
 type LogConfig struct {

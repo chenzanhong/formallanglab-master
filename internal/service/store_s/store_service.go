@@ -15,13 +15,13 @@ import (
 type StoreService interface {
 	// 自动机
 	CreateAutomaton(ctx context.Context, a *storage.AutomatonRecord) error
-	FindAutomatonByUsername(ctx context.Context, username string) ([]model.Automaton, error) // sql时只返回content字段
+	FindAutomatonByUsername(ctx context.Context, username string) ([]model.Automaton, error) // sql 时只返回 content 字段
 	FindAutomata(ctx context.Context, username string, lastID uint, limit int) (dto.FindAutomatonResponse, error)
 	DeleteAutomaton(ctx context.Context, id string, username string) error
 
 	// 文法
 	CreateGrammar(ctx context.Context, g *storage.GrammarRecord) error
-	FindGrammarByUsername(ctx context.Context, username string) ([]model.Grammar, error) // sql时只返回content字段
+	FindGrammarByUsername(ctx context.Context, username string) ([]model.Grammar, error) // sql 时只返回 content 字段
 	FindGrammars(ctx context.Context, username string, lastID uint, limit int) (dto.FindGrammarResponse, error)
 	DeleteGrammar(ctx context.Context, id string, username string) error
 
@@ -68,13 +68,13 @@ func (s *StoreServiceImpl) CreateAutomaton(ctx context.Context, a *storage.Autom
 
 // FindAutomatonByUsername 根据用户名查询自动机列表
 func (s *StoreServiceImpl) FindAutomatonByUsername(ctx context.Context, username string) ([]model.Automaton, error) {
-	// 调用repository层方法获取存储记录
+	// 调用 repository 层方法获取存储记录
 	records, err := s.storeRepo.FindAutomatonByUsername(ctx, username)
 	if err != nil {
 		return nil, err
 	}
 
-	// 转换为model.Automaton
+	// 转换为 model.Automaton
 	automata := make([]model.Automaton, 0, len(records))
 	for _, record := range records {
 		automata = append(automata, record.Automaton)
@@ -97,13 +97,13 @@ func (s *StoreServiceImpl) CreateGrammar(ctx context.Context, g *storage.Grammar
 
 // FindGrammarByUsername 根据用户名查询文法列表
 func (s *StoreServiceImpl) FindGrammarByUsername(ctx context.Context, username string) ([]model.Grammar, error) {
-	// 调用repository层方法获取存储记录
+	// 调用 repository 层方法获取存储记录
 	records, err := s.storeRepo.FindGrammarByUsername(ctx, username)
 	if err != nil {
 		return nil, err
 	}
 
-	// 转换为model.Grammar
+	// 转换为 model.Grammar
 	grammars := make([]model.Grammar, 0, len(records))
 	for _, record := range records {
 		grammars = append(grammars, record.Grammar)

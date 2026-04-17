@@ -13,8 +13,8 @@ type RecognitionResult struct {
 	Steps      []RecognitionStep `json:"steps"`
 }
 
-// ===================	  DFA最小化的过程记录    ===================
-// MinimizationStep 表示DFA最小化过程中的一个步骤
+// ===================	  DFA 最小化的过程记录    ===================
+// MinimizationStep 表示 DFA 最小化过程中的一个步骤
 type MinimizationStep struct {
 	Step          int                 `json:"step"`      // 步骤编号
 	Partition     [][]State           `json:"partition"` // 当前的状态划分
@@ -22,12 +22,12 @@ type MinimizationStep struct {
 	AutomatonFlow *ReactFlowAutomaton `json:"automatonFlow"`
 }
 
-// MinimizationProcess 表示DFA最小化的完整过程记录
+// MinimizationProcess 表示 DFA 最小化的完整过程记录
 type MinimizationProcess struct {
 	Steps []MinimizationStep `json:"steps"` // 最小化步骤列表
 }
 
-// ===================	  NFA确定化的过程记录    ===================
+// ===================	  NFA 确定化的过程记录    ===================
 type NFADeterminizationStep struct {
 	Step          int                 `json:"step"`        // 步骤编号
 	Description   string              `json:"description"` // 步骤描述

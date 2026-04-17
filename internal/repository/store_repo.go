@@ -14,20 +14,20 @@ type StoreRepository interface {
 	// 只要创建和查询即可，CreateXXX、FindXXXByUsername
 	// 自动机
 	CreateAutomaton(ctx context.Context, a *storage.AutomatonRecord) error
-	FindAutomatonByUsername(ctx context.Context, username string) ([]storage.AutomatonRecord, error) // sql时只返回content和id字段
+	FindAutomatonByUsername(ctx context.Context, username string) ([]storage.AutomatonRecord, error) // sql 时只返回 content 和 id 字段
 	FindAutomatonsAfterID(ctx context.Context, username string, lastID uint, limit int) ([]storage.AutomatonRecord, bool, error)
 	DeleteAutomatonByID(ctx context.Context, id string, username string) error
 
 	// 文法
 	CreateGrammar(ctx context.Context, g *storage.GrammarRecord) error
-	FindGrammarByUsername(ctx context.Context, username string) ([]storage.GrammarRecord, error) // sql时只返回content和id字段
+	FindGrammarByUsername(ctx context.Context, username string) ([]storage.GrammarRecord, error) // sql 时只返回 content 和 id 字段
 	FindGrammarsAfterID(ctx context.Context, username string, lastID uint, limit int) ([]storage.GrammarRecord, bool, error)
 	DeleteGrammarByID(ctx context.Context, id string, username string) error
 
 	// 正则表达式
 	CreateRegex(ctx context.Context, r *storage.RegexRecord) error
 	FindRegexesByUsername(ctx context.Context, username string) ([]storage.RegexRecord, error)
-	FindRegexesAfterID(ctx context.Context, username string, lastID uint, limit int) ([]storage.RegexRecord, bool, error) // sql时只返回content和id字段
+	FindRegexesAfterID(ctx context.Context, username string, lastID uint, limit int) ([]storage.RegexRecord, bool, error) // sql 时只返回 content 和 id 字段
 	DeleteRegexByID(ctx context.Context, id string, username string) error
 }
 
@@ -48,7 +48,7 @@ func (r *StoreRepositoryImpl) CreateAutomaton(ctx context.Context, a *storage.Au
 	return r.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
 			Columns: []clause.Column{{Name: "username"}, {Name: "automaton_hash"}},
-			// 后面可以增加是否为更新name字段的返回值，以增加前端用户体验
+			// 后面可以增加是否为更新 name 字段的返回值，以增加前端用户体验
 			DoUpdates: clause.Assignments(map[string]interface{}{
 				"name":       a.Name,
 				"created_at": a.CreatedAt,
@@ -93,7 +93,7 @@ func (r *StoreRepositoryImpl) FindGrammarByUsername(ctx context.Context, usernam
 	return records, nil
 }
 
-// FindAutomataAfterID 根据用户名和lastID分页查询自动机列表
+// FindAutomataAfterID 根据用户名和 lastID 分页查询自动机列表
 func (r *StoreRepositoryImpl) FindAutomatonsAfterID(ctx context.Context, username string, lastID uint, limit int) ([]storage.AutomatonRecord, bool, error) {
 	var records []storage.AutomatonRecord
 	query := r.db.WithContext(ctx).Where("username = ?", username).Select("id, name, automaton, created_at")
@@ -102,7 +102,7 @@ func (r *StoreRepositoryImpl) FindAutomatonsAfterID(ctx context.Context, usernam
 		query = query.Where("id < ?", lastID)
 	}
 
-	// 查询limit+1条记录来判断是否有更多
+	// 查询 limit+1 条记录来判断是否有更多
 	if err := query.Order("created_at DESC").Limit(limit + 1).Find(&records).Error; err != nil {
 		return nil, false, err
 	}
@@ -115,7 +115,7 @@ func (r *StoreRepositoryImpl) FindAutomatonsAfterID(ctx context.Context, usernam
 	return records, hasMore, nil
 }
 
-// FindGrammarsAfterID 根据用户名和lastID分页查询文法列表
+// FindGrammarsAfterID 根据用户名和 lastID 分页查询文法列表
 func (r *StoreRepositoryImpl) FindGrammarsAfterID(ctx context.Context, username string, lastID uint, limit int) ([]storage.GrammarRecord, bool, error) {
 	var records []storage.GrammarRecord
 	query := r.db.WithContext(ctx).Where("username = ?", username).Select("id, name, grammar, created_at")
@@ -124,7 +124,7 @@ func (r *StoreRepositoryImpl) FindGrammarsAfterID(ctx context.Context, username 
 		query = query.Where("id < ?", lastID)
 	}
 
-	// 查询limit+1条记录来判断是否有更多
+	// 查询 limit+1 条记录来判断是否有更多
 	if err := query.Order("created_at DESC").Limit(limit + 1).Find(&records).Error; err != nil {
 		return nil, false, err
 	}
@@ -188,17 +188,17 @@ func (r *StoreRepositoryImpl) FindRegexesAfterID(
 	return records, hasMore, nil
 }
 
-// DeleteAutomatonByID 根据id和用户名删除自动机记录
+// DeleteAutomatonByID 根据 id 和用户名删除自动机记录
 func (r *StoreRepositoryImpl) DeleteAutomatonByID(ctx context.Context, id string, username string) error {
 	return r.db.WithContext(ctx).Where("id = ? AND username = ?", id, username).Delete(&storage.AutomatonRecord{}).Error
 }
 
-// DeleteGrammarByID 根据id和用户名删除文法记录
+// DeleteGrammarByID 根据 id 和用户名删除文法记录
 func (r *StoreRepositoryImpl) DeleteGrammarByID(ctx context.Context, id string, username string) error {
 	return r.db.WithContext(ctx).Where("id = ? AND username = ?", id, username).Delete(&storage.GrammarRecord{}).Error
 }
 
-// DeleteRegexByID 根据id和用户名删除正则表达式记录
+// DeleteRegexByID 根据 id 和用户名删除正则表达式记录
 func (r *StoreRepositoryImpl) DeleteRegexByID(ctx context.Context, id string, username string) error {
 	return r.db.WithContext(ctx).Where("id = ? AND username = ?", id, username).Delete(&storage.RegexRecord{}).Error
 }

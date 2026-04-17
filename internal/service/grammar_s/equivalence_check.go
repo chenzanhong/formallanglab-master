@@ -7,7 +7,7 @@ import (
 	"github.com/chenzanhong/formallanglab-master/internal/service/automaton_s"
 )
 
-// 采用理论方法：转为最小DFA，判断是否同构。
+// 采用理论方法：转为最小 DFA，判断是否同构。
 // 默认输入的文法为正则文法
 func GrammarIsEquivalent(g1, g2 *model.Grammar) (bool, error) {
 	if g1 == nil || g2 == nil {
@@ -27,11 +27,11 @@ func GrammarIsEquivalent(g1, g2 *model.Grammar) (bool, error) {
 	automaton_s.Cleanup(fa1)
 	automaton_s.Cleanup(fa2)
 
-	// 判断FA类型
+	// 判断 FA 类型
 	fa1.Validate()
 	fa2.Validate()
 
-	// 转DFA
+	// 转 DFA
 	if fa1.Type != model.DFA {
 		fa1 = automaton_s.NFAToDFA(fa1)
 	}
@@ -39,10 +39,10 @@ func GrammarIsEquivalent(g1, g2 *model.Grammar) (bool, error) {
 		fa2 = automaton_s.NFAToDFA(fa2)
 	}
 
-	// DFA最小化
+	// DFA 最小化
 	fa1 = automaton_s.DFAMinimize(fa1)
 	fa2 = automaton_s.DFAMinimize(fa2)
 
-	// DFA同构判断
+	// DFA 同构判断
 	return automaton_s.AreDFAsIsomorphic(fa1, fa2), nil
 }

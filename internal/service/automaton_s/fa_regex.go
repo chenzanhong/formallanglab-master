@@ -244,7 +244,7 @@ func FAToRegexWithProcess(a *model.Automaton) (*model.ConversionProcess, error) 
 	a.InitialState = initial
 	a.AcceptingStates = []model.State{final}
 
-	// 3. 初始化regexMap
+	// 3. 初始化 regexMap
 	regexMap := make(map[model.State]map[model.State]model.Regex)
 	for _, s1 := range a.States {
 		regexMap[s1] = make(map[model.State]model.Regex)
@@ -279,7 +279,7 @@ func FAToRegexWithProcess(a *model.Automaton) (*model.ConversionProcess, error) 
 	eliminated := make(map[model.State]bool)
 	processSteps := []model.ConversionStep{}
 
-	alphabet := a.Alphabet // 用于starRegex
+	alphabet := a.Alphabet // 用于 starRegex
 
 	// 6. 逐个消除状态
 	for _, r := range statesToEliminate {
@@ -330,7 +330,7 @@ func FAToRegexWithProcess(a *model.Automaton) (*model.ConversionProcess, error) 
 		}
 		eliminated[r] = true
 
-		// 构建当前GNFA快照
+		// 构建当前 GNFA 快照
 		snapshot := buildGNFASnapshot(a.States, regexMap, eliminated, initial, final)
 
 		step := model.ConversionStep{

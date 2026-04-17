@@ -2,15 +2,15 @@ package dto
 
 import "github.com/chenzanhong/formallanglab-master/internal/domain/model"
 
-// Automaton相关请求响应结构
+// Automaton 相关请求响应结构
 // 不使用 Error 字段，具体错误在 Msg 字段说明
 
-// AutomatonValidateRequest Automaton验证请求结构
+// AutomatonValidateRequest Automaton 验证请求结构
 type AutomatonValidateRequest struct {
 	Automaton model.Automaton `json:"automaton" binding:"required"`
 }
 
-// AutomatonValidateResponse Automaton验证响应结构
+// AutomatonValidateResponse Automaton 验证响应结构
 type AutomatonValidateResponse struct {
 	Msg           string                    `json:"msg"`
 	Result        bool                      `json:"result"`
@@ -19,12 +19,12 @@ type AutomatonValidateResponse struct {
 	// Error         string                    `json:"error,omitempty"`
 }
 
-// AutomatonCleanupRequest Automaton清理请求结构
+// AutomatonCleanupRequest Automaton 清理请求结构
 type AutomatonCleanupRequest struct {
 	Automaton model.Automaton `json:"automaton" binding:"required"`
 }
 
-// AutomatonCleanupResponse Automaton清理响应结构
+// AutomatonCleanupResponse Automaton 清理响应结构
 type AutomatonCleanupResponse struct {
 	Msg           string                    `json:"msg"`
 	Result        bool                      `json:"result"`
@@ -33,12 +33,12 @@ type AutomatonCleanupResponse struct {
 	// Error         string                    `json:"error,omitempty"`
 }
 
-// DFAMinimizeRequest DFA最小化请求结构
+// DFAMinimizeRequest DFA 最小化请求结构
 type DFAMinimizeRequest struct {
 	Automaton model.Automaton `json:"automaton" binding:"required"`
 }
 
-// DFAMinimizeResponse DFA最小化响应结构
+// DFAMinimizeResponse DFA 最小化响应结构
 type DFAMinimizeResponse struct {
 	Msg           string                     `json:"msg"`
 	Result        bool                       `json:"result"`
@@ -48,13 +48,13 @@ type DFAMinimizeResponse struct {
 	// Error         string                    `json:"error,omitempty"`
 }
 
-// AutomatonStringRecognizeRequest Automaton字符串识别请求结构
+// AutomatonStringRecognizeRequest Automaton 字符串识别请求结构
 type AutomatonStringRecognizeRequest struct {
 	Automaton model.Automaton `json:"automaton" binding:"required"`
 	Str       string          `json:"str" binding:"required"`
 }
 
-// AutomatonStringRecognizeResponse Automaton字符串识别响应结构
+// AutomatonStringRecognizeResponse Automaton 字符串识别响应结构
 type AutomatonStringRecognizeResponse struct {
 	Msg string `json:"msg"`
 	// Error           string                  `json:"error,omitempty"`
@@ -62,12 +62,12 @@ type AutomatonStringRecognizeResponse struct {
 	Result            bool                     `json:"result"`
 }
 
-// NFADeterminizationRequest NFA确定化请求结构
+// NFADeterminizationRequest NFA 确定化请求结构
 type NFADeterminizationRequest struct {
 	Automaton model.Automaton `json:"automaton" binding:"required"`
 }
 
-// NFADeterminizationResponse NFA确定化响应结构
+// NFADeterminizationResponse NFA 确定化响应结构
 type NFADeterminizationResponse struct {
 	Msg           string                           `json:"msg"`
 	Result        bool                             `json:"result"`

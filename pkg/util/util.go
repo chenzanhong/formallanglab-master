@@ -25,7 +25,7 @@ func Min(a, b int) int {
 	return b
 }
 
-// []model.Symbol转string
+// []model.Symbol 转 string
 func SymbolsToString(syms []model.Symbol) string {
 	var s strings.Builder
 	for _, sym := range syms {

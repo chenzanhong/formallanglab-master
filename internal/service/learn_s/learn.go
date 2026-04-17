@@ -17,11 +17,11 @@ import (
 type LearnService interface {
 	// ListMaterials 获取学习资源列表
 	ListMaterials(ctx context.Context, category string) ([]*dto.LearnMaterialResponse, error)
-	// GetMaterialByID 根据ID获取学习资源详情
+	// GetMaterialByID 根据 ID 获取学习资源详情
 	GetMaterialByID(ctx context.Context, id int64) (*dto.LearnMaterialDetailResponse, error)
 	// AddMaterial 添加学习资源（管理员直接在 OSS 上传后调用）
 	AddMaterial(ctx context.Context, req *dto.AddMaterialRequest) error
-	// SyncOSSFiles 同步OSS文件到数据库（自动识别新增文件）
+	// SyncOSSFiles 同步 OSS 文件到数据库（自动识别新增文件）
 	SyncOSSFiles(ctx context.Context) (*dto.SyncOSSFilesResponse, error)
 	// DeleteMaterial 删除学习资源
 	DeleteMaterial(ctx context.Context, id int64) error
@@ -52,7 +52,7 @@ func (s *LearnServiceImpl) ListMaterials(ctx context.Context, category string) (
 		"":          true, // 空字符串表示获取所有分类
 	}
 	if !validCategories[category] {
-		category = "general" // 默认为general分类
+		category = "general" // 默认为 general 分类
 	}
 
 	// 从仓库获取数据
@@ -61,7 +61,7 @@ func (s *LearnServiceImpl) ListMaterials(ctx context.Context, category string) (
 		return nil, fmt.Errorf("failed to list materials: %w", err)
 	}
 
-	// 转换为DTO
+	// 转换为 DTO
 	responses := make([]*dto.LearnMaterialResponse, len(materials))
 	for i, material := range materials {
 		responses[i] = &dto.LearnMaterialResponse{
@@ -78,7 +78,7 @@ func (s *LearnServiceImpl) ListMaterials(ctx context.Context, category string) (
 	return responses, nil
 }
 
-// GetMaterialByID 根据ID获取学习资源详情
+// GetMaterialByID 根据 ID 获取学习资源详情
 func (s *LearnServiceImpl) GetMaterialByID(ctx context.Context, id int64) (*dto.LearnMaterialDetailResponse, error) {
 	// 从仓库获取数据
 	material, err := s.learnRepo.GetMaterialByID(ctx, id)
@@ -86,10 +86,10 @@ func (s *LearnServiceImpl) GetMaterialByID(ctx context.Context, id int64) (*dto.
 		return nil, fmt.Errorf("failed to get material: %w", err)
 	}
 	if material == nil {
-		return nil, nil // 返回nil表示资源不存在
+		return nil, nil // 返回 nil 表示资源不存在
 	}
 
-	// 生成5分钟有效的下载链接
+	// 生成 5 分钟有效的下载链接
 	downloadURL, err := s.ossClient.GeneratePresignedURL(material.FileKey, time.Minute*5)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate download URL: %w", err)
@@ -141,7 +141,7 @@ func (s *LearnServiceImpl) AddMaterial(ctx context.Context, req *dto.AddMaterial
 	return nil
 }
 
-// SyncOSSFiles 同步OSS文件到数据库（自动识别新增文件）
+// SyncOSSFiles 同步 OSS 文件到数据库（自动识别新增文件）
 func (s *LearnServiceImpl) SyncOSSFiles(ctx context.Context) (*dto.SyncOSSFilesResponse, error) {
 	// 扫描根目录下的所有文件（支持直接放在根目录）
 
@@ -161,7 +161,7 @@ func (s *LearnServiceImpl) SyncOSSFiles(ctx context.Context) (*dto.SyncOSSFilesR
 		AddedFiles: []string{},
 	}
 
-	// 列出OSS中的所有文件（根目录）
+	// 列出 OSS 中的所有文件（根目录）
 	ossObjects, err := s.ossClient.ListObjects("")
 	if err != nil {
 		return nil, fmt.Errorf("failed to list OSS objects: %w", err)

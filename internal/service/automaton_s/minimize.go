@@ -87,8 +87,8 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 	if automaton == nil {
 		return nil, nil
 	}
-	// 先确保automaton为完备的，但是可能添加陷阱状态"dead_state"，用户体验不好，这里先不采用完备化
-	// if err := automaton.CompleteDFA(); err != nil { // 一般不会err，handler层确保了是有效DFA。
+	// 先确保 automaton 为完备的，但是可能添加陷阱状态"dead_state"，用户体验不好，这里先不采用完备化
+	// if err := automaton.CompleteDFA(); err != nil { // 一般不会 err，handler 层确保了是有效 DFA。
 	// 	return automaton, nil
 	// }
 	// 创建过程记录器
@@ -236,7 +236,7 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 						if equalSet(w, Y) {
 							// 替换 W 中的 Y 为两个新块
 							W = append(W[:i], W[i+1:]...)
-							// // 较小者入 W（前提是需automaton是完备的，但是可能会引入dead_state，用户体验可能不好）
+							// // 较小者入 W（前提是需 automaton 是完备的，但是可能会引入 dead_state，用户体验可能不好）
 							// if len(YInX) <= len(YNotInX) {
 							// 	W = append(W, YInX)
 							// } else {
@@ -251,7 +251,7 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 						}
 					}
 					if !found {
-						// // 较小者入 W（前提是需automaton是完备的，但是可能会引入dead_state，用户体验可能不好）
+						// // 较小者入 W（前提是需 automaton 是完备的，但是可能会引入 dead_state，用户体验可能不好）
 						// if len(YInX) <= len(YNotInX) {
 						// 	W = append(W, YInX)
 						// } else {
@@ -303,9 +303,10 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 	stepCount++
 	finalPartition := P
 	process.Steps = append(process.Steps, model.MinimizationStep{
-		Step:      stepCount,
-		Partition: finalPartition,
-		Actions:   []string{"划分不再变化，最小化完成"},
+		Step:          stepCount,
+		Partition:     finalPartition,
+		Actions:       []string{"划分不再变化，最小化完成"},
+		AutomatonFlow: currentDFA.ToReactFlow(),
 	})
 
 	// 构建等价类映射
@@ -320,7 +321,7 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 	// 构建新 DFA
 	minimizedDFA := buildMinimizedDFAFromClasses(reduced, classes, acceptingSet, stateToClass)
 
-	// 把可能添加的陷阱状态去除，经过buildMinimizedDFAFromClasses后，model.DeadState被[]包裹
+	// 把可能添加的陷阱状态去除，经过 buildMinimizedDFAFromClasses 后，model.DeadState 被[]包裹
 	// UnCompleteDFA(minimizedDFA, "["+model.SinkState+"]")
 
 	return minimizedDFA, process

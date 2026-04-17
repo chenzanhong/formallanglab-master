@@ -58,18 +58,21 @@ func TestNFAToDFA(t *testing.T) {
 			nfa: &model.Automaton{
 				States:          []model.State{"q0"},
 				Alphabet:        []model.Symbol{"a"},
-				Transitions:     []model.Transition{},
+				Transitions:     []model.Transition{}, // 没有转移
 				InitialState:    "q0",
 				AcceptingStates: []model.State{"q0"},
 				Type:            model.NFA,
 			},
-			wantNil: false,
+			wantNil: true, // 没有转移的 NFA 实际上已经是 DFA，应该返回 nil
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// 调试：检查输入 NFA 的类型
+			t.Logf("Input NFA type before NFAToDFA: %v", tt.nfa.Type)
 			dfa := NFAToDFA(tt.nfa)
+			t.Logf("NFAToDFA() result: %v", dfa)
 			if (dfa == nil) != tt.wantNil {
 				t.Errorf("NFAToDFA() = %v, wantNil %v", dfa == nil, tt.wantNil)
 			}

@@ -24,7 +24,7 @@ type GrammarAmbiguityCheckRequest struct {
 // 文法二义性检查响应
 type GrammarAmbiguityCheckResponse struct {
 	Msg         string            `json:"msg"`
-	IsAmbiguous *bool             `json:"isAmbiguous,omitempty"` // 使用指针类型以支持nil值（无法判断）
+	IsAmbiguous *bool             `json:"isAmbiguous,omitempty"` // 使用指针类型以支持 nil 值（无法判断）
 	Type        model.GrammarType `json:"type"`
 	// Error  string `json:"error,omitempty"`
 	Result bool `json:"result"`
@@ -88,12 +88,12 @@ type GrammarSimplifyResponse struct {
 	Result bool `json:"result"`
 }
 
-// 文法First集请求
+// 文法 First 集请求
 type GrammarFirstSetRequest struct {
 	Grammar model.Grammar `json:"grammar" binding:"required"`
 }
 
-// 文法First集响应
+// 文法 First 集响应
 type GrammarFirstSetResponse struct {
 	FirstSet map[string][]string `json:"firstSet"`
 	Msg      string              `json:"msg"`
@@ -101,12 +101,12 @@ type GrammarFirstSetResponse struct {
 	Result bool `json:"result"`
 }
 
-// 文法Follow集请求
+// 文法 Follow 集请求
 type GrammarFollowSetRequest struct {
 	Grammar model.Grammar `json:"grammar" binding:"required"`
 }
 
-// 文法Follow集响应
+// 文法 Follow 集响应
 type GrammarFollowSetResponse struct {
 	FollowSet map[string][]string `json:"followSet"`
 	Msg       string              `json:"msg"`

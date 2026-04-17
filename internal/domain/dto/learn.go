@@ -1,6 +1,6 @@
 package dto
 
-// LearnMaterialResponse 学习资源响应DTO
+// LearnMaterialResponse 学习资源响应 DTO
 type LearnMaterialResponse struct {
 	ID          int64  `json:"id"`
 	Title       string `json:"title"`
@@ -11,7 +11,7 @@ type LearnMaterialResponse struct {
 	SizeBytes   int64  `json:"size_bytes"`
 }
 
-// LearnMaterialDetailResponse 学习资源详情响应DTO（包含下载链接）
+// LearnMaterialDetailResponse 学习资源详情响应 DTO（包含下载链接）
 type LearnMaterialDetailResponse struct {
 	ID          int64  `json:"id"`
 	Title       string `json:"title"`
@@ -23,7 +23,7 @@ type LearnMaterialDetailResponse struct {
 	DownloadURL string `json:"download_url"`
 }
 
-// AddMaterialRequest 添加学习资源请求DTO
+// AddMaterialRequest 添加学习资源请求 DTO
 type AddMaterialRequest struct {
 	Title       string `json:"title" binding:"required"`
 	Description string `json:"description"`
@@ -34,9 +34,9 @@ type AddMaterialRequest struct {
 	Category    string `json:"category" binding:"required,oneof=grammar automaton regex general"`
 }
 
-// SyncOSSFilesResponse 同步OSS文件响应DTO
+// SyncOSSFilesResponse 同步 OSS 文件响应 DTO
 type SyncOSSFilesResponse struct {
-	TotalFiles    int64    `json:"total_files"`    // OSS中的文件总数
+	TotalFiles    int64    `json:"total_files"`    // OSS 中的文件总数
 	NewFiles      int64    `json:"new_files"`      // 新增的文件数
 	ExistingFiles int64    `json:"existing_files"` // 已存在的文件数
 	AddedFiles    []string `json:"added_files"`    // 新增的文件列表

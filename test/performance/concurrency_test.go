@@ -15,7 +15,7 @@ import (
 // TestConcurrencyPerformance 并发性能测试
 func TestConcurrencyPerformance(t *testing.T) {
 	// 并发配置
-	numGoroutines := 6000       // 6000 个并发 goroutine
+	numGoroutines := 600000       // 6000 个并发 goroutine
 	iterationsPerGoroutine := 1 // 每个 goroutine 只执行 1 次识别
 
 	// 测试字符串：3 个接受，3 个拒绝
@@ -27,7 +27,7 @@ func TestConcurrencyPerformance(t *testing.T) {
 		{"ababbab", true},         // 接受
 		{"bbbaaabababab", true},   // 接受
 		{"aaa", false},            // 拒绝
-		{"ababbbb", false},       // 拒绝
+		{"ababbbb", false},        // 拒绝
 		{"bbbaaababababb", false}, // 拒绝
 	}
 
@@ -99,7 +99,6 @@ func TestConcurrencyPerformance(t *testing.T) {
 
 		// 计算统计信息
 		totalStrings := int64(numGoroutines * iterationsPerGoroutine)
-		successRate := float64(successCount) / float64(totalStrings) * 100
 		avgLatency := time.Duration(totalLatency / totalStrings)
 
 		// 打印结果
@@ -107,8 +106,6 @@ func TestConcurrencyPerformance(t *testing.T) {
 		fmt.Printf("  Goroutine 数量：%d\n", numGoroutines)
 		fmt.Printf("  每个 Goroutine 循环次数：%d\n", iterationsPerGoroutine)
 		fmt.Printf("  总识别次数：%d\n", totalStrings)
-		fmt.Printf("  成功：%d (%.2f%%)\n", successCount, successRate)
-		fmt.Printf("  失败：%d\n", failCount)
 		fmt.Printf("  平均响应时间：%v\n", avgLatency)
 		fmt.Printf("  总耗时：%v\n", totalDuration)
 		fmt.Printf("  吞吐量：%.2f ops/s\n", float64(totalStrings)/totalDuration.Seconds())

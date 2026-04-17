@@ -8,7 +8,7 @@ import (
 
 // AutomatonEquivalenceCheck 自动机等价检查
 // 检查两个自动机是否等价
-// 通过转化为最小DFA来检查是否同构
+// 通过转化为最小 DFA 来检查是否同构
 func AutomatonEquivalenceCheck(a1, a2 *model.Automaton) (minDFA1, minDFA2 *model.Automaton, isEquivalent bool) {
 	if a1 == nil || a2 == nil {
 		if a1 == nil && a2 == nil {
@@ -34,9 +34,9 @@ func AutomatonEquivalenceCheck(a1, a2 *model.Automaton) (minDFA1, minDFA2 *model
 	return minDFA1, minDFA2, AreDFAsIsomorphic(minDFA1, minDFA2)
 }
 
-// canonicalize 对DFA进行BFS编号映射（规范重命名）
+// canonicalize 对 DFA 进行 BFS 编号映射（规范重命名）
 func canonicalize(dfa *model.Automaton) *model.Automaton {
-	// 创建一个新的Automaton实例来存储规范化的结果
+	// 创建一个新的 Automaton 实例来存储规范化的结果
 	canonicalDFA := &model.Automaton{
 		Type:            dfa.Type,
 		States:          make([]model.State, 0),
@@ -55,7 +55,7 @@ func canonicalize(dfa *model.Automaton) *model.Automaton {
 		queue = queue[1:]
 
 		if _, exists := stateMap[currentState]; !exists {
-			// 添加新状态名到map和新的Automaton中
+			// 添加新状态名到 map 和新的 Automaton 中
 			stateMap[currentState] = newStateName
 			canonicalDFA.States = append(canonicalDFA.States, newStateName)
 
@@ -91,9 +91,9 @@ func canonicalize(dfa *model.Automaton) *model.Automaton {
 	return canonicalDFA
 }
 
-// AreDFAsIsomorphic 检查两个最小DFA是否同构
+// AreDFAsIsomorphic 检查两个最小 DFA 是否同构
 func AreDFAsIsomorphic(dfa1, dfa2 *model.Automaton) bool {
-	// 使用canonicalize函数规范化DFA
+	// 使用 canonicalize 函数规范化 DFA
 	dfa1 = canonicalize(dfa1)
 	dfa2 = canonicalize(dfa2)
 
