@@ -44,6 +44,7 @@ func SetupRouter(storeHandler *StoreHandler, learnHandler *LearnHandler) *gin.En
 	return router
 }
 
+// setupAuthRoutes 注册需要认证的路由
 func setupAuthRoutes(router *gin.Engine, learnHandler *LearnHandler, storeHandler *StoreHandler) {
 	// 使用 JWT、Rate 中间件保护这些路由
 	r := router.Group("/gdesign/master", jwtx.GinJWTAuthMiddleware(), rate.UserRateLimitMiddleware())

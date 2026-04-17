@@ -21,14 +21,6 @@ func DFAMinimize(automaton *model.Automaton) *model.Automaton {
 	// return minimizeByTableFilling(automaton)
 }
 
-func DFAMinimizeWithProcess(automaton *model.Automaton) (*model.Automaton, *model.MinimizationProcess) {
-	if automaton == nil {
-		return nil, nil
-	}
-
-	return minimizeByHopcroft(automaton)
-}
-
 // 使用表格填充法（Table-Filling Method）对 DFA 进行最小化
 func minimizeByTableFilling(automaton *model.Automaton) *model.Automaton {
 	if automaton == nil {
@@ -80,6 +72,14 @@ func minimizeByTableFilling(automaton *model.Automaton) *model.Automaton {
 
 	// 构建最小 DFA
 	return buildMinimizedDFA(reduced, classes, acceptingSet)
+}
+
+func DFAMinimizeWithProcess(automaton *model.Automaton) (*model.Automaton, *model.MinimizationProcess) {
+	if automaton == nil {
+		return nil, nil
+	}
+
+	return minimizeByHopcroft(automaton)
 }
 
 // minimizeByHopcroft 使用 Hopcroft 算法对 DFA 进行最小化

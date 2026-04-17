@@ -15,7 +15,7 @@ import (
 // TestConcurrencyPerformance 并发性能测试
 func TestConcurrencyPerformance(t *testing.T) {
 	// 并发配置
-	numGoroutines := 60000     // 60000 个并发 goroutine
+	numGoroutines := 60000      // 60000 个并发 goroutine
 	iterationsPerGoroutine := 1 // 每个 goroutine 只执行 1 次识别
 
 	// 测试字符串：3 个接受，3 个拒绝
