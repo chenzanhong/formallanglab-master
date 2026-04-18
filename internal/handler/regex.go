@@ -230,3 +230,46 @@ func RegexGenerateExampleString(c *gin.Context) {
 		Result:         true,
 	})
 }
+
+func RegexSimplify(c *gin.Context) {
+	start := time.Now()
+	defer func() {
+		metrics.ObserveOperationDuration("regex", "simplify", time.Since(start).Seconds())
+	}()
+
+	var req dto.RegexSimplifyRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		metrics.IncOperation("regex", "simplify", "failure: parameter parsing error")
+		zlog.Warnw("正则表达式化简失败", "detail", "参数解析失败，请检查请求格式是否正确")
+		c.JSON(400, dto.RegexSimplifyResponse{
+			Msg:    "无效的请求格式：" + err.Error(),
+			Result: false,
+		})
+
+		return
+	}
+
+	if err := re.RegexValidate(req.Pattern); err != nil {
+		metrics.IncOperation("regex", "simplify", "failure: invalid regex")
+		zlog.Warnw("正则表达式化简失败", "detail", "正则表达式格式无效")
+		c.JSON(http.StatusBadRequest, dto.RegexSimplifyResponse{
+			Msg:    "无效的正则表达式",
+			Result: false,
+		})
+
+		return
+	}
+
+	simplified, isEmptyLanguage := re.SimplifyRegex(string(req.Pattern))
+
+	metrics.IncOperation("regex", "simplify", "success")
+	zlog.Infow("正则表达式化简成功")
+	c.JSON(http.StatusOK, dto.RegexSimplifyResponse{
+		Msg:           "正则表达式化简成功",
+		Result:        true,
+		Original:      string(req.Pattern),
+		Simplified:    simplified,
+		IsEmptyLanguage: isEmptyLanguage,
+	})
+}

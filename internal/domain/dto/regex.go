@@ -26,8 +26,8 @@ type RegexRecognizeRequest struct {
 type RegexRecognizeResponse struct {
 	Matched bool   `json:"matched"`
 	Msg     string `json:"msg"`
+	Result  bool   `json:"result"`
 	// Error   interface{} `json:"error,omitempty"`
-	Result bool `json:"result"`
 }
 
 type RegexEquivalenceCheckRequest struct {
@@ -50,4 +50,18 @@ type RegexGenerateExampleStringResponse struct {
 	Result         bool     `json:"result"`
 	AcceptExamples []string `json:"accept"`
 	RejectExamples []string `json:"reject"`
+}
+
+// 正则表达式化简请求
+type RegexSimplifyRequest struct {
+	Pattern model.Regex `json:"pattern" binding:"required"`
+}
+
+// 正则表达式化简响应
+type RegexSimplifyResponse struct {
+	Msg             string `json:"msg"`
+	Result          bool   `json:"result"`
+	Original        string `json:"original"`
+	Simplified      string `json:"simplified"`
+	IsEmptyLanguage bool   `json:"isEmptyLanguage"`
 }

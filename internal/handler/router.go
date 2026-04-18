@@ -82,6 +82,7 @@ func setupAuthRoutes(router *gin.Engine, learnHandler *LearnHandler, storeHandle
 		regEx.POST("/recognize", RegexRecognize)
 		regEx.POST("/equivalence", RegexEquivalenceCheck)   // 判断所给的两个正则表达式是否等价
 		regEx.POST("/generate", RegexGenerateExampleString) // 生成可匹配和不可匹配字符串
+		regEx.POST("/simplify", RegexSimplify)              // 化简正则表达式
 	}
 
 	// 文法、自动机间的转换
