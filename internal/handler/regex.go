@@ -171,8 +171,13 @@ func RegexEquivalenceCheck(c *gin.Context) {
 	if !ok {
 		metrics.IncOperation("regex", "equivalence_check", "failure: equivalence check failed")
 		zlog.Warnw("正则表达式等价检查成功", "detail", "正则表达式 1 和 2 不等价")
+
+		errMsg := ""
+		if err != nil {
+			errMsg = "：" + err.Error()
+		}
 		c.JSON(http.StatusOK, dto.RegexEquivalenceCheckResponse{
-			Msg:          "等价性检查失败：" + err.Error(),
+			Msg:          "等价性检查失败" + errMsg,
 			Result:       true,
 			IsEquivalent: false,
 		})
@@ -266,10 +271,10 @@ func RegexSimplify(c *gin.Context) {
 	metrics.IncOperation("regex", "simplify", "success")
 	zlog.Infow("正则表达式化简成功")
 	c.JSON(http.StatusOK, dto.RegexSimplifyResponse{
-		Msg:           "正则表达式化简成功",
-		Result:        true,
-		Original:      string(req.Pattern),
-		Simplified:    simplified,
+		Msg:             "正则表达式化简成功",
+		Result:          true,
+		Original:        string(req.Pattern),
+		Simplified:      simplified,
 		IsEmptyLanguage: isEmptyLanguage,
 	})
 }

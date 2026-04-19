@@ -182,8 +182,12 @@ func AutomatonStringRecognize(c *gin.Context) {
 
 	result, err := automaton_s.Recognize(&req.Automaton, req.Str)
 	if err != nil || !result.IsAccepted {
+		errMsg := ""
+		if err != nil {
+			errMsg = "：" + err.Error()
+		}
 		c.JSON(http.StatusOK, dto.AutomatonStringRecognizeResponse{
-			Msg:               "识别成功，该字符串未被自动机接收：" + err.Error(),
+			Msg:               "识别成功，该字符串未被自动机接收" + errMsg,
 			RecognitionResult: result,
 			Result:            true,
 		})
