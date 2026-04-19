@@ -261,6 +261,21 @@ func simplifyStar(node *simplifyASTNode) *simplifyASTNode {
 		return &simplifyASTNode{typ: "char", val: 'ε'}
 	}
 
+	// (R*)* = R*（幂等性）
+	if child.typ == "star" {
+		return child
+	}
+
+	// (R+)* = R*
+	if child.typ == "plus" {
+		return &simplifyASTNode{typ: "star", children: []*simplifyASTNode{child.children[0]}}
+	}
+
+	// (R?)* = R*
+	if child.typ == "question" {
+		return &simplifyASTNode{typ: "star", children: []*simplifyASTNode{child.children[0]}}
+	}
+
 	return node
 }
 
@@ -278,6 +293,21 @@ func simplifyPlus(node *simplifyASTNode) *simplifyASTNode {
 		return &simplifyASTNode{typ: "char", val: 'ε'}
 	}
 
+	// (R+)+ = R+（幂等性）
+	if child.typ == "plus" {
+		return child
+	}
+
+	// (R*)+ = R*
+	if child.typ == "star" {
+		return child
+	}
+
+	// (R?)+ = R?
+	if child.typ == "question" {
+		return child
+	}
+
 	return node
 }
 
@@ -293,6 +323,21 @@ func simplifyQuestion(node *simplifyASTNode) *simplifyASTNode {
 	// ε? = ε
 	if child.typ == "char" && child.val == 'ε' {
 		return &simplifyASTNode{typ: "char", val: 'ε'}
+	}
+
+	// (R?)? = R?（幂等性）
+	if child.typ == "question" {
+		return child
+	}
+
+	// (R*)? = R*
+	if child.typ == "star" {
+		return child
+	}
+
+	// (R+)? = R*
+	if child.typ == "plus" {
+		return &simplifyASTNode{typ: "star", children: []*simplifyASTNode{child.children[0]}}
 	}
 
 	return node

@@ -7,6 +7,10 @@ import (
 
 type Regex string
 
+func (r Regex) String() string{
+	return string(r)
+}
+
 const (
 	EmptyLanguageToken Regex = "∅" // 空集
 	EmptyStringToken   Regex = Regex(Epsilon)
