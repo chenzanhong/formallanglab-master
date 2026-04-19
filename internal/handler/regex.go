@@ -168,16 +168,25 @@ func RegexEquivalenceCheck(c *gin.Context) {
 	}
 
 	ok, err := re.RegexEquivalenceCheck(req.Pattern1, req.Pattern2)
-	if !ok {
-		metrics.IncOperation("regex", "equivalence_check", "failure: equivalence check failed")
-		zlog.Warnw("正则表达式等价检查成功", "detail", "正则表达式 1 和 2 不等价")
+	if err != nil {
+		// 内部计算错误
+		metrics.IncOperation("regex", "equivalence_check", "failure: equivalence check error")
+		zlog.Warnw("正则表达式等价检查失败", "detail", "等价性判断过程中发生错误")
+		c.JSON(http.StatusInternalServerError, dto.RegexEquivalenceCheckResponse{
+			Msg:          "等价性判断出错：" + err.Error(),
+			Result:       false,
+			IsEquivalent: false,
+		})
 
-		errMsg := ""
-		if err != nil {
-			errMsg = "：" + err.Error()
-		}
+		return
+	}
+
+	if !ok {
+		// 检查结果为不等价（这是成功的检查结果）
+		metrics.IncOperation("regex", "equivalence_check", "success: not equivalent")
+		zlog.Infow("正则表达式等价检查成功", "detail", "正则表达式 1 和 2 不等价")
 		c.JSON(http.StatusOK, dto.RegexEquivalenceCheckResponse{
-			Msg:          "等价性检查失败" + errMsg,
+			Msg:          "这两个正则表达式不是等价的",
 			Result:       true,
 			IsEquivalent: false,
 		})
