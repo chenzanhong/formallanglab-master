@@ -374,7 +374,22 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 		return
 	}
 
-	if is, err := grammar_s.GrammarIsEquivalent(&req.Grammar1, &req.Grammar2); !is || err != nil {
+	is, err := grammar_s.GrammarIsEquivalent(&req.Grammar1, &req.Grammar2)
+	if err != nil {
+		// 内部计算错误
+		metrics.IncOperation("grammar", "equivalence_check", "failure: equivalence check error")
+		zlog.Warnw("文法等价性检查失败", "detail", "等价性判断过程中发生错误")
+		c.JSON(http.StatusInternalServerError, dto.GrammarEquivalenceCheckResponse{
+			Msg:          "等价性判断出错：" + err.Error(),
+			IsEquivalent: false,
+			Result:       false,
+		})
+
+		return
+	}
+
+	if !is {
+		// 检查结果为不等价（这是成功的检查结果）
 		metrics.IncOperation("grammar", "equivalence_check", "success: not equivalent")
 		zlog.Infow("文法等价性检查成功", "detail", "两个文法不等价")
 		c.JSON(http.StatusOK, dto.GrammarEquivalenceCheckResponse{

@@ -45,7 +45,8 @@ func RegexEquivalenceCheck(pattern1 model.Regex, pattern2 model.Regex) (bool, er
 	}
 
 	// Step 2: 使用日常方法（有限测试集）
-	equivalent, err := checkByTesting(pattern1, pattern2)
+	// 使用化简后的表达式进行测试（去除 ε 和 ∅）
+	equivalent, err := checkByTesting(model.Regex(simplified1), model.Regex(simplified2))
 	if err != nil {
 		// 找到反例 → 不等价
 		return false, nil
@@ -61,9 +62,9 @@ func RegexEquivalenceCheck(pattern1 model.Regex, pattern2 model.Regex) (bool, er
 
 // checkByTesting 通过有限测试集检查正则等价性（日常方法）
 func checkByTesting(pattern1 model.Regex, pattern2 model.Regex) (bool, error) {
-	// 提取字母表（使用专门用于等价性检查的版本）
-	alphabet1 := extractAlphabetForCheck(string(pattern1))
-	alphabet2 := extractAlphabetForCheck(string(pattern2))
+	// 提取字母表
+	alphabet1 := extractAlphabet(pattern1.String())
+	alphabet2 := extractAlphabet(pattern2.String())
 	// 合并字母表
 	seen := make(map[string]bool)
 	for _, b := range alphabet1 {
@@ -121,33 +122,4 @@ func checkByAutomata(pattern1 model.Regex, pattern2 model.Regex) (bool, error) {
 	_, _, isEquivalent := automaton_s.AutomatonEquivalenceCheck(fa1, fa2)
 
 	return isEquivalent, nil
-}
-
-// extractAlphabetForCheck 从正则表达式中提取字母表（用于等价性检查）
-// 与 generate.go 中的 extractAlphabet 不同，这个版本处理更一般的字符集
-func extractAlphabetForCheck(regex string) []string {
-	seen := make(map[string]bool)
-	i := 0
-	for i < len(regex) {
-		b := regex[i]
-		// 跳过元字符
-		if b == '(' || b == ')' || b == '|' || b == '*' || b == '+' || b == '?' || b == '.' || b == '[' || b == ']' || b == '^' || b == '$' {
-			i++
-			continue
-		}
-		// 处理转义字符
-		if b == '\\' && i+1 < len(regex) {
-			i += 2
-			continue
-		}
-		// 添加字符到字母表
-		seen[string(b)] = true
-		i++
-	}
-
-	alphabet := make([]string, 0, len(seen))
-	for b := range seen {
-		alphabet = append(alphabet, b)
-	}
-	return alphabet
 }
