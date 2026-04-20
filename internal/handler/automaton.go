@@ -181,17 +181,26 @@ func AutomatonStringRecognize(c *gin.Context) {
 	}
 
 	result, err := automaton_s.Recognize(&req.Automaton, req.Str)
-	if err != nil || !result.IsAccepted {
-		errMsg := ""
-		if err != nil {
-			errMsg = "：" + err.Error()
-		}
+	if err != nil {
+		// 内部计算错误
+		c.JSON(http.StatusInternalServerError, dto.AutomatonStringRecognizeResponse{
+			Msg:               "识别过程中发生错误：" + err.Error(),
+			RecognitionResult: result,
+			Result:            false,
+		})
+		metrics.IncOperation("automaton", "string_recognize", "failure: recognition error")
+
+		return
+	}
+
+	if !result.IsAccepted {
+		// 识别成功，但字符串不被接受（正常的逻辑结果）
 		c.JSON(http.StatusOK, dto.AutomatonStringRecognizeResponse{
-			Msg:               "识别成功，该字符串未被自动机接收" + errMsg,
+			Msg:               "识别成功，该字符串未被自动机接收",
 			RecognitionResult: result,
 			Result:            true,
 		})
-		metrics.IncOperation("automaton", "string_recognize", "failure: recognition failed")
+		metrics.IncOperation("automaton", "string_recognize", "success: not accepted")
 
 		return
 	}

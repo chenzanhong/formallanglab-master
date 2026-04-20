@@ -105,13 +105,27 @@ func RegexRecognize(c *gin.Context) {
 	}
 
 	ok, err := re.RegexRecognize(req.Pattern, req.Str)
-	if !ok {
-		metrics.IncOperation("regex", "recognize", "failure: recognition failed")
-		zlog.Warnw("正则表达式匹配失败", "detail", "正则表达式无法匹配给定的字符串")
-		c.JSON(http.StatusOK, dto.RegexRecognizeResponse{
-			Msg:     "识别失败",
+	if err != nil {
+		// 内部计算错误
+		metrics.IncOperation("regex", "recognize", "failure: recognition error")
+		zlog.Warnw("正则表达式匹配失败", "detail", "匹配过程中发生错误")
+		c.JSON(http.StatusInternalServerError, dto.RegexRecognizeResponse{
+			Msg:     "匹配过程中发生错误：" + err.Error(),
 			Matched: false,
 			Result:  false,
+		})
+
+		return
+	}
+
+	if !ok {
+		// 匹配结果为否（正常的逻辑结果）
+		metrics.IncOperation("regex", "recognize", "success: not matched")
+		zlog.Infow("正则表达式匹配成功", "detail", "正则表达式无法匹配给定的字符串")
+		c.JSON(http.StatusOK, dto.RegexRecognizeResponse{
+			Msg:     "字符串不匹配",
+			Matched: false,
+			Result:  true,
 		})
 
 		return
