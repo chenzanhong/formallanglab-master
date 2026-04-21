@@ -45,7 +45,7 @@ func GrammarValidate(c *gin.Context) {
 		return
 	}
 
-	normalizeGrammar(&req.Grammar)
+	grammar_s.NormalizeGrammar(&req.Grammar)
 
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "validate", "failure: invalid grammar")
@@ -88,7 +88,7 @@ func GrammarAmbiguityCheck(c *gin.Context) {
 		return
 	}
 
-	normalizeGrammar(&req.Grammar)
+	grammar_s.NormalizeGrammar(&req.Grammar)
 
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "ambiguity_check", "failure: invalid grammar")
@@ -164,7 +164,7 @@ func GrammarStringRecognize(c *gin.Context) {
 		return
 	}
 
-	normalizeGrammar(&req.Grammar)
+	grammar_s.NormalizeGrammar(&req.Grammar)
 
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "string_recognize", "failure: invalid grammar")
@@ -233,7 +233,7 @@ func GrammarTypeDetermine(c *gin.Context) {
 		return
 	}
 
-	normalizeGrammar(&req.Grammar)
+	grammar_s.NormalizeGrammar(&req.Grammar)
 
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "type_determine", "failure: invalid grammar")
@@ -278,7 +278,7 @@ func GrammarSimplify(c *gin.Context) {
 		return
 	}
 
-	normalizeGrammar(&req.Grammar)
+	grammar_s.NormalizeGrammar(&req.Grammar)
 
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "simplify", "failure: invalid grammar")
@@ -323,8 +323,8 @@ func GrammarEquivalenceCheck(c *gin.Context) {
 		return
 	}
 
-	normalizeGrammar(&req.Grammar1)
-	normalizeGrammar(&req.Grammar2)
+	grammar_s.NormalizeGrammar(&req.Grammar1)
+	grammar_s.NormalizeGrammar(&req.Grammar2)
 
 	if grammar_s.GrammarCheckValidity(&req.Grammar1) != nil {
 		metrics.IncOperation("grammar", "equivalence_check", "failure: invalid grammar1")
@@ -429,7 +429,7 @@ func GrammarFirstSet(c *gin.Context) {
 		return
 	}
 
-	normalizeGrammar(&req.Grammar)
+	grammar_s.NormalizeGrammar(&req.Grammar)
 
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "first_set", "failure: invalid grammar")
@@ -473,7 +473,7 @@ func GrammarFollowSet(c *gin.Context) {
 		return
 	}
 
-	normalizeGrammar(&req.Grammar)
+	grammar_s.NormalizeGrammar(&req.Grammar)
 
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "follow_set", "failure: invalid grammar")
@@ -518,7 +518,7 @@ func GrammarGenerateExampleString(c *gin.Context) {
 		return
 	}
 
-	normalizeGrammar(&req.Grammar)
+	grammar_s.NormalizeGrammar(&req.Grammar)
 
 	if err := grammar_s.GrammarCheckValidity(&req.Grammar); err != nil {
 		metrics.IncOperation("grammar", "generate_example", "failure: invalid grammar")
@@ -552,16 +552,6 @@ func GrammarGenerateExampleString(c *gin.Context) {
 		AcceptExamples: accept,
 		RejectExamples: reject,
 	})
-}
-
-func normalizeGrammar(grammar *model.Grammar) {
-	for _, prod := range grammar.Productions {
-		for i, sym := range prod.Right {
-			if sym == "ε" || sym == "λ" || sym == "epsilon" {
-				prod.Right[i] = model.Epsilon
-			}
-		}
-	}
 }
 
 // 将 map[model.Symbol]map[model.Symbol]struct{} 转换为 map[string][]string
