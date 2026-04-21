@@ -117,6 +117,7 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 	process.Steps = append(process.Steps, model.MinimizationStep{
 		Step:          stepCount,
 		Partition:     partition,
+		QueueW:        [][]model.State{}, // 初始队列为空
 		Actions:       actions,
 		AutomatonFlow: reduced.ToReactFlow(),
 	})
@@ -130,6 +131,7 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 		process.Steps = append(process.Steps, model.MinimizationStep{
 			Step:          stepCount,
 			Partition:     finalPartition,
+			QueueW:        [][]model.State{},
 			Actions:       []string{"状态数量 <= 1，无需进一步最小化"},
 			AutomatonFlow: automaton.ToReactFlow(),
 		})
@@ -177,15 +179,20 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 		}
 	}
 	currentDFA := buildMinimizedDFAFromClasses(reduced, P, acceptingSet, tempStateToClass)
+
+	// W 是待处理的划分块（初始为接受状态块）
+	W := [][]model.State{}
+	if len(reduced.AcceptingStates) > 0 {
+		W = append(W, reduced.AcceptingStates)
+	}
+
 	process.Steps = append(process.Steps, model.MinimizationStep{
 		Step:          stepCount,
 		Partition:     initialPartition,
+		QueueW:        W,
 		Actions:       actions,
 		AutomatonFlow: currentDFA.ToReactFlow(),
 	})
-
-	// W 是待处理的划分块（初始为接受状态块）
-	W := [][]model.State{reduced.AcceptingStates}
 
 	// Hopcroft 主循环
 	for len(W) > 0 {
@@ -288,14 +295,21 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 					tempStateToClass[s] = cls
 				}
 			}
+
+			P = newP
 			currentDFA = buildMinimizedDFAFromClasses(reduced, P, acceptingSet, tempStateToClass)
+
+			// 复制当前队列 W 用于记录
+			currentW := make([][]model.State, len(W))
+			copy(currentW, W)
+
 			process.Steps = append(process.Steps, model.MinimizationStep{
 				Step:          stepCount,
 				Partition:     newPartition,
+				QueueW:        currentW,
 				Actions:       actions,
 				AutomatonFlow: currentDFA.ToReactFlow(),
 			})
-			P = newP
 		}
 	}
 
@@ -305,6 +319,7 @@ func minimizeByHopcroft(automaton *model.Automaton) (*model.Automaton, *model.Mi
 	process.Steps = append(process.Steps, model.MinimizationStep{
 		Step:          stepCount,
 		Partition:     finalPartition,
+		QueueW:        [][]model.State{}, // 完成时队列为空
 		Actions:       []string{"划分不再变化，最小化完成"},
 		AutomatonFlow: currentDFA.ToReactFlow(),
 	})

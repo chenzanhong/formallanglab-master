@@ -16,9 +16,10 @@ type RecognitionResult struct {
 // ===================	  DFA 最小化的过程记录    ===================
 // MinimizationStep 表示 DFA 最小化过程中的一个步骤
 type MinimizationStep struct {
-	Step          int                 `json:"step"`      // 步骤编号
-	Partition     [][]State           `json:"partition"` // 当前的状态划分
-	Actions       []string            `json:"actions"`   // 执行的操作描述
+	Step          int                 `json:"step"`           // 步骤编号
+	Partition     [][]State           `json:"partition"`      // 当前的状态划分
+	QueueW        [][]State           `json:"queueW"`         // 当前的待处理队列 W
+	Actions       []string            `json:"actions"`        // 执行的操作描述
 	AutomatonFlow *ReactFlowAutomaton `json:"automatonFlow"`
 }
 
