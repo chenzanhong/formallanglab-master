@@ -74,6 +74,7 @@ import (
 	"sync"
 
 	"github.com/chenzanhong/formallanglab-master/internal/domain/model"
+	"github.com/chenzanhong/formallanglab-master/pkg/util"
 )
 
 // ===================================================================================
@@ -430,7 +431,7 @@ func RecognizeString(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth 
 					}
 
 					// 构建新推导路径
-					step := fmt.Sprintf("%s → %s", string(leftSymbol), symbolsToStringJoinSep(prod.Right))
+					step := fmt.Sprintf("%s → %s", string(leftSymbol), util.SymbolsToString(prod.Right))
 					newPath := append([]string{}, curr.path...)
 					newPath = append(newPath, step)
 
@@ -583,9 +584,9 @@ func BFSParseDetailed(g *model.Grammar, input []model.Symbol, maxSteps, maxWidth
 					newSymbols = append(newSymbols, curr.symbols[i+leftLen:]...)
 
 					// 构建产生式字符串
-					leftStr := symbolsToStringJoinSep(prod.Left)
-					rightStr := symbolsToStringJoinSep(prod.Right)
-					stepStr := fmt.Sprintf("%s → %s", leftStr, rightStr)
+					// leftStr := symbolsToStringJoinSep(prod.Left)
+					// rightStr := symbolsToStringJoinSep(prod.Right)
+					stepStr := prod.String()
 
 					// 新状态
 					newHistory := append([][]model.Symbol{}, curr.history...)
@@ -946,8 +947,8 @@ func LL1ParseDetailed(grammar *model.Grammar, input []model.Symbol) *model.Parse
 			}
 
 			step.StepType = "predict"
-			step.Description = fmt.Sprintf("使用产生式: %s → %s", string(prod.Left[0]), symbolsToStringJoinSep(prod.Right))
-			step.Action = fmt.Sprintf("出栈 %s，压入 %s", string(top), symbolsToStringJoinSep(prod.Right))
+			step.Description = fmt.Sprintf("使用产生式: %s", prod.String())
+			step.Action = fmt.Sprintf("出栈 %s，压入 %s", string(top), util.SymbolsToString(prod.Right))
 			step.Production = &prod
 
 			result.Steps = append(result.Steps, step)
