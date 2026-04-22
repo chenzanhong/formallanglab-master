@@ -20,9 +20,11 @@ func automatonGenerateExampleStringByDFAAndBFS(a *model.Automaton) (accept, reje
 	if err := a.Validate(); err != nil {
 		return automatonGenerateExampleStringByEnumAndVerify(a)
 	}
+
 	if a.Type != model.DFA {
 		a = NFAToDFA(a)
 	}
+
 	if err := a.CompleteDFA(); err != nil { // 完备化失败
 		return automatonGenerateExampleStringByEnumAndVerify(a)
 	}
@@ -177,7 +179,8 @@ func automatonGenerateExampleStringByEnumAndVerify(a *model.Automaton) (accept, 
 
 	// 2. 生成候选字符串（长度 0 ~ maxLen）
 	maxLen := min(len(a.States)*2, len(a.States)+4)
-	candidates := util.GenerateStrings(alphabet, maxLen)
+	// candidates := util.GenerateStrings(alphabet, maxLen)
+	candidates := util.SamplingExampleStrings(alphabet, maxLen)
 
 	acceptMap := make(map[string]bool)
 	rejectMap := make(map[string]bool)

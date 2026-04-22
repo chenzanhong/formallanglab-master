@@ -226,7 +226,7 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 			}
 			automaton.Transitions = append(automaton.Transitions, trans)
 			step.NewTransitions = []model.Transition{trans}
-			step.Description = fmt.Sprintf("因产生式 %s → %s，添加转移 δ(%s, ε) = {%s}", leftSym, prod.Right[0], fromState, toState)
+			step.Description = fmt.Sprintf("因产生式 %s → %s，添加转移 δ(%s, ε) = {%s}", leftSym, util.SymbolsToString(prod.Right), fromState, toState)
 
 		// 4) 形如 A -> aB，新增转移 A →a→ B
 		case rightLen == 2 && g.CheckIsTerminal(prod.Right[0]) && g.CheckIsNonTerminal(prod.Right[1]):
@@ -239,7 +239,7 @@ func rightLinearGrammarToFAWithProcess(g *model.Grammar) *model.GrammarToFAProce
 			}
 			automaton.Transitions = append(automaton.Transitions, trans)
 			step.NewTransitions = []model.Transition{trans}
-			step.Description = fmt.Sprintf("因产生式 %s → %s，添加转移 δ(%s, %s) = {%s}", leftSym, prod.Right[0], fromState, input, toState)
+			step.Description = fmt.Sprintf("因产生式 %s → %s，添加转移 δ(%s, %s) = {%s}", leftSym, util.SymbolsToString(prod.Right), fromState, input, toState)
 
 		// 5) 形如 A -> w，w =a1a2a3...an，需展开为 A →a1→ A_1 →a2→ A_2 →...→ A_n-1 →an→ accept
 		case rightLen >= 2 && g.CheckIsTerminal(prod.Right[rightLen-1]):

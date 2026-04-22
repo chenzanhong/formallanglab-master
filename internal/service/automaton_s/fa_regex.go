@@ -121,7 +121,7 @@ func FAToRegex(a *model.Automaton) model.Regex {
 	})
 	a.InitialState = newInitialState
 
-	newAcceptingState := model.State("accept")
+	newAcceptingState := model.State("final")
 	a.States = append(a.States, newAcceptingState)
 	for _, acceptState := range a.AcceptingStates {
 		a.Transitions = append(a.Transitions, model.Transition{
