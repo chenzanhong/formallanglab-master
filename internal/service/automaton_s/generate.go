@@ -37,43 +37,58 @@ func GenerateExampleStringsFromCompletedDFA(a *model.Automaton) (accept, reject 
 	if a.Type != model.DFA {
 		return automatonGenerateExampleStringByEnumAndVerify(a) // 备选
 	}
-	// accept: 在原 DFA 上 BFS 最多 maxNum 个
-	accept = BFSShortestAcceptedStringsForDFA(a, 3*maxExampleNum)
-	if len(accept) == 0 {
-		accept = []string{"(no short accepted string found)"}
-	}
 
-	// reject: 在补集 DFA 上 BFS
-	complementDFA := a.Clone()
-	complementDFA.AcceptingStates = GetNonAcceptingStates(a)
-	if err := complementDFA.CompleteDFA(); err != nil {
-		reject = []string{"(failed to generate reject example)"}
-	} else {
-		reject = BFSShortestAcceptedStringsForDFA(complementDFA, 3*maxExampleNum)
-		if len(reject) == 0 {
-			reject = []string{"(all strings are accepted)"}
+	// 使用 channel 接收并行处理的结果
+	acceptChan := make(chan []string, 1)
+	rejectChan := make(chan []string, 1)
+
+	// 并行生成接受字符串（包括随机采样和兜底）
+	go func() {
+		result := BFSShortestAcceptedStringsForDFA(a, 3*maxExampleNum)
+		if len(result) == 0 {
+			result = []string{"(no short accepted string found)"}
 		}
-	}
+		// 随机采样
+		if len(result) > maxExampleNum {
+			result = util.SamplingExampleStrings(result, maxExampleNum)
+		}
+		// 兜底
+		if len(result) == 0 {
+			result = []string{"(no short accepted string found)"}
+		}
+		acceptChan <- result
+	}()
 
-	if len(reject) > 1 && reject[0] == "" { // 对于拒绝的字符串优先展示非空的
-		reject = reject[1:]
-	}
+	// 并行生成拒绝字符串（包括随机采样和兜底）
+	go func() {
+		complementDFA := a.Clone()
+		complementDFA.AcceptingStates = GetNonAcceptingStates(a)
+		if err := complementDFA.CompleteDFA(); err != nil {
+			rejectChan <- []string{"(failed to generate reject example)"}
+			return
+		}
+		result := BFSShortestAcceptedStringsForDFA(complementDFA, 3*maxExampleNum)
+		if len(result) == 0 {
+			result = []string{"(all strings are accepted)"}
+		}
+		// 对于拒绝的字符串优先展示非空的
+		if len(result) > 1 && result[0] == "" {
+			result = result[1:]
+		}
+		// 随机采样
+		if len(result) > maxExampleNum {
+			result = util.SamplingExampleStrings(result, maxExampleNum)
+		}
+		// 兜底
+		if len(result) == 0 {
+			result = []string{"(all short strings are accepted)"}
+		}
+		rejectChan <- result
+	}()
 
-	// 随机采样
-	if len(accept) > maxExampleNum {
-		accept = util.SamplingExampleStrings(accept, maxExampleNum)
-	}
-	if len(reject) > maxExampleNum {
-		reject = util.SamplingExampleStrings(reject, maxExampleNum)
-	}
-
-	// 兜底
-	if len(accept) == 0 {
-		accept = []string{"(no short accepted string found)"}
-	}
-	if len(reject) == 0 {
-		reject = []string{"(all short strings are accepted)"}
-	}
+	// 接收结果
+	accept = <-acceptChan
+	reject = <-rejectChan
 
 	return accept, reject
 }
