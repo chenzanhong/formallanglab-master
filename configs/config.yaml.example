@@ -3,7 +3,7 @@ pg:
   port: 5432
   user: postgres
   password: "your-postgres-password"
-  name: gdesign
+  name: formallanglab
   max_conn: 10
   max_idle_conn: 5
 

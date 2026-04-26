@@ -109,7 +109,7 @@ func main() {
 			r := gin.New()
 			r.Use(gin.Recovery())
 			zlog.Infow("Starting metrics on localhost:" + metricsPort)
-			r.GET("/gdesign/master/metrics", metrics.MetricsHandler())
+			r.GET("/formallanglab/master/metrics", metrics.MetricsHandler())
 			r.Run(fmt.Sprintf(":%s", metricsPort))
 		}
 	}()

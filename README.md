@@ -307,78 +307,78 @@ backend/master/
 
 | 方法 | 路由 | 功能 |
 |------|------|------|
-| POST | `/gdesign/master/grammar/validate` | 文法验证 |
-| POST | `/gdesign/master/grammar/type` | 文法类型判定 |
-| POST | `/gdesign/master/grammar/simplify` | 文法化简 |
-| POST | `/gdesign/master/grammar/first` | First 集计算 |
-| POST | `/gdesign/master/grammar/follow` | Follow 集计算 |
-| POST | `/gdesign/master/grammar/ambiguity` | 二义性检测 |
-| POST | `/gdesign/master/grammar/equivalence` | 文法等价性检查 |
-| POST | `/gdesign/master/grammar/recognize` | 字符串识别 |
-| POST | `/gdesign/master/grammar/generate` | 示例字符串生成 |
+| POST | `/formallanglab/master/grammar/validate` | 文法验证 |
+| POST | `/formallanglab/master/grammar/type` | 文法类型判定 |
+| POST | `/formallanglab/master/grammar/simplify` | 文法化简 |
+| POST | `/formallanglab/master/grammar/first` | First 集计算 |
+| POST | `/formallanglab/master/grammar/follow` | Follow 集计算 |
+| POST | `/formallanglab/master/grammar/ambiguity` | 二义性检测 |
+| POST | `/formallanglab/master/grammar/equivalence` | 文法等价性检查 |
+| POST | `/formallanglab/master/grammar/recognize` | 字符串识别 |
+| POST | `/formallanglab/master/grammar/generate` | 示例字符串生成 |
 
 ### 自动机接口
 
 | 方法 | 路由 | 功能 |
 |------|------|------|
-| POST | `/gdesign/master/automaton/validate` | 自动机验证 |
-| POST | `/gdesign/master/automaton/cleanup` | 自动机清理 |
-| POST | `/gdesign/master/automaton/minimize` | DFA 最小化 |
-| POST | `/gdesign/master/automaton/nfatodfa` | NFA 确定化 |
-| POST | `/gdesign/master/automaton/equivalence` | 自动机等价性检查 |
-| POST | `/gdesign/master/automaton/recognize` | 字符串识别 |
-| POST | `/gdesign/master/automaton/generate` | 示例字符串生成 |
-| POST | `/gdesign/master/automaton/complete` | DFA 补全 |
-| POST | `/gdesign/master/automaton/complement` | DFA 补集 |
+| POST | `/formallanglab/master/automaton/validate` | 自动机验证 |
+| POST | `/formallanglab/master/automaton/cleanup` | 自动机清理 |
+| POST | `/formallanglab/master/automaton/minimize` | DFA 最小化 |
+| POST | `/formallanglab/master/automaton/nfatodfa` | NFA 确定化 |
+| POST | `/formallanglab/master/automaton/equivalence` | 自动机等价性检查 |
+| POST | `/formallanglab/master/automaton/recognize` | 字符串识别 |
+| POST | `/formallanglab/master/automaton/generate` | 示例字符串生成 |
+| POST | `/formallanglab/master/automaton/complete` | DFA 补全 |
+| POST | `/formallanglab/master/automaton/complement` | DFA 补集 |
 
 ### 正则表达式接口
 
 | 方法 | 路由 | 功能 |
 |------|------|------|
-| POST | `/gdesign/master/regex/validate` | 正则表达式验证 |
-| POST | `/gdesign/master/regex/equivalence` | 正则等价性检查 |
-| POST | `/gdesign/master/regex/recognize` | 字符串匹配 |
-| POST | `/gdesign/master/regex/generate` | 示例字符串生成 |
+| POST | `/formallanglab/master/regex/validate` | 正则表达式验证 |
+| POST | `/formallanglab/master/regex/equivalence` | 正则等价性检查 |
+| POST | `/formallanglab/master/regex/recognize` | 字符串匹配 |
+| POST | `/formallanglab/master/regex/generate` | 示例字符串生成 |
 
 ### 转换接口
 
 | 方法 | 路由 | 功能 |
 |------|------|------|
-| POST | `/gdesign/master/convert/grammar-to-nfa` | 文法转 NFA |
-| POST | `/gdesign/master/convert/fa-to-grammar` | 自动机转文法 |
-| POST | `/gdesign/master/convert/regex-to-nfa` | 正则转 NFA |
-| POST | `/gdesign/master/convert/fa-to-regex` | 自动机转正则 |
+| POST | `/formallanglab/master/convert/grammar-to-nfa` | 文法转 NFA |
+| POST | `/formallanglab/master/convert/fa-to-grammar` | 自动机转文法 |
+| POST | `/formallanglab/master/convert/regex-to-nfa` | 正则转 NFA |
+| POST | `/formallanglab/master/convert/fa-to-regex` | 自动机转正则 |
 
 ### 存储接口
 
 | 方法 | 路由 | 功能 |
 |------|------|------|
-| POST | `/gdesign/master/store/automaton` | 保存自动机 |
-| GET | `/gdesign/master/store/automatons` | 获取自动机列表 |
-| DELETE | `/gdesign/master/store/automaton/:id` | 删除自动机 |
-| POST | `/gdesign/master/store/grammar` | 保存文法 |
-| GET | `/gdesign/master/store/grammars` | 获取文法列表 |
-| DELETE | `/gdesign/master/store/grammar/:id` | 删除文法 |
-| POST | `/gdesign/master/store/regex` | 保存正则 |
-| GET | `/gdesign/master/store/regexes` | 获取正则列表 |
-| DELETE | `/gdesign/master/store/regex/:id` | 删除正则 |
+| POST | `/formallanglab/master/store/automaton` | 保存自动机 |
+| GET | `/formallanglab/master/store/automatons` | 获取自动机列表 |
+| DELETE | `/formallanglab/master/store/automaton/:id` | 删除自动机 |
+| POST | `/formallanglab/master/store/grammar` | 保存文法 |
+| GET | `/formallanglab/master/store/grammars` | 获取文法列表 |
+| DELETE | `/formallanglab/master/store/grammar/:id` | 删除文法 |
+| POST | `/formallanglab/master/store/regex` | 保存正则 |
+| GET | `/formallanglab/master/store/regexes` | 获取正则列表 |
+| DELETE | `/formallanglab/master/store/regex/:id` | 删除正则 |
 
 ### 学习资源接口
 
 | 方法 | 路由 | 功能 |
 |------|------|------|
-| GET | `/gdesign/master/learn/` | 获取学习资源列表 |
-| GET | `/gdesign/master/learn/:id` | 获取学习资源详情 |
-| POST | `/gdesign/master/learn/` | 添加学习资源（管理员） |
-| POST | `/gdesign/master/learn/sync` | 同步 OSS 文件到数据库 |
-| DELETE | `/gdesign/master/learn/:id` | 删除学习资源（管理员） |
+| GET | `/formallanglab/master/learn/` | 获取学习资源列表 |
+| GET | `/formallanglab/master/learn/:id` | 获取学习资源详情 |
+| POST | `/formallanglab/master/learn/` | 添加学习资源（管理员） |
+| POST | `/formallanglab/master/learn/sync` | 同步 OSS 文件到数据库 |
+| DELETE | `/formallanglab/master/learn/:id` | 删除学习资源（管理员） |
 
 ### 系统接口
 
 | 方法 | 路由 | 功能 |
 |------|------|------|
-| GET | `/gdesign/master/metrics` | Prometheus 指标采集 |
-| GET | `/gdesign/master/health` | 健康检查 |
+| GET | `/formallanglab/master/metrics` | Prometheus 指标采集 |
+| GET | `/formallanglab/master/health` | 健康检查 |
 
 ## 核心算法
 

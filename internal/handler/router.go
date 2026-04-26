@@ -28,12 +28,12 @@ func SetupRouter(storeHandler *StoreHandler, learnHandler *LearnHandler) *gin.En
 	// 6. 指标收集 - 收集所有处理过程的指标
 	router.Use(metrics.HTTPMiddleware())
 
-	router.GET("/gdesign/master/health", func(c *gin.Context) {
+	router.GET("/formallanglab/master/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status": "ok",
 		})
 	})
-	router.HEAD("/gdesign/master/health", func(c *gin.Context) {
+	router.HEAD("/formallanglab/master/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status": "ok",
 		})
@@ -47,7 +47,7 @@ func SetupRouter(storeHandler *StoreHandler, learnHandler *LearnHandler) *gin.En
 // setupAuthRoutes 注册需要认证的路由
 func setupAuthRoutes(router *gin.Engine, learnHandler *LearnHandler, storeHandler *StoreHandler) {
 	// 使用 JWT、Rate 中间件保护这些路由
-	r := router.Group("/gdesign/master", jwtx.GinJWTAuthMiddleware(), rate.UserRateLimitMiddleware())
+	r := router.Group("/formallanglab/master", jwtx.GinJWTAuthMiddleware(), rate.UserRateLimitMiddleware())
 
 	// 文法相关接口
 	grammar := r.Group("/grammar")

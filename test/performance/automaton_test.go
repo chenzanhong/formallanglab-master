@@ -323,7 +323,7 @@ func (s *AutomatonTestSuite) callAutomatonValidate(automaton model.Automaton) er
 	}
 
 	resp, err := s.client.Post(
-		fmt.Sprintf("%s/gdesign/master/automaton/validate", s.config.BaseURL),
+		fmt.Sprintf("%s/formallanglab/master/automaton/validate", s.config.BaseURL),
 		"application/json",
 		bytes.NewBuffer(reqBody),
 	)
@@ -346,7 +346,7 @@ func (s *AutomatonTestSuite) callAutomatonCleanup(automaton model.Automaton) err
 	}
 
 	resp, err := s.client.Post(
-		fmt.Sprintf("%s/gdesign/master/automaton/cleanup", s.config.BaseURL),
+		fmt.Sprintf("%s/formallanglab/master/automaton/cleanup", s.config.BaseURL),
 		"application/json",
 		bytes.NewBuffer(reqBody),
 	)
@@ -369,7 +369,7 @@ func (s *AutomatonTestSuite) callDFAMinimize(automaton model.Automaton) error {
 	}
 
 	resp, err := s.client.Post(
-		fmt.Sprintf("%s/gdesign/master/automaton/minimize", s.config.BaseURL),
+		fmt.Sprintf("%s/formallanglab/master/automaton/minimize", s.config.BaseURL),
 		"application/json",
 		bytes.NewBuffer(reqBody),
 	)
@@ -395,7 +395,7 @@ func (s *AutomatonTestSuite) callAutomatonStringRecognize(automaton model.Automa
 	}
 
 	resp, err := s.client.Post(
-		fmt.Sprintf("%s/gdesign/master/automaton/recognize", s.config.BaseURL),
+		fmt.Sprintf("%s/formallanglab/master/automaton/recognize", s.config.BaseURL),
 		"application/json",
 		bytes.NewBuffer(reqBody),
 	)
@@ -418,7 +418,7 @@ func (s *AutomatonTestSuite) callNFADeterminization(nfa model.Automaton) error {
 	}
 
 	resp, err := s.client.Post(
-		fmt.Sprintf("%s/gdesign/master/automaton/nfatodfa", s.config.BaseURL),
+		fmt.Sprintf("%s/formallanglab/master/automaton/nfatodfa", s.config.BaseURL),
 		"application/json",
 		bytes.NewBuffer(reqBody),
 	)
@@ -444,7 +444,7 @@ func (s *AutomatonTestSuite) callAutomatonEquivalenceCheck(automaton1, automaton
 	}
 
 	resp, err := s.client.Post(
-		fmt.Sprintf("%s/gdesign/master/automaton/equivalence", s.config.BaseURL),
+		fmt.Sprintf("%s/formallanglab/master/automaton/equivalence", s.config.BaseURL),
 		"application/json",
 		bytes.NewBuffer(reqBody),
 	)
@@ -467,7 +467,7 @@ func (s *AutomatonTestSuite) callAutomatonGenerateExampleString(automaton model.
 	}
 
 	resp, err := s.client.Post(
-		fmt.Sprintf("%s/gdesign/master/automaton/generate", s.config.BaseURL),
+		fmt.Sprintf("%s/formallanglab/master/automaton/generate", s.config.BaseURL),
 		"application/json",
 		bytes.NewBuffer(reqBody),
 	)
